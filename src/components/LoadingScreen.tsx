@@ -83,10 +83,6 @@ export function LoadingScreen({ progress, done, onExited }: LoadingScreenProps) 
           </div>
         </div>
       </div>
-
-      <p className="loading-label">
-        {done ? 'Entering the gallery' : 'Collecting nature'}
-      </p>
     </div>
   );
 }

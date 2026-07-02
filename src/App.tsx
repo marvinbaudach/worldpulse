@@ -26,11 +26,6 @@ export default function App() {
           onExited={() => setShowLoader(false)}
         />
       )}
-
-      <header className="stage__title" aria-hidden={showLoader}>
-        <h1>Wild Frames</h1>
-        <p>Drag to explore · nature in orbit</p>
-      </header>
     </main>
   );
 }
