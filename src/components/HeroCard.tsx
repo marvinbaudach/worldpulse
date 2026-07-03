@@ -110,6 +110,7 @@ export function HeroCard({
           toneMapped={false}
           side={DoubleSide}
           radius={0.06}
+          onClick={(e) => e.stopPropagation()}
         />
       </group>
     </group>

@@ -41,6 +41,7 @@ interface RingProps {
 }
 
 function Ring({ onSelect, selectedUrl, paused }: RingProps) {
+  const interactive = selectedUrl === null;
   const { groupRef, tiltRef, wasDrag } = useCarouselRotation({
     autoSpin: 0.12,
     paused,
@@ -64,6 +65,7 @@ function Ring({ onSelect, selectedUrl, paused }: RingProps) {
             onSelect={onSelect}
             wasDrag={wasDrag}
             entranceDelay={i * 0.06}
+            interactive={interactive}
           />
         ))}
       </group>

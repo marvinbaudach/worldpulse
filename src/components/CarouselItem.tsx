@@ -20,6 +20,8 @@ interface CarouselItemProps {
   wasDrag: () => boolean;
   /** Per-panel delay (seconds) for the staggered entrance fly-out. */
   entranceDelay: number;
+  /** False while a hero is open, so panels stop absorbing click-away taps. */
+  interactive: boolean;
 }
 
 type ImageMaterial = {
@@ -49,6 +51,7 @@ export function CarouselItem({
   onSelect,
   wasDrag,
   entranceDelay,
+  interactive,
 }: CarouselItemProps) {
   const groupRef = useRef<Group>(null);
   const imgRef = useRef<Mesh>(null);
@@ -162,9 +165,13 @@ export function CarouselItem({
         side={DoubleSide}
         radius={0.06}
         scale={[width, height]}
-        onClick={handleClick}
-        onPointerOver={() => (document.body.style.cursor = 'pointer')}
-        onPointerOut={() => (document.body.style.cursor = '')}
+        onClick={interactive ? handleClick : undefined}
+        onPointerOver={
+          interactive ? () => (document.body.style.cursor = 'pointer') : undefined
+        }
+        onPointerOut={
+          interactive ? () => (document.body.style.cursor = '') : undefined
+        }
       />
 
       {/* Glass plate in front of the photo: real thickness plus a glossy,
