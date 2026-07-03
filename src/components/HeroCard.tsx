@@ -24,9 +24,9 @@ interface HeroCardProps {
   /** 720p variant that takes over once it has buffered. */
   videoHd: string;
   start: HeroStart;
-  /** Front-and-center pose the card flies to. */
+  /** Front-and-center position the card flies to; its size is computed from
+      the camera frustum there so every edge stays on screen. */
   targetPosition: Vector3;
-  targetScale: Vector3;
   /** When true the card flies back and calls onClosed once it arrives. */
   closing: boolean;
   onClosed: () => void;
@@ -39,8 +39,13 @@ const MAX_HINGE = 0.8;
 const UP = new Vector3(0, 1, 0);
 const X_AXIS = new Vector3(1, 0, 0);
 
+// Fraction of the visible frustum (at the hero's depth) the card may fill,
+// so all four edges sit comfortably inside the frame.
+const FIT = 0.88;
+
 const _pos = new Vector3();
 const _scale = new Vector3();
+const _target = new Vector3();
 const _up = new Vector3();
 const _qBase = new Quaternion();
 const _hinge = new Quaternion();
@@ -63,7 +68,6 @@ export function HeroCard({
   videoHd,
   start,
   targetPosition,
-  targetScale,
   closing,
   onClosed,
 }: HeroCardProps) {
@@ -93,7 +97,7 @@ export function HeroCard({
     };
   }, [video, videoHd]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const pivot = pivotRef.current;
     const inner = innerRef.current;
     const img = imgRef.current;
@@ -131,9 +135,17 @@ export function HeroCard({
     );
     const t = easeInOutCubic(progress.current);
 
+    // Largest size (keeping the panel's aspect) that fits the visible frustum
+    // at the hero's depth, with a margin. Evaluated per frame because the
+    // camera distance animates (portrait pull-back, parallax).
+    const vp = state.viewport.getCurrentViewport(state.camera, targetPosition);
+    const cardAspect = start.scale.x / start.scale.y;
+    const h = Math.min(vp.height * FIT, (vp.width * FIT) / cardAspect);
+    _target.set(h * cardAspect, h, 1);
+
     // Card center + size interpolate from the ring slot to the hero pose.
     _pos.lerpVectors(start.position, targetPosition, t);
-    _scale.lerpVectors(start.scale, targetScale, t);
+    _scale.lerpVectors(start.scale, _target, t);
     const halfH = _scale.y / 2;
 
     // Base orientation eases from the tilted ring pose to facing the camera.

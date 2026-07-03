@@ -30,9 +30,9 @@ const RADIUS = (PANEL_W * IMAGES.length) / (2 * Math.PI) + 0.6;
 const FOG_NEAR = RADIUS + 2;
 const FOG_FAR = RADIUS * 2 + 8;
 
-// Front-and-center pose the hero card flies to (between ring front and camera).
+// Front-and-center position the hero card flies to (between ring front and
+// camera); the card sizes itself to the visible frustum at this depth.
 const HERO_Z = RADIUS + 4.5;
-const HERO_SCALE = new Vector3(2.88, 3.6, 1);
 
 interface RingProps {
   onSelect: (url: string, start: HeroStart) => void;
@@ -173,7 +173,6 @@ export function Carousel3D() {
           videoHd={selectedImage?.videoHd ?? ''}
           start={selected.start}
           targetPosition={heroTarget}
-          targetScale={HERO_SCALE}
           closing={closing}
           onClosed={finishClose}
         />
