@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
+import { MathUtils } from 'three';
 import type { Group } from 'three';
 
 interface Options {
@@ -25,6 +26,10 @@ const CLICK_THRESHOLD = 6;
 // tilt so dragging up or down both have room).
 const MIN_TILT = -1.0;
 const MAX_TILT = 0.7;
+// Swirl-in on first appearance: the ring starts rotated by this much and
+// unwinds with an eased spin, in sync with the panels flying out.
+const ASSEMBLE_DURATION = 1.7;
+const ASSEMBLE_TURNS = Math.PI * 1.5;
 
 /**
  * Drives the ring: horizontal drag spins it (Y), vertical drag freely tilts it
@@ -55,6 +60,7 @@ export function useCarouselRotation({
   const lastY = useRef(0);
   const lastMoveTime = useRef(0);
   const moved = useRef(0);
+  const assembleStart = useRef<number | null>(null);
   // Keep the latest `paused` callback so listeners never capture a stale one.
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
@@ -132,7 +138,7 @@ export function useCarouselRotation({
   /** True when the last gesture moved far enough to count as a drag. */
   const wasDrag = () => moved.current > CLICK_THRESHOLD;
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     // Clamp delta so a dropped frame does not cause a jump.
     const dt = Math.min(delta, 1 / 30);
 
@@ -145,8 +151,19 @@ export function useCarouselRotation({
       velocity.current += (autoSpin - velocity.current) * friction;
     }
 
+    // Eased swirl-in offset that unwinds to zero as the ring assembles.
+    if (assembleStart.current === null) {
+      assembleStart.current = state.clock.elapsedTime;
+    }
+    const ap = MathUtils.clamp(
+      (state.clock.elapsedTime - assembleStart.current) / ASSEMBLE_DURATION,
+      0,
+      1,
+    );
+    const assembleOffset = ASSEMBLE_TURNS * Math.pow(1 - ap, 3);
+
     if (groupRef.current) {
-      groupRef.current.rotation.y = rotation.current;
+      groupRef.current.rotation.y = rotation.current + assembleOffset;
     }
     if (tiltRef.current) {
       tiltRef.current.rotation.x = tilt.current;

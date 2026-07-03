@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 
 interface LoadingScreenProps {
   progress: number; // 0..1
@@ -7,7 +7,10 @@ interface LoadingScreenProps {
   onExited: () => void;
 }
 
-const CIRCUMFERENCE = 2 * Math.PI * 46; // r = 46 (progress ring)
+const RING_R = 46; // progress ring radius
+const RING_CIRCUM = 2 * Math.PI * RING_R;
+const ORBIT_R = 54; // orbit ring radius
+const ORBIT_CIRCUM = 2 * Math.PI * ORBIT_R;
 
 // Three tilted orbit rings, each with a single orbiting glow node.
 const ORBITS = [
@@ -27,6 +30,12 @@ const gyroTumble = keyframes`
 const orbitSpin = keyframes`
   to { transform: rotateZ(360deg); }
 `;
+// Quick "locked in" pulse once loading completes.
+const completePulse = keyframes`
+  0% { transform: scale(1); }
+  45% { transform: scale(1.09); }
+  100% { transform: scale(1); }
+`;
 
 const Screen = styled.div<{ $leaving: boolean }>`
   position: fixed;
@@ -36,11 +45,14 @@ const Screen = styled.div<{ $leaving: boolean }>`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 40%, #10151f 0%, #05070c 70%);
+  background: radial-gradient(circle at 50% 50%, #10151f 0%, #05070c 70%);
   opacity: ${(p) => (p.$leaving ? 0 : 1)};
-  transform: ${(p) => (p.$leaving ? 'scale(1.06)' : 'none')};
+  /* Implode toward the center where the carousel blooms out. */
+  transform: ${(p) => (p.$leaving ? 'scale(0.2)' : 'scale(1)')};
   pointer-events: ${(p) => (p.$leaving ? 'none' : 'auto')};
-  transition: opacity 0.9s ease, transform 0.9s ease;
+  transition:
+    opacity 0.85s cubic-bezier(0.7, 0, 0.84, 0),
+    transform 0.85s cubic-bezier(0.7, 0, 0.84, 0);
   overflow: hidden;
 `;
 
@@ -70,6 +82,19 @@ const Loader = styled.div`
   display: grid;
   place-items: center;
   perspective: 900px;
+`;
+
+// Wraps the orbit rings and builds up with progress: it grows and brightens as
+// more images load, reaching full size and glow exactly at 100%.
+const Build = styled.div<{ $p: number }>`
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: scale(${(p) => 0.5 + p.$p * 0.5});
+  opacity: ${(p) => 0.3 + p.$p * 0.7};
+  transition:
+    transform 0.5s ease,
+    opacity 0.5s ease;
 `;
 
 // Group of all orbits, slowly tumbling for a real 3D impression.
@@ -104,23 +129,31 @@ const OrbitRing = styled.svg<{ $duration: string }>`
   }
 `;
 
+// The ring path draws itself in proportion to loading progress.
 const OrbitPath = styled.circle`
   fill: none;
   stroke-width: 1.6;
-  opacity: 0.35;
+  opacity: 0.4;
+  transition: stroke-dashoffset 0.45s ease;
 `;
 
 const OrbitNode = styled.circle`
   filter: drop-shadow(0 0 6px currentColor);
+  transition: opacity 0.45s ease;
 `;
 
 // Center: progress ring + percentage, stays flat toward the camera.
-const Core = styled.div`
+const Core = styled.div<{ $done: boolean }>`
   position: relative;
   width: 132px;
   height: 132px;
   display: grid;
   place-items: center;
+  ${(p) =>
+    p.$done &&
+    css`
+      animation: ${completePulse} 0.6s ease;
+    `}
 `;
 
 const ProgressRing = styled.svg`
@@ -168,10 +201,10 @@ export function LoadingScreen({ progress, done, onExited }: LoadingScreenProps) 
   const [leaving, setLeaving] = useState(false);
   const pct = Math.round(progress * 100);
 
-  // Gentle fade-out once all images have loaded.
+  // Brief hold at 100% (lets the completion pulse read), then implode.
   useEffect(() => {
     if (!done) return;
-    const t = window.setTimeout(() => setLeaving(true), 500);
+    const t = window.setTimeout(() => setLeaving(true), 320);
     return () => window.clearTimeout(t);
   }, [done]);
 
@@ -184,28 +217,44 @@ export function LoadingScreen({ progress, done, onExited }: LoadingScreenProps) 
       <Aurora />
 
       <Loader>
-        {/* 3D gyroscope: tumbling group of tilted orbits */}
-        <Gyro>
-          {ORBITS.map((o) => (
-            <Orbit key={o.key} $transform={o.transform}>
-              <OrbitRing $duration={o.duration} viewBox="0 0 120 120">
-                <OrbitPath cx="60" cy="60" r="54" style={{ stroke: o.color }} />
-                <OrbitNode cx="60" cy="6" r="4.5" style={{ fill: o.color }} />
-              </OrbitRing>
-            </Orbit>
-          ))}
-        </Gyro>
+        {/* 3D gyroscope: orbit rings that build up with progress */}
+        <Build $p={progress}>
+          <Gyro>
+            {ORBITS.map((o) => (
+              <Orbit key={o.key} $transform={o.transform}>
+                <OrbitRing $duration={o.duration} viewBox="0 0 120 120">
+                  <OrbitPath
+                    cx="60"
+                    cy="60"
+                    r={ORBIT_R}
+                    style={{
+                      stroke: o.color,
+                      strokeDasharray: ORBIT_CIRCUM,
+                      strokeDashoffset: ORBIT_CIRCUM * (1 - progress),
+                    }}
+                  />
+                  <OrbitNode
+                    cx="60"
+                    cy={60 - ORBIT_R}
+                    r="4.5"
+                    style={{ fill: o.color, opacity: progress }}
+                  />
+                </OrbitRing>
+              </Orbit>
+            ))}
+          </Gyro>
+        </Build>
 
         {/* Progress ring + percentage in the center */}
-        <Core>
+        <Core $done={done}>
           <ProgressRing viewBox="0 0 120 120">
-            <Track cx="60" cy="60" r="46" />
+            <Track cx="60" cy="60" r={RING_R} />
             <Fill
               cx="60"
               cy="60"
-              r="46"
-              strokeDasharray={CIRCUMFERENCE}
-              strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
+              r={RING_R}
+              strokeDasharray={RING_CIRCUM}
+              strokeDashoffset={RING_CIRCUM * (1 - progress)}
             />
           </ProgressRing>
           <Percent>
