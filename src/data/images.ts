@@ -46,5 +46,3 @@ export const IMAGES: CarouselImage[] = CLIPS.map(({ id, fps }) => ({
   video: `https://videos.pexels.com/video-files/${id}/${id}-sd_640_360_${fps}fps.mp4`,
   videoHd: `https://videos.pexels.com/video-files/${id}/${id}-hd_1280_720_${fps}fps.mp4`,
 }));
-
-export const IMAGE_COUNT = IMAGES.length;

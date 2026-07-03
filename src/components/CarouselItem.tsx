@@ -1,16 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
-import {
-  DoubleSide,
-  MathUtils,
-  Quaternion,
-  SRGBColorSpace,
-  Vector3,
-  VideoTexture,
-} from 'three';
-import type { Group, Mesh, MeshPhysicalMaterial, Texture, Vector2 } from 'three';
+import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
+import type { Group, Mesh, MeshPhysicalMaterial, Texture } from 'three';
 import type { HeroStart } from './HeroCard';
+import {
+  createVideoLoop,
+  disposeVideoLoop,
+  uploadVideoFrame,
+  type ImageMaterial,
+  type VideoLoop,
+} from '../utils/videoLoop';
 
 interface CarouselItemProps {
   url: string;
@@ -32,15 +32,6 @@ interface CarouselItemProps {
   /** False while a hero is open, so panels stop absorbing click-away taps. */
   interactive: boolean;
 }
-
-type ImageMaterial = {
-  opacity: number;
-  grayscale: number;
-  zoom: number;
-  map: Texture | null;
-  /** Texture dimensions the shader uses for its cover-fit math. */
-  imageBounds: Vector2;
-};
 
 const worldPos = new Vector3();
 
@@ -82,7 +73,7 @@ export function CarouselItem({
   // happens while a video plays, and only the hovered panel ever plays,
   // keeping iGPUs happy.
   const hovered = useRef(false);
-  const videoState = useRef<{ el: HTMLVideoElement; tex: VideoTexture } | null>(null);
+  const videoState = useRef<VideoLoop | null>(null);
   // Original poster texture, so the panel can swap back on hover-out.
   const poster = useRef<{ map: Texture; w: number; h: number } | null>(null);
 
@@ -102,21 +93,10 @@ export function CarouselItem({
   // Create (and prefetch) the video on mount; release the decoder and GPU
   // texture when the panel unmounts.
   useEffect(() => {
-    const el = document.createElement('video');
-    el.src = video;
-    el.muted = true;
-    el.loop = true;
-    el.playsInline = true;
-    el.preload = 'auto';
-    el.crossOrigin = 'anonymous';
-    const tex = new VideoTexture(el);
-    tex.colorSpace = SRGBColorSpace;
-    videoState.current = { el, tex };
+    const loop = createVideoLoop(video);
+    videoState.current = loop;
     return () => {
-      el.pause();
-      el.removeAttribute('src');
-      el.load();
-      tex.dispose();
+      disposeVideoLoop(loop);
       videoState.current = null;
     };
   }, [video]);
@@ -145,18 +125,12 @@ export function CarouselItem({
     // Swap between the poster still and the hover video. The video texture
     // only goes live once a frame is decodable, so there is no black flash.
     const vs = videoState.current;
-    // Force a texture upload per rendered frame while the video plays.
-    // three relies on requestVideoFrameCallback, which browsers do not
-    // reliably fire for video elements that are not in the DOM — without
-    // this the panel would freeze on the video's first frame.
-    if (vs && !vs.el.paused && vs.el.readyState >= 2) {
-      vs.tex.needsUpdate = true;
-    }
+    if (vs) uploadVideoFrame(vs);
     if (hovered.current && !hidden && vs && vs.el.readyState >= 2) {
       if (mat.map !== vs.tex) {
         if (!poster.current && mat.map) {
-          const img = mat.map.image as { width: number; height: number };
-          poster.current = { map: mat.map, w: img.width, h: img.height };
+          const still = mat.map.image as { width: number; height: number };
+          poster.current = { map: mat.map, w: still.width, h: still.height };
         }
         mat.map = vs.tex;
         mat.imageBounds.set(vs.el.videoWidth, vs.el.videoHeight);

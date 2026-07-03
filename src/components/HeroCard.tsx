@@ -1,15 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
+import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
+import type { Group, Mesh } from 'three';
 import {
-  DoubleSide,
-  MathUtils,
-  Quaternion,
-  SRGBColorSpace,
-  Vector3,
-  VideoTexture,
-} from 'three';
-import type { Group, Mesh, Texture, Vector2 } from 'three';
+  createVideoLoop,
+  disposeVideoLoop,
+  type ImageMaterial,
+  type VideoLoop,
+} from '../utils/videoLoop';
 
 /** World-space transform captured from the clicked ring panel. */
 export interface HeroStart {
@@ -58,32 +57,6 @@ function easeInOutCubic(t: number): number {
  * expressed in plain world space. The pivot group sits at the card's top edge;
  * the inner group hangs the card down from it.
  */
-type ImageMaterial = {
-  map: Texture | null;
-  /** Texture dimensions the shader uses for its cover-fit math. */
-  imageBounds: Vector2;
-};
-
-function createLoop(src: string): { el: HTMLVideoElement; tex: VideoTexture } {
-  const el = document.createElement('video');
-  el.src = src;
-  el.muted = true;
-  el.loop = true;
-  el.playsInline = true;
-  el.preload = 'auto';
-  el.crossOrigin = 'anonymous';
-  const tex = new VideoTexture(el);
-  tex.colorSpace = SRGBColorSpace;
-  return { el, tex };
-}
-
-function disposeLoop(loop: { el: HTMLVideoElement; tex: VideoTexture }) {
-  loop.el.pause();
-  loop.el.removeAttribute('src');
-  loop.el.load();
-  loop.tex.dispose();
-}
-
 export function HeroCard({
   url,
   video,
@@ -100,21 +73,21 @@ export function HeroCard({
   const progress = useRef(0);
   // Two-tier playback: the small (prefetched, instantly playable) loop starts
   // right away, the 720p variant buffers in parallel and takes over seamlessly.
-  const sd = useRef<{ el: HTMLVideoElement; tex: VideoTexture } | null>(null);
-  const hd = useRef<{ el: HTMLVideoElement; tex: VideoTexture } | null>(null);
+  const sd = useRef<VideoLoop | null>(null);
+  const hd = useRef<VideoLoop | null>(null);
   const hdLive = useRef(false);
 
   useEffect(() => {
     if (!video) return;
-    sd.current = createLoop(video);
+    sd.current = createVideoLoop(video);
     sd.current.el.play().catch((err) => {
       console.warn('Hero video was blocked:', err);
     });
-    if (videoHd) hd.current = createLoop(videoHd);
+    if (videoHd) hd.current = createVideoLoop(videoHd);
     hdLive.current = false;
     return () => {
-      if (sd.current) disposeLoop(sd.current);
-      if (hd.current) disposeLoop(hd.current);
+      if (sd.current) disposeVideoLoop(sd.current);
+      if (hd.current) disposeVideoLoop(hd.current);
       sd.current = null;
       hd.current = null;
     };

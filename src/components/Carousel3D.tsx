@@ -125,6 +125,10 @@ export function Carousel3D() {
   // Focus the depth of field on the hero while it is open, on the ring otherwise.
   const focusZ = selected ? HERO_Z : RADIUS;
 
+  const selectedImage = selected
+    ? IMAGES.find((img) => img.url === selected.url)
+    : undefined;
+
   return (
     <Canvas
       dpr={dpr}
@@ -165,8 +169,8 @@ export function Carousel3D() {
       {selected && (
         <HeroCard
           url={selected.url}
-          video={IMAGES.find((img) => img.url === selected.url)?.video ?? ''}
-          videoHd={IMAGES.find((img) => img.url === selected.url)?.videoHd ?? ''}
+          video={selectedImage?.video ?? ''}
+          videoHd={selectedImage?.videoHd ?? ''}
           start={selected.start}
           targetPosition={heroTarget}
           targetScale={HERO_SCALE}

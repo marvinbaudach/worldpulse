@@ -39,27 +39,28 @@ export function useImagePreloader(urls: string[]): PreloaderState {
       if (count === total) setDone(true);
     };
 
-    const images = urls.map((url) => {
+    urls.forEach((url) => {
       const img = new Image();
       // decode() guarantees the image sits decoded in memory; otherwise the
       // first draw into the WebGL context would cause a hitch.
-      img.onload = () => {
-        img
-          .decode()
-          .then(bump)
-          .catch(bump); // decode can fail for some formats -> count anyway
-      };
-      img.onerror = bump; // broken images must not block the loading screen
+      img.addEventListener(
+        'load',
+        () => {
+          img
+            .decode()
+            .then(bump)
+            .catch(bump); // decode can fail for some formats -> count anyway
+        },
+        { once: true },
+      );
+      // Broken images must not block the loading screen.
+      img.addEventListener('error', bump, { once: true });
       img.src = url;
-      return img;
     });
 
+    // `bump` checks the flag, so late load events after unmount are ignored.
     return () => {
       cancelled = true;
-      images.forEach((img) => {
-        img.onload = null;
-        img.onerror = null;
-      });
     };
   }, [urlsKey, urls, total]);
 
