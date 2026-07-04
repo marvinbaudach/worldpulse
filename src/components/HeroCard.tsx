@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
 import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
@@ -23,6 +23,11 @@ interface HeroCardProps {
   /** When true the card flies back and calls onClosed once it arrives. */
   closing: boolean;
   onClosed: () => void;
+  /** While non-null the flight progress follows this value (0..1) instead of
+      running on time — this is how a hand gesture drags the card along its
+      flight path. Back to null, the time-driven open/close takes over from
+      wherever the scrub left the card. */
+  scrub?: RefObject<number | null>;
 }
 
 const OPEN_TIME = 0.75; // seconds for the dramatic fly-in
@@ -82,6 +87,7 @@ export function HeroCard({
   targetPosition,
   closing,
   onClosed,
+  scrub,
 }: HeroCardProps) {
   const pivotRef = useRef<Group>(null);
   const innerRef = useRef<Group>(null);
@@ -104,12 +110,19 @@ export function HeroCard({
     if (openedAt.current === null) openedAt.current = state.clock.elapsedTime;
     dash.render(state.clock.elapsedTime - openedAt.current);
 
-    const dir = closing ? -1 : 1;
-    progress.current = MathUtils.clamp(
-      progress.current + (dir * delta) / (closing ? CLOSE_TIME : OPEN_TIME),
-      0,
-      1,
-    );
+    const scrubT = scrub?.current ?? null;
+    if (scrubT !== null) {
+      // Gesture drag: chase the hand's pull with critically-damped smoothing
+      // so the card feels attached without transmitting tracking jitter.
+      progress.current = MathUtils.damp(progress.current, scrubT, 10, delta);
+    } else {
+      const dir = closing ? -1 : 1;
+      progress.current = MathUtils.clamp(
+        progress.current + (dir * delta) / (closing ? CLOSE_TIME : OPEN_TIME),
+        0,
+        1,
+      );
+    }
     const t = easeInOutCubic(progress.current);
     // Flourish envelope: 0 at both ends, 1 at mid-flight — every extra move
     // (arc, yaw) is scaled by it, so start and landing poses stay exact.

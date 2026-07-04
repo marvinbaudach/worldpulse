@@ -196,6 +196,8 @@ export function CarouselItem({
         side={DoubleSide}
         radius={0.06}
         scale={[width, height]}
+        // Lets the hand-gesture raycast identify which panel it grabbed.
+        userData={{ dashboardId: dashboard.id }}
         onClick={interactive ? handleClick : undefined}
         onPointerOver={
           interactive

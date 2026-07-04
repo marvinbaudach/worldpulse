@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { MathUtils } from 'three';
 import type { Group } from 'three';
+import type { HandState } from './useHandTracking';
 
 interface Options {
   /** Constant idle rotation in radians/second. */
@@ -18,7 +19,18 @@ interface Options {
   initialTilt?: number;
   /** Pixel -> radians conversion for vertical drag tilting. */
   tiltSensitivity?: number;
+  /** Webcam hand state; an open moving hand swipes the ring like a drag. */
+  hand?: RefObject<HandState>;
 }
+
+// Hand swipes are discrete flicks, not continuous coupling: tracking jitter
+// and the return stroke of a swipe otherwise keep reversing the ring. A fast
+// horizontal motion kicks the ring once; inertia and friction do the rest,
+// and further input is ignored until the cooldown passes.
+const FLICK_SPEED = 0.55; // normalized screen units/s to count as a flick
+const FLICK_SPIN = 2.6; // flick velocity -> ring angular velocity (rad/s)
+const MAX_FLICK = 3.5; // rad/s cap so a wild swing cannot blur the ring
+const FLICK_COOLDOWN = 0.7; // seconds; swallows the hand's return stroke
 
 // Beyond this pixel movement a gesture counts as a drag, not a click.
 const CLICK_THRESHOLD = 6;
@@ -46,6 +58,7 @@ export function useCarouselRotation({
   paused,
   initialTilt = -0.32,
   tiltSensitivity = 0.005,
+  hand,
 }: Options = {}) {
   const groupRef = useRef<Group>(null);
   const tiltRef = useRef<Group>(null);
@@ -61,6 +74,7 @@ export function useCarouselRotation({
   const lastMoveTime = useRef(0);
   const moved = useRef(0);
   const assembleStart = useRef<number | null>(null);
+  const flickReadyAt = useRef(0);
   // Keep the latest `paused` callback so listeners never capture a stale one.
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
@@ -146,6 +160,22 @@ export function useCarouselRotation({
     if (pausedRef.current?.()) return;
 
     if (!dragging.current) {
+      // Open-hand flick spins the ring; a pinch belongs to the grab gesture
+      // and slow hand motion (aiming at a panel) leaves the ring alone.
+      const h = hand?.current;
+      if (
+        h?.tracked &&
+        !h.pinching &&
+        state.clock.elapsedTime > flickReadyAt.current &&
+        Math.abs(h.vx) > FLICK_SPEED
+      ) {
+        velocity.current = MathUtils.clamp(
+          h.vx * FLICK_SPIN,
+          -MAX_FLICK,
+          MAX_FLICK,
+        );
+        flickReadyAt.current = state.clock.elapsedTime + FLICK_COOLDOWN;
+      }
       rotation.current += velocity.current * dt;
       // Ease velocity toward the auto-spin (inertia -> idle).
       velocity.current += (autoSpin - velocity.current) * friction;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { Canvas } from '@react-three/fiber';
 import {
   EffectComposer,
@@ -15,7 +15,10 @@ import { CarouselItem } from './CarouselItem';
 import { PerfProbe } from './PerfHud';
 import { Dust } from './Dust';
 import { HeroCard, type HeroStart } from './HeroCard';
+import { HandGestures } from './HandGestures';
+import { HandControls } from './HandControls';
 import { useCarouselRotation } from '../hooks/useCarouselRotation';
+import { useHandTracking, type HandState } from '../hooks/useHandTracking';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { DASHBOARDS } from '../dashboards';
 
@@ -38,13 +41,15 @@ interface RingProps {
   onSelect: (id: string, start: HeroStart) => void;
   selectedId: string | null;
   paused: () => boolean;
+  hand: RefObject<HandState>;
 }
 
-function Ring({ onSelect, selectedId, paused }: RingProps) {
+function Ring({ onSelect, selectedId, paused, hand }: RingProps) {
   const interactive = selectedId === null;
   const { groupRef, tiltRef, wasDrag } = useCarouselRotation({
     autoSpin: 0.12,
     paused,
+    hand,
   });
   const step = (Math.PI * 2) / DASHBOARDS.length;
 
@@ -79,6 +84,11 @@ export function Carousel3D() {
     null,
   );
   const [closing, setClosing] = useState(false);
+
+  // Webcam hand gestures (opt-in): open-hand swipe spins the ring, pinch
+  // grabs a panel and hand depth drags it along the hero flight path.
+  const handTracking = useHandTracking();
+  const scrubRef = useRef<number | null>(null);
 
   // Adaptive quality: integrated GPUs are fill-rate bound, so the render
   // resolution is the main lever. PerformanceMonitor samples the frame rate
@@ -123,7 +133,14 @@ export function Carousel3D() {
     ? DASHBOARDS.find((d) => d.id === selected.id)
     : undefined;
 
+  // Pinch released: pulled past halfway the card stays open (its time-driven
+  // flight completes), otherwise it flies back onto the ring.
+  const onGestureRelease = (keepOpen: boolean) => {
+    if (!keepOpen) requestClose();
+  };
+
   return (
+    <>
     <Canvas
       dpr={dpr}
       camera={{ position: [0, 0, RADIUS + 9], fov: 40 }}
@@ -156,7 +173,18 @@ export function Carousel3D() {
         onSelect={open}
         selectedId={selected?.id ?? null}
         paused={() => selected !== null}
+        hand={handTracking.handRef}
       />
+
+      {handTracking.status === 'running' && (
+        <HandGestures
+          hand={handTracking.handRef}
+          selectedId={selected?.id ?? null}
+          scrub={scrubRef}
+          onSelect={open}
+          onRelease={onGestureRelease}
+        />
+      )}
 
       {selected && selectedDashboard && (
         <HeroCard
@@ -165,6 +193,7 @@ export function Carousel3D() {
           targetPosition={heroTarget}
           closing={closing}
           onClosed={finishClose}
+          scrub={scrubRef}
         />
       )}
 
@@ -201,5 +230,17 @@ export function Carousel3D() {
         ].filter(Boolean) as ReactElement[]}
       </EffectComposer>
     </Canvas>
+
+    {/* Hand tracking is desktop-only: detection + post-processing together
+        overwhelm phone GPUs, and touch already covers those devices. */}
+    {!isMobile && (
+      <HandControls
+        status={handTracking.status}
+        onToggle={handTracking.toggle}
+        hand={handTracking.handRef}
+        scrub={scrubRef}
+      />
+    )}
+    </>
   );
 }
