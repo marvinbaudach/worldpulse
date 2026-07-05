@@ -170,7 +170,9 @@ export function Carousel3D() {
         radius={RADIUS}
         fogNear={FOG_NEAR}
         fogFar={FOG_FAR}
-        parallax={!isMobile}
+        // Mouse parallax off: the camera drifting after the pointer made the
+        // whole scene feel restless while browsing the panels.
+        parallax={false}
       />
       <Dust radius={RADIUS} count={isMobile ? 180 : 500} />
 
