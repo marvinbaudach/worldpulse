@@ -97,8 +97,13 @@ export function Carousel3D() {
   const [dpr, setDpr] = useState(Math.min(maxDpr, 1.5));
 
   const heroTarget = useMemo(() => new Vector3(0, 0, HERO_Z), []);
-  // Tiny constant color fringe for a cinematic, lens-like finish.
-  const aberration = useMemo(() => new Vector2(0.0008, 0.0008), []);
+  // Tiny constant color fringe for a cinematic, lens-like finish — dropped
+  // while a hero is open, where it reads as blur on the fullscreen text.
+  const heroOpen = selected !== null;
+  const aberration = useMemo(
+    () => new Vector2(heroOpen ? 0 : 0.0008, heroOpen ? 0 : 0.0008),
+    [heroOpen],
+  );
 
   const open = (id: string, start: HeroStart) => {
     if (selected) return; // one hero at a time
@@ -204,10 +209,13 @@ export function Carousel3D() {
           invisible under the effect stack. */}
       <EffectComposer key={isMobile ? 'mobile' : 'desktop'} multisampling={0}>
         {[
+          // With a hero open the whole frame is text, so the glow that looks
+          // cinematic on the ring reads as a soft-focus filter: raise the
+          // threshold and pull the intensity back until the hero closes.
           <Bloom
             key="bloom"
-            intensity={0.7}
-            luminanceThreshold={0.55}
+            intensity={heroOpen ? 0.25 : 0.7}
+            luminanceThreshold={heroOpen ? 0.85 : 0.55}
             luminanceSmoothing={0.3}
             mipmapBlur
           />,
@@ -218,7 +226,7 @@ export function Carousel3D() {
               offset={aberration}
             />
           ),
-          !isMobile && (
+          !isMobile && !heroOpen && (
             <Noise
               key="noise"
               premultiply
