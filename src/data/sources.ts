@@ -379,6 +379,7 @@ async function loadFx(): Promise<void> {
 
 interface WorldGeo {
   features: {
+    id: string;
     geometry: { type: string; coordinates: number[][][] | number[][][][] };
   }[];
 }
@@ -387,19 +388,17 @@ async function loadWorldMap(): Promise<void> {
   const geo = await fetchJson<WorldGeo>(
     'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
   );
-  const rings: number[][][] = [];
-  for (const f of geo.features) {
+  live.worldMap = geo.features.map((f) => {
     const polys =
       f.geometry.type === 'Polygon'
         ? [f.geometry.coordinates as number[][][]]
         : (f.geometry.coordinates as number[][][][]);
-    for (const poly of polys) {
-      const outer = poly[0]; // outer ring only — holes are invisible at panel size
-      if (outer.length < 12) continue; // skip micro-islands
-      rings.push(outer.filter((_, i) => i % 2 === 0)); // halve the point count
-    }
-  }
-  live.worldMap = rings;
+    const rings = polys
+      .map((poly) => poly[0]) // outer ring only — holes are invisible at panel size
+      .filter((outer) => outer.length >= 12) // skip micro-islands
+      .map((outer) => outer.filter((_, i) => i % 2 === 0)); // halve the points
+    return { id: f.id, rings };
+  });
 }
 
 // ---------------------------------------------------------------------------

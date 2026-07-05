@@ -5,7 +5,6 @@ import {
   hBarChart,
   lineChart,
   nukeMap,
-  statTiles,
   weatherForecast,
 } from './charts';
 import type { Frame } from './draw';
@@ -35,15 +34,15 @@ const degrees = (v: number) => `${v.toFixed(1)}°C`;
  * 2025 status). No live API exists for this — estimates change yearly.
  */
 const NUKE_STATES = [
-  { name: 'Russia', lon: 60, lat: 60, count: 5449 },
-  { name: 'United States', lon: -98, lat: 39, count: 5277 },
-  { name: 'China', lon: 104, lat: 35, count: 600 },
-  { name: 'France', lon: 2.5, lat: 46.5, count: 290 },
-  { name: 'United Kingdom', lon: -1.5, lat: 53, count: 225 },
-  { name: 'India', lon: 79, lat: 22, count: 180 },
-  { name: 'Pakistan', lon: 69, lat: 30, count: 170 },
-  { name: 'Israel', lon: 35.2, lat: 31.5, count: 90 },
-  { name: 'North Korea', lon: 127, lat: 40, count: 50 },
+  { name: 'Russia', iso: 'RUS', lon: 60, lat: 60, count: 5449 },
+  { name: 'United States', iso: 'USA', lon: -98, lat: 39, count: 5277 },
+  { name: 'China', iso: 'CHN', lon: 104, lat: 35, count: 600 },
+  { name: 'France', iso: 'FRA', lon: 2.5, lat: 46.5, count: 290 },
+  { name: 'United Kingdom', iso: 'GBR', lon: -1.5, lat: 53, count: 225 },
+  { name: 'India', iso: 'IND', lon: 79, lat: 22, count: 180 },
+  { name: 'Pakistan', iso: 'PAK', lon: 69, lat: 30, count: 170 },
+  { name: 'Israel', iso: 'ISR', lon: 35.2, lat: 31.5, count: 90 },
+  { name: 'North Korea', iso: 'PRK', lon: 127, lat: 40, count: 50 },
 ];
 const NUKE_TOTAL = NUKE_STATES.reduce((sum, s) => sum + s.count, 0);
 
@@ -208,58 +207,6 @@ const POOL: Dashboard[] = [
     },
   },
   {
-    id: 'kpis',
-    title: 'Global Overview',
-    live: true,
-    draw: (f) => {
-      const d = live.debt;
-      const wp = live.worldPop;
-      const sp = live.swissPop;
-      const w = live.weather;
-      statTiles(f, {
-        label: 'Global Overview',
-        tiles: [
-          {
-            name: 'US Debt',
-            value: d?.latest ?? 39.4e12,
-            fmt: (v) => `$${(v / 1e12).toFixed(1)}T`,
-            delta: d?.yoyPct ?? 5.8,
-            color: yellow,
-            seed: 61,
-            data: d?.series,
-          },
-          {
-            name: 'World Pop.',
-            value: wp?.latest ?? 8.23e9,
-            fmt: (v) => `${(v / 1e9).toFixed(2)}B`,
-            delta: wp?.yoyPct ?? 0.9,
-            color: blue,
-            seed: 67,
-            data: wp?.series,
-          },
-          {
-            name: 'Swiss Pop.',
-            value: sp?.latest ?? 9_092_000,
-            fmt: (v) => `${(v / 1e6).toFixed(2)}M`,
-            delta: sp?.yoyPct ?? 0.8,
-            color: magenta,
-            seed: 71,
-            data: sp?.series,
-          },
-          {
-            name: 'Zurich now',
-            value: w?.currentTemp ?? 18,
-            fmt: degrees,
-            delta: w?.highDeltaPct ?? 2.0,
-            color: aqua,
-            seed: 73,
-            data: w?.lineZurich,
-          },
-        ],
-      });
-    },
-  },
-  {
     id: 'wiki',
     title: 'Wikipedia · Top Articles',
     draw: (f) => {
@@ -303,7 +250,7 @@ const POOL: Dashboard[] = [
   },
 ];
 
-const RING_SIZE = 10;
+const RING_SIZE = 9;
 
 function shuffled<T>(list: T[]): T[] {
   const a = [...list];

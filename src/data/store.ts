@@ -65,8 +65,8 @@ export interface LiveData {
     usdNow: number;
     usdYoyPct: number;
   };
-  /** Country outlines for the map panels: rings of [lon, lat] points. */
-  worldMap?: number[][][];
+  /** Country outlines for the map panels, keyed by ISO3 country code. */
+  worldMap?: { id: string; rings: number[][][] }[];
 }
 
 export const live: LiveData = {};

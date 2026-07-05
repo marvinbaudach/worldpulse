@@ -228,69 +228,6 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
   });
 }
 
-export interface TilesCfg {
-  label: string;
-  tiles: {
-    name: string;
-    value: number;
-    fmt: (v: number) => string;
-    delta: number;
-    color: string;
-    seed: number;
-    /** Normalized sparkline data; wins over the seeded fallback. */
-    data?: number[];
-  }[];
-}
-
-/** 2x2 KPI tiles: counting figures, deltas and draw-in sparklines. */
-export function statTiles(f: Frame, cfg: TilesCfg): void {
-  const { ctx, u, t, w, h } = f;
-  drawSurface(f);
-  const pad = 36 * u;
-
-  ctx.fillStyle = MUTED;
-  ctx.font = `600 ${17 * u}px ${FONT}`;
-  drawTracked(ctx, cfg.label.toUpperCase(), pad, pad + 16 * u, 2.4 * u);
-
-  const top = pad + 44 * u;
-  const gap = 16 * u;
-  const tw = (w - 2 * pad - gap) / 2;
-  const th = (h - top - pad - gap) / 2;
-
-  cfg.tiles.forEach((tile, i) => {
-    const p = stagger(t, i, 0.1, 0.8);
-    const x = pad + (i % 2) * (tw + gap);
-    const y = top + Math.floor(i / 2) * (th + gap);
-
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
-    roundRect(ctx, x, y, tw, th, 10 * u);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-    ctx.lineWidth = 1 * u;
-    roundRect(ctx, x, y, tw, th, 10 * u);
-    ctx.stroke();
-
-    const ip = 18 * u;
-    ctx.fillStyle = MUTED;
-    ctx.font = `500 ${15 * u}px ${FONT}`;
-    ctx.fillText(tile.name, x + ip, y + ip + 12 * u);
-    ctx.fillStyle = INK;
-    ctx.font = `700 ${34 * u}px ${FONT}`;
-    ctx.fillText(tile.fmt(tile.value * p), x + ip, y + ip + 52 * u);
-    const up = tile.delta >= 0;
-    ctx.fillStyle = up ? GOOD : CRITICAL;
-    ctx.font = `600 ${15 * u}px ${FONT}`;
-    ctx.fillText(`${up ? '▲' : '▼'} ${Math.abs(tile.delta).toFixed(1)}%`, x + ip, y + ip + 78 * u);
-
-    const data = tile.data ?? makeSeries(tile.seed, 16, tile.delta >= 0 ? 0.6 : -0.5);
-    ctx.strokeStyle = tile.color;
-    ctx.lineWidth = 2 * u;
-    ctx.lineJoin = 'round';
-    linePath(ctx, data, x + ip, x + tw - ip, y + th - 52 * u, y + th - 14 * u, p);
-    ctx.stroke();
-  });
-}
-
 export interface DebtClockCfg {
   label: string;
   /** Latest official total, its record time and the recent growth rate. */
@@ -565,15 +502,16 @@ export interface NukeMapCfg {
   label: string;
   total: number;
   /** Estimated warheads with a rough country-center anchor. */
-  states: { name: string; lon: number; lat: number; count: number }[];
-  /** Country outline rings ([lon, lat] points); graticule-only fallback. */
-  world?: number[][][];
+  states: { name: string; iso: string; lon: number; lat: number; count: number }[];
+  /** Country outlines keyed by ISO3; graticule-only fallback. */
+  world?: { id: string; rings: number[][][] }[];
   source: string;
 }
 
 /**
- * World map with warhead stockpiles as scaled circles, plus a direct-labeled
- * top-5 list below. Equirectangular, cropped to 85°N..60°S.
+ * World map with the nine nuclear states shaded red by stockpile size and a
+ * radar ping pulsing over each arsenal, plus a direct-labeled top-5 list
+ * below. Equirectangular, cropped to 85°N..60°S.
  */
 export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
   const { ctx, u, t, w, h } = f;
@@ -587,17 +525,27 @@ export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
   const my0 = top + 4 * u;
   const px = (lon: number) => mx0 + ((lon + 180) / 360) * mw;
   const py = (lat: number) => my0 + ((85 - Math.min(85, Math.max(-60, lat))) / 145) * mh;
+  const maxCount = Math.max(...cfg.states.map((s) => s.count));
+  // Shading scales with sqrt so China/France stay visible next to the big two.
+  const heat = (count: number) => Math.sqrt(count / maxCount);
 
   if (cfg.world) {
-    ctx.fillStyle = 'rgba(214,222,236,0.09)';
-    for (const ring of cfg.world) {
-      ctx.beginPath();
-      ring.forEach(([lon, lat], i) => {
-        if (i === 0) ctx.moveTo(px(lon), py(lat));
-        else ctx.lineTo(px(lon), py(lat));
-      });
-      ctx.closePath();
-      ctx.fill();
+    const armed = new Map(cfg.states.map((s) => [s.iso, s.count]));
+    for (const country of cfg.world) {
+      const count = armed.get(country.id);
+      ctx.fillStyle =
+        count === undefined
+          ? 'rgba(214,222,236,0.08)'
+          : `rgba(208,59,59,${(0.22 + 0.5 * heat(count)).toFixed(2)})`;
+      for (const ring of country.rings) {
+        ctx.beginPath();
+        ring.forEach(([lon, lat], i) => {
+          if (i === 0) ctx.moveTo(px(lon), py(lat));
+          else ctx.lineTo(px(lon), py(lat));
+        });
+        ctx.closePath();
+        ctx.fill();
+      }
     }
   } else {
     // No geometry (yet): a quiet graticule keeps the map readable.
@@ -617,24 +565,27 @@ export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
     }
   }
 
-  // Warhead circles, area-true (radius ~ sqrt), staggering in.
-  const maxCount = Math.max(...cfg.states.map((s) => s.count));
-  const rMax = 24 * u;
+  // Radar pings: an expanding, fading ring over every arsenal, phase-shifted
+  // per state so the map keeps flickering with activity; core dot on top.
   cfg.states.forEach((s, i) => {
-    const p = stagger(t, i, 0.06);
-    if (p <= 0) return;
-    const r = Math.max(3 * u, rMax * Math.sqrt(s.count / maxCount)) * p;
+    const appear = stagger(t, i, 0.06);
+    if (appear <= 0) return;
     const x = px(s.lon);
     const y = py(s.lat);
-    ctx.fillStyle = 'rgba(240,177,66,0.25)';
+    const rMax = (8 + 20 * heat(s.count)) * u;
+    const phase = (t * 0.55 + i * 0.31) % 1;
+    ctx.globalAlpha = appear * (1 - phase) * 0.8;
+    ctx.strokeStyle = CRITICAL;
+    ctx.lineWidth = 1.8 * u;
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = SERIES[2];
-    ctx.lineWidth = 1.5 * u;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.arc(x, y, 2.5 * u + phase * rMax, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.globalAlpha = appear;
+    ctx.fillStyle = '#ff6b5e';
+    ctx.beginPath();
+    ctx.arc(x, y, 3 * u, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
   });
 
   // Top-5 list under the map, direct-labeled.
@@ -657,7 +608,7 @@ export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
     ctx.fillStyle = GRID;
     roundRect(ctx, pad, y + 24 * u, w - 2 * pad, 7 * u, 3.5 * u);
     ctx.fill();
-    ctx.fillStyle = SERIES[2];
+    ctx.fillStyle = CRITICAL;
     roundRect(ctx, pad, y + 24 * u, Math.max((w - 2 * pad) * (s.count / barMax) * Math.max(0, p), 7 * u), 7 * u, 3.5 * u);
     ctx.fill();
     ctx.globalAlpha = 1;
