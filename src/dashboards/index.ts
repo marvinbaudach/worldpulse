@@ -12,6 +12,7 @@ import type { Frame } from './draw';
 import { SERIES } from './theme';
 import { live } from '../data/store';
 import {
+  CLIMATE_PANEL,
   DEBT_TREND_FALLBACK,
   GOLD_FALLBACK,
   SWISS_POP_FALLBACK,
@@ -154,6 +155,27 @@ const POOL: Dashboard[] = [
         ],
         ticks: hm?.ticks ?? ['0', '5', '10'],
         xLabels: ['1990', '2002', '2013', 'today'],
+      });
+    },
+  },
+  {
+    id: 'climate',
+    title: 'CO₂ & Temperature · 10,000 Years',
+    draw: (f) => {
+      const c = live.climate ?? CLIMATE_PANEL;
+      lineChart(f, {
+        label: 'CO₂ & Global Temp · 10k Years',
+        value: c.latestCo2,
+        unit: '',
+        fmt: (v) => `${Math.round(v)} ppm`,
+        delta: null,
+        seed: 53,
+        series: [
+          { name: 'CO₂ ppm', color: orange, data: c.co2 },
+          { name: 'Temp °C', color: magenta, data: c.temp },
+        ],
+        ticks: c.ticks,
+        xLabels: ['10k BP', '6.7k BP', '3.3k BP', 'today'],
       });
     },
   },

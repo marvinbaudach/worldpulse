@@ -50,6 +50,13 @@ export interface LiveData {
   swissPop?: TrendSeries;
   /** World population since 1960 (World Bank). */
   worldPop?: TrendSeries;
+  /** CO2 (ppm) and global temperature over 10,000 years, own scales. */
+  climate?: {
+    co2: number[];
+    temp: number[];
+    ticks: string[];
+    latestCo2: number;
+  };
   /** Gold in CHF/oz vs SNB monetary base, both normalized to own scale. */
   gold?: {
     gold: number[];

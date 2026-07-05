@@ -440,6 +440,71 @@ async function loadHomicide(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Paleoclimate: atmospheric CO2 and global temperature over 10,000 years.
+// Holocene values are ice-core reconstructions (EPICA Dome C / Law Dome for
+// CO2; Marcott et al. 2013 for temperature), spliced with the modern
+// instrumental record (Mauna Loa CO2; global surface-temperature anomaly).
+// Bundled — the point is the 10k-year shape, not a live reading.
+
+// [years before today, CO2 ppm, temperature anomaly °C vs 1961–1990]
+const CLIMATE_ANCHORS: [number, number, number][] = [
+  [10000, 265, -0.2],
+  [8000, 260, 0.3], // Holocene climatic optimum
+  [6000, 265, 0.4],
+  [4000, 270, 0.2],
+  [2000, 275, 0.0],
+  [1000, 279, 0.05],
+  [300, 280, -0.35], // ~1700, Little Ice Age
+  [175, 285, -0.3], // ~1850, pre-industrial
+  [125, 296, -0.2],
+  [75, 311, -0.05],
+  [50, 331, 0.0],
+  [25, 361, 0.35],
+  [0, 421, 1.1], // today
+];
+
+/** Linear-interpolate sorted [x, y] points at x (clamped at the ends). */
+function interpAt(points: [number, number][], x: number): number {
+  if (x <= points[0][0]) return points[0][1];
+  const last = points[points.length - 1];
+  if (x >= last[0]) return last[1];
+  for (let i = 1; i < points.length; i++) {
+    const [x2, y2] = points[i];
+    if (x2 >= x) {
+      const [x1, y1] = points[i - 1];
+      return y1 + ((y2 - y1) * (x - x1)) / (x2 - x1);
+    }
+  }
+  return last[1];
+}
+
+function climatePanel(): NonNullable<typeof live.climate> {
+  // interpAt needs x (years-ago) ascending; anchors list it descending.
+  const co2Pts = CLIMATE_ANCHORS.map(([ya, co2]) => [ya, co2] as [number, number]).toReversed();
+  const tempPts = CLIMATE_ANCHORS.map(([ya, , t]) => [ya, t] as [number, number]).toReversed();
+
+  const n = 90;
+  const co2raw: number[] = [];
+  const tempraw: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const ya = 10000 - (10000 * i) / (n - 1); // 10000 -> 0 (oldest to today)
+    co2raw.push(interpAt(co2Pts, ya));
+    tempraw.push(interpAt(tempPts, ya));
+  }
+  const cs = niceScale(Math.min(...co2raw), Math.max(...co2raw), (v) => `${Math.round(v)}`);
+  const tlo = Math.min(...tempraw) - 0.15;
+  const thi = Math.max(...tempraw) + 0.15;
+  return {
+    co2: norm(co2raw, cs.lo, cs.hi),
+    temp: norm(tempraw, tlo, thi),
+    ticks: cs.ticks,
+    latestCo2: CLIMATE_ANCHORS[CLIMATE_ANCHORS.length - 1][1],
+  };
+}
+
+export const CLIMATE_PANEL = climatePanel();
+
+// ---------------------------------------------------------------------------
 // Gold priced in Swiss francs vs the SNB monetary base, 100 years. History
 // comes from documented anchors (gold was pegged until 1971 — CHF ~150/oz —
 // the base figures are approximate SNB year-end levels); today's gold price

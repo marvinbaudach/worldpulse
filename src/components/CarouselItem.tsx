@@ -4,7 +4,7 @@ import { Image } from '@react-three/drei';
 import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
 import type { Group, Mesh, MeshPhysicalMaterial } from 'three';
 import type { HeroStart } from './HeroCard';
-import { GlassPlate, GLASS_OPACITY } from './GlassPlate';
+import { GlassPlate, GLASS_OPACITY, GLASS_THICKNESS } from './GlassPlate';
 import { createDashboardTexture, SETTLED_T, type Dashboard } from '../dashboards';
 import { onLiveUpdate } from '../data/store';
 
@@ -46,6 +46,16 @@ const TEX_H = 960;
 // Duration of the one-time entrance fly-out per panel.
 const ENTRANCE_DURATION = 0.9;
 
+// Hover press: the glass plate tilts toward the cursor as if pushed down on
+// one side, pivoting on its center like a plate resting on a ball joint.
+// Max tilt per axis (radians); kept small so the dipping edge only barely
+// sinks past the dashboard plane.
+const TILT_X = 0.055; // vertical cursor offset -> rotation around x
+const TILT_Y = 0.07; // horizontal cursor offset -> rotation around y
+const PRESS_SINK = 0.02; // slight overall sink while pressed (world units)
+// Small gap between the dashboard image and the glass plate's back face.
+const GLASS_GAP = 0.01;
+
 export function CarouselItem({
   dashboard,
   angle,
@@ -68,14 +78,15 @@ export function CarouselItem({
   // opacity instead of fading in and leaving a transparent gap after the hero.
   const wasHidden = useRef(false);
 
-  // The dashboard is rendered once in its settled state; while hovered it is
-  // redrawn per frame from t=0, replaying the intro and running the live
-  // motion. Only the hovered panel ever redraws/uploads, keeping iGPUs happy.
+  // The dashboard is rendered once in its settled state and only refreshed
+  // when live data lands — hovering no longer replays the intro animation.
   const dash = useMemo(() => createDashboardTexture(dashboard, TEX_W, TEX_H), [dashboard]);
-  // Hover state; the frame loop stamps hoverStart from the shared clock on
-  // the first animated frame (pointer events have no access to it).
+  // Hover state; the frame loop eases `press` toward 1 while hovered so the
+  // glass plate tilts down toward the cursor.
   const hovered = useRef(false);
-  const hoverStart = useRef<number | null>(null);
+  const press = useRef(0);
+  // Cursor position on the panel, -1..1 from the center on both axes.
+  const pointer = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     dash.tex.anisotropy = Math.min(8, maxAnisotropy);
@@ -88,17 +99,10 @@ export function CarouselItem({
     () =>
       onLiveUpdate((kind) => {
         if (kind === 'tick' && !dashboard.live) return;
-        if (!hovered.current) dash.render(SETTLED_T);
+        dash.render(SETTLED_T);
       }),
     [dash, dashboard.live],
   );
-
-  const stopAnimation = () => {
-    hovered.current = false;
-    if (hoverStart.current === null) return;
-    hoverStart.current = null;
-    dash.render(SETTLED_T); // freeze back into the settled look
-  };
 
   // Position on the ring; the group faces outward toward the viewer.
   const x = Math.sin(angle) * radius;
@@ -112,15 +116,9 @@ export function CarouselItem({
     const mat = img.material as unknown as ImageMaterial;
     const glassMat = glassRef.current?.material as MeshPhysicalMaterial | undefined;
 
-    // Hover animation: replay the dashboard from its intro, then live motion.
-    if (hovered.current && !hidden) {
-      if (hoverStart.current === null) hoverStart.current = state.clock.elapsedTime;
-      dash.render(state.clock.elapsedTime - hoverStart.current);
-    }
-
     // While the hero copy is flying, fade this panel (dashboard + glass) out.
     if (hidden) {
-      stopAnimation();
+      hovered.current = false;
       mat.opacity = MathUtils.lerp(mat.opacity, 0, 0.2);
       if (glassMat) glassMat.opacity = MathUtils.lerp(glassMat.opacity, 0, 0.2);
       wasHidden.current = true;
@@ -148,6 +146,29 @@ export function CarouselItem({
       return;
     }
 
+    // Hover press: tilt the glass plate toward the cursor, pivoting on its
+    // center — the edge under the pointer dips down onto the dashboard while
+    // the opposite edge lifts, plus a slight overall sink for contact. The
+    // tilt keeps following the pointer as it moves across the panel.
+    press.current = MathUtils.lerp(press.current, hovered.current ? 1 : 0, 0.18);
+    const pressed = press.current;
+    const glass = glassRef.current;
+    if (glass) {
+      // Positive rotation.x lifts the top edge toward the viewer, so the
+      // cursor side (pointer.y = +1 at the top) needs the negative direction.
+      glass.rotation.x = MathUtils.lerp(
+        glass.rotation.x,
+        -pointer.current.y * TILT_X * pressed,
+        0.15,
+      );
+      glass.rotation.y = MathUtils.lerp(
+        glass.rotation.y,
+        pointer.current.x * TILT_Y * pressed,
+        0.15,
+      );
+      glass.position.z = GLASS_GAP + GLASS_THICKNESS / 2 - pressed * PRESS_SINK;
+    }
+
     // Settled: pin the panel to its ring slot every frame. The entrance branch
     // above only lands the panel here on its final frame, so if startup jank
     // makes the clock jump straight past the entrance window, the panels would
@@ -166,18 +187,20 @@ export function CarouselItem({
     const targetOpacity = 0.4 + eased * 0.6;
     const targetGray = (1 - eased) * 0.7;
     const targetZoom = 1 + (1 - eased) * 0.15;
+    // Pressed glass catches a touch more light, selling the contact.
+    const targetGlass = GLASS_OPACITY + pressed * 0.08;
     if (wasHidden.current) {
       // Just returned from the hero: snap to the settled look, no fade-in gap.
       mat.opacity = targetOpacity;
       mat.grayscale = targetGray;
       mat.zoom = targetZoom;
-      if (glassMat) glassMat.opacity = GLASS_OPACITY;
+      if (glassMat) glassMat.opacity = targetGlass;
       wasHidden.current = false;
     } else {
       mat.opacity = MathUtils.lerp(mat.opacity, targetOpacity, 0.15);
       mat.grayscale = MathUtils.lerp(mat.grayscale, targetGray, 0.15);
       mat.zoom = MathUtils.lerp(mat.zoom, targetZoom, 0.15);
-      if (glassMat) glassMat.opacity = MathUtils.lerp(glassMat.opacity, GLASS_OPACITY, 0.15);
+      if (glassMat) glassMat.opacity = MathUtils.lerp(glassMat.opacity, targetGlass, 0.15);
     }
 
     // Front panels slightly larger -> "focus" feel (scales the whole group).
@@ -221,11 +244,20 @@ export function CarouselItem({
               }
             : undefined
         }
+        onPointerMove={
+          interactive
+            ? (e: ThreeEvent<PointerEvent>) => {
+                if (!e.uv) return;
+                pointer.current.x = e.uv.x * 2 - 1;
+                pointer.current.y = e.uv.y * 2 - 1;
+              }
+            : undefined
+        }
         onPointerOut={
           interactive
             ? () => {
                 canvasEl.style.cursor = 'grab';
-                stopAnimation();
+                hovered.current = false;
               }
             : undefined
         }
