@@ -1,30 +1,36 @@
 # Worldpulse
 
-Cinematic 3D analytics carousel — a tilted ring of animated dashboards
-(canvas-rendered charts, KPI tiles, a world map, a live debt clock) orbits in
-space with drag inertia, mouse-wheel spin and depth-of-field. Every panel
-shows real public data with a geopolitical/financial bent: a US debt clock
-counting up ~$60k/second (US Treasury), nuclear warheads on a world map (FAS
-estimates + GeoJSON outlines), military spending top 10 and a century of
-Swiss/world population (World Bank), franc strength vs EUR/USD (ECB), a
-Zurich 7-day forecast with hand-drawn weather glyphs (Open-Meteo), and the
-most-read Wikipedia articles globally and from Switzerland (Wikimedia). Each
-page load draws a random selection from the pool. Hovering a panel replays its chart animation; clicking flies
-it front-and-center at double resolution.
+Cinematic 3D data carousel — up to 30 animated dashboards (canvas-rendered
+charts, treemaps, world maps, a live US debt clock) orbit in space with drag
+inertia and depth cues. Every panel shows real public data with a
+geopolitical/financial bent: national debt ticking up live (US Treasury),
+military spending and homicide rates (World Bank), nuclear warheads on a
+world map (FAS), refugees, fertility by continent and population history
+(UN), debt-to-GDP and reserve currencies (IMF), a Zurich forecast
+(Open-Meteo) and the most-read Wikipedia articles (Wikimedia). Panels not
+backed by a live API ship with sourced, yearly-revised data. The UI is
+German (Swiss market); the codebase is English.
 
 **Live → [marvinbaudach.github.io/worldpulse](https://marvinbaudach.github.io/worldpulse/)**
 
+Presenting: the bottom bar morphs the set between ring, double rows, helix
+and sphere formations (hotkeys 1–4) and adjusts the panel count 5–30
+(persisted); optional webcam hand gestures spin the ring and grab panels.
+
 ## Tech
 
-- React Three Fiber · Three.js · drei · postprocessing (DoF, Bloom, Vignette)
+- React Three Fiber · Three.js · drei · postprocessing (Bloom, Vignette)
 - Vite 8 · React 19 · TypeScript 6 · oxlint
-- Dashboards drawn with Canvas 2D into `CanvasTexture`s — only the hovered
-  panel redraws/uploads per frame; a CVD-validated dark chart palette
-- Live data layer: keyless CORS APIs, derived shapes cached in localStorage;
-  panels fall back to demo data offline
-- Rotation driven entirely in `useFrame` (no per-frame React state)
-- Adaptive quality: `PerformanceMonitor` walks render resolution, drops DoF
-- GitHub Pages via Actions
+- Dashboards drawn with Canvas 2D into `CanvasTexture`s — panels only redraw
+  when their data changes; a CVD-validated dark chart palette
+- Live data layer: keyless CORS APIs, derived shapes cached in localStorage,
+  every panel falls back to bundled data offline; the loading screen's feed
+  list derives from the same manifest as the fetchers, so it cannot drift
+- Formation morphs: per-panel slot targets with staggered damped flight;
+  ring radius, camera distance and fog scale with the panel count
+- Rotation and animation driven entirely in `useFrame` (no per-frame React
+  state); adaptive render resolution via `PerformanceMonitor`
+- CI: lint + type-checked build, deployed to GitHub Pages on push to `main`
 
 ## Develop
 
@@ -34,5 +40,3 @@ npm run dev      # dev server
 npm run build    # type-checked production build
 npm run lint
 ```
-
-Deploys to GitHub Pages on push to `main`.
