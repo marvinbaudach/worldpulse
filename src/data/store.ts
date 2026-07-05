@@ -58,14 +58,6 @@ export interface LiveData {
     /** True where the sample falls in a glacial period (ice age). */
     iceMask: boolean[];
   };
-  /** Gold in CHF/oz vs SNB monetary base, both normalized to own scale. */
-  gold?: {
-    gold: number[];
-    base: number[];
-    /** Gridline labels for the gold scale (CHF per ounce, in thousands). */
-    ticks: string[];
-    latest: number;
-  };
   /** Country outlines for the map panels, keyed by ISO3 country code. */
   worldMap?: { id: string; rings: number[][][] }[];
   /** Intentional homicides per 100k (World Bank, latest year per country). */
@@ -73,10 +65,13 @@ export interface LiveData {
     byIso: Record<string, number>;
     rows: { name: string; v: number }[];
     world: number;
-    /** CH vs DE vs US since 1990, shared scale. */
+    /** Country trends since 1990, shared scale. */
     che: number[];
     deu: number[];
     usa: number[];
+    rus: number[];
+    bra: number[];
+    jpn: number[];
     cheLatest: number;
     ticks: string[];
   };

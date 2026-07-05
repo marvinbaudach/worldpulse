@@ -17,7 +17,7 @@ import {
   stagger,
   type Frame,
 } from './draw';
-import { CRITICAL, FONT, GOOD, GRID, INK, INK_SECONDARY, MUTED, SERIES } from './theme';
+import { CRITICAL, FONT, GOOD, GRID, INK, INK_SECONDARY, MUTED, SEQ, SERIES } from './theme';
 
 const MONTHS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
@@ -219,6 +219,10 @@ export interface HBarCfg {
   delta: number | null;
   color: string;
   unit?: string;
+  /** Headline formatter; falls back to compact notation with `unit`. */
+  fmt?: (v: number) => string;
+  /** Per-row value formatter (e.g. percentages); same fallback. */
+  rowFmt?: (v: number) => string;
   rows: { name: string; v: number }[];
 }
 
@@ -227,7 +231,14 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
   const { ctx, u, t, w } = f;
   drawSurface(f);
   const unit = cfg.unit ?? '€';
-  const top = drawHeader(f, cfg.label, cfg.value, (v) => fmtCompact(v, unit), cfg.delta);
+  const rowFmt = cfg.rowFmt ?? ((v: number) => fmtCompact(v, unit));
+  const top = drawHeader(
+    f,
+    cfg.label,
+    cfg.value,
+    cfg.fmt ?? ((v) => fmtCompact(v, unit)),
+    cfg.delta,
+  );
   const pad = 36 * u;
   const rowH = (f.h - 60 * u - (top + 10 * u)) / cfg.rows.length;
   const max = Math.max(...cfg.rows.map((d) => d.v));
@@ -241,7 +252,7 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
     ctx.fillStyle = INK;
     ctx.font = `600 ${17 * u}px ${FONT}`;
     ctx.textAlign = 'right';
-    ctx.fillText(fmtCompact(d.v * p, unit), w - pad, y + 22 * u);
+    ctx.fillText(rowFmt(d.v * p), w - pad, y + 22 * u);
     ctx.textAlign = 'left';
 
     const bw = (w - 2 * pad) * (d.v / max) * p;
@@ -313,7 +324,7 @@ export function debtClock(f: Frame, cfg: DebtClockCfg): void {
   ctx.fillStyle = MUTED;
   ctx.font = `400 ${17 * u}px ${FONT}`;
   ctx.fillText(
-    `${perSec >= 0 ? '+' : '−'}$${Math.abs(Math.round(perSec)).toLocaleString('en-US')} / second`,
+    `${perSec >= 0 ? '+' : '−'}$${Math.abs(Math.round(perSec)).toLocaleString('de-CH')} / Sekunde`,
     pad + cw + 32 * u,
     cy + 2 * u,
   );
@@ -351,7 +362,7 @@ export function debtClock(f: Frame, cfg: DebtClockCfg): void {
   ctx.arc(end.x, end.y, 4.5 * u, 0, Math.PI * 2);
   ctx.fill();
   drawGridLabels(f, r.y0, r.y1, cfg.ticks);
-  xAxisLabels(f, ['1900', '1940', '1980', 'today'], r.x0, r.x1, r.y1);
+  xAxisLabels(f, ['1900', '1940', '1980', 'heute'], r.x0, r.x1, r.y1);
 }
 
 export interface ForecastCfg {
@@ -734,3 +745,96 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
   ctx.font = `400 ${13 * u}px ${FONT}`;
   ctx.fillText(cfg.source, pad, h - 22 * u);
 }
+
+export interface TreemapCfg {
+  label: string;
+  value: number;
+  fmt: (v: number) => string;
+  /** Block areas; `muted` renders as a neutral filler (e.g. "Rest of world"). */
+  rows: { name: string; v: number; muted?: boolean }[];
+}
+
+/**
+ * Strip treemap — shares of a whole as nested rectangles. Reads far better
+ * than a pie once there are ~10 slices: areas line up for comparison and
+ * every block is large enough to be labeled directly.
+ */
+export function treemap(f: Frame, cfg: TreemapCfg): void {
+  const { ctx, u, t, w, h } = f;
+  drawSurface(f);
+  const top = drawHeader(f, cfg.label, cfg.value, cfg.fmt, null);
+
+  const pad = 36 * u;
+  const x0 = pad;
+  const y0 = top + 6 * u;
+  const W = w - 2 * pad;
+  const H = h - 40 * u - y0;
+  const rows = [...cfg.rows].toSorted((a, b) => b.v - a.v);
+  const total = rows.reduce((s, r) => s + r.v, 0);
+  // Color rank over the non-muted blocks only, brightest = largest.
+  let colorRank = 0;
+
+  // Strip layout: horizontal strips top to bottom, each strip taking items
+  // while the worst block aspect ratio keeps improving.
+  let y = y0;
+  let i = 0;
+  let blockIndex = 0;
+  while (i < rows.length) {
+    let len = 1;
+    let bestScore = Infinity;
+    for (let tryLen = 1; tryLen <= rows.length - i; tryLen++) {
+      const slice = rows.slice(i, i + tryLen);
+      const sum = slice.reduce((s, r) => s + r.v, 0);
+      const sh = (sum / total) * H;
+      const worst = Math.max(
+        ...slice.map((r) => {
+          const bw = (r.v / sum) * W;
+          return Math.max(bw / sh, sh / bw);
+        }),
+      );
+      if (worst < bestScore) {
+        bestScore = worst;
+        len = tryLen;
+      } else break;
+    }
+
+    const slice = rows.slice(i, i + len);
+    const sum = slice.reduce((s, r) => s + r.v, 0);
+    const sh = (sum / total) * H;
+    let x = x0;
+    for (const r of slice) {
+      const bw = (r.v / sum) * W;
+      const p = stagger(t, blockIndex, 0.06);
+      const gap = 3 * u;
+
+      ctx.globalAlpha = p;
+      ctx.fillStyle = r.muted
+        ? GRID
+        : SEQ[Math.max(0, SEQ.length - 1 - colorRank)];
+      roundRect(ctx, x + gap / 2, y + gap / 2, bw - gap, sh - gap, 4 * u);
+      ctx.fill();
+
+      // Direct labels once the block is big enough to hold them.
+      if (bw > 78 * u && sh > 44 * u) {
+        ctx.fillStyle = r.muted ? INK_SECONDARY : INK;
+        ctx.font = `500 ${13 * u}px ${FONT}`;
+        ctx.fillText(r.name, x + 10 * u, y + 22 * u, bw - 20 * u);
+        ctx.font = `700 ${16 * u}px ${FONT}`;
+        ctx.fillText(
+          `${((r.v / total) * 100).toFixed(1)}%`,
+          x + 10 * u,
+          y + 42 * u,
+          bw - 20 * u,
+        );
+      }
+      ctx.globalAlpha = 1;
+
+      if (!r.muted) colorRank++;
+      x += bw;
+      blockIndex++;
+    }
+    y += sh;
+    i += len;
+  }
+}
+

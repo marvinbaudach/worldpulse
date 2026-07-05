@@ -17,53 +17,73 @@ import { Dust } from './Dust';
 import { HeroCard, type HeroStart } from './HeroCard';
 import { HandGestures } from './HandGestures';
 import { HandControls } from './HandControls';
+import { LayoutControls } from './LayoutControls';
+import { layoutSlots, type LayoutMode } from '../layouts';
 import { useCarouselRotation } from '../hooks/useCarouselRotation';
 import { useHandTracking, type HandState } from '../hooks/useHandTracking';
 import { useIsMobile } from '../hooks/useIsMobile';
-import { DASHBOARDS } from '../dashboards';
+import {
+  ALL_DASHBOARDS,
+  DEFAULT_COUNT,
+  MIN_COUNT,
+  type Dashboard,
+} from '../dashboards';
 
 // Panel dimensions in world units (4:5 aspect ratio).
 const PANEL_W = 2.4;
 const PANEL_H = 3.0;
-// Radius chosen so the panels do not overlap.
-const RADIUS = (PANEL_W * DASHBOARDS.length) / (2 * Math.PI) + 0.6;
+// Radius chosen so the panels do not overlap on the ring; grows with the
+// panel count, and CameraRig dollies the camera along smoothly.
+const radiusFor = (count: number) => (PANEL_W * count) / (2 * Math.PI) + 0.6;
+const DEFAULT_RADIUS = radiusFor(DEFAULT_COUNT);
 
-// Fog distances, tuned for the wide-screen camera; CameraRig scales them when
-// the camera pulls back on portrait screens.
-const FOG_NEAR = RADIUS + 2;
-const FOG_FAR = RADIUS * 2 + 8;
-
-// Front-and-center position the hero card flies to (between ring front and
-// camera); the card sizes itself to the visible frustum at this depth.
-const HERO_Z = RADIUS + 4.5;
+// localStorage key for the persisted panel count.
+const COUNT_KEY = 'pulse-panel-count';
 
 interface RingProps {
   onSelect: (id: string, start: HeroStart) => void;
   selectedId: string | null;
   paused: () => boolean;
   hand: RefObject<HandState>;
+  layout: LayoutMode;
+  dashboards: Dashboard[];
+  radius: number;
 }
 
-function Ring({ onSelect, selectedId, paused, hand }: RingProps) {
+function Ring({
+  onSelect,
+  selectedId,
+  paused,
+  hand,
+  layout,
+  dashboards,
+  radius,
+}: RingProps) {
   const interactive = selectedId === null;
   const { groupRef, tiltRef, wasDrag } = useCarouselRotation({
     autoSpin: 0.12,
     paused,
     hand,
   });
-  const step = (Math.PI * 2) / DASHBOARDS.length;
+  // Memoized so the slot objects keep their identity across unrelated
+  // re-renders — CarouselItem detects a formation switch by slot identity.
+  const slots = useMemo(
+    () => layoutSlots(layout, dashboards.length, radius, PANEL_H),
+    [layout, dashboards.length, radius],
+  );
 
   return (
-    // Outer group tilts the ring (driven by vertical drag) so the far side and
-    // the back sides of the panels come into view. Inner group spins on Y.
+    // Outer group tilts the formation (driven by vertical drag) so the far
+    // side and the panels' back sides come into view. Inner group spins on Y.
     <group ref={tiltRef}>
       <group ref={groupRef}>
-        {DASHBOARDS.map((dashboard, i) => (
+        {dashboards.map((dashboard, i) => (
           <CarouselItem
             key={dashboard.id}
             dashboard={dashboard}
-            angle={i * step}
-            radius={RADIUS}
+            slot={slots[i]}
+            index={i}
+            radius={radius}
             width={PANEL_W}
             height={PANEL_H}
             hidden={dashboard.id === selectedId}
@@ -84,6 +104,24 @@ export function Carousel3D() {
     null,
   );
   const [closing, setClosing] = useState(false);
+  // Demo formations: the panels morph between arrangements (see layouts.ts).
+  const [layout, setLayout] = useState<LayoutMode>('ring');
+  // User-adjustable panel count; radius, fog and hero depth follow it.
+  // Persisted so a presentation setup survives the page reload.
+  const [count, setCount] = useState(() => {
+    const stored = Number(localStorage.getItem(COUNT_KEY));
+    return Number.isFinite(stored) && stored >= MIN_COUNT
+      ? Math.min(stored, ALL_DASHBOARDS.length)
+      : DEFAULT_COUNT;
+  });
+  useEffect(() => {
+    localStorage.setItem(COUNT_KEY, String(count));
+  }, [count]);
+  const dashboards = useMemo(() => ALL_DASHBOARDS.slice(0, count), [count]);
+  const radius = radiusFor(count);
+  const fogNear = radius + 2;
+  const fogFar = radius * 2 + 8;
+  const heroZ = radius + 4.5;
 
   // Webcam hand gestures (opt-in): open-hand swipe spins the ring, pinch
   // grabs a panel and hand depth drags it along the hero flight path.
@@ -96,7 +134,7 @@ export function Carousel3D() {
   const maxDpr = isMobile ? 1.5 : 1.75;
   const [dpr, setDpr] = useState(Math.min(maxDpr, 1.5));
 
-  const heroTarget = useMemo(() => new Vector3(0, 0, HERO_Z), []);
+  const heroTarget = useMemo(() => new Vector3(0, 0, heroZ), [heroZ]);
   // Tiny constant color fringe for a cinematic, lens-like finish — dropped
   // while a hero is open, where it reads as blur on the fullscreen text.
   const heroOpen = selected !== null;
@@ -135,7 +173,7 @@ export function Carousel3D() {
   }, [selected, closing]);
 
   const selectedDashboard = selected
-    ? DASHBOARDS.find((d) => d.id === selected.id)
+    ? ALL_DASHBOARDS.find((d) => d.id === selected.id)
     : undefined;
 
   // Pinch released: pulled past halfway the card stays open (its time-driven
@@ -148,14 +186,14 @@ export function Carousel3D() {
     <>
     <Canvas
       dpr={dpr}
-      camera={{ position: [0, 0, RADIUS + 9], fov: 40 }}
+      camera={{ position: [0, 0, DEFAULT_RADIUS + 9], fov: 40 }}
       // Canvas MSAA is wasted work: EffectComposer renders offscreen anyway,
       // and the bloom/noise/vignette stack hides the aliasing it would fix.
       gl={{ antialias: false }}
       onPointerMissed={requestClose}
     >
       <color attach="background" args={['#05070c']} />
-      <fog attach="fog" args={['#05070c', FOG_NEAR, FOG_FAR]} />
+      <fog attach="fog" args={['#05070c', fogNear, fogFar]} />
 
       <PerformanceMonitor
         // Step the resolution up/down with the measured frame rate.
@@ -167,20 +205,23 @@ export function Carousel3D() {
       <Environment preset="night" />
 
       <CameraRig
-        radius={RADIUS}
-        fogNear={FOG_NEAR}
-        fogFar={FOG_FAR}
+        radius={radius}
+        fogNear={fogNear}
+        fogFar={fogFar}
         // Mouse parallax off: the camera drifting after the pointer made the
         // whole scene feel restless while browsing the panels.
         parallax={false}
       />
-      <Dust radius={RADIUS} count={isMobile ? 180 : 500} />
+      <Dust radius={radius} count={isMobile ? 180 : 500} />
 
       <Ring
         onSelect={open}
         selectedId={selected?.id ?? null}
         paused={() => selected !== null}
         hand={handTracking.handRef}
+        layout={layout}
+        dashboards={dashboards}
+        radius={radius}
       />
 
       {handTracking.status === 'running' && (
@@ -240,6 +281,15 @@ export function Carousel3D() {
         ].filter(Boolean) as ReactElement[]}
       </EffectComposer>
     </Canvas>
+
+    <LayoutControls
+      layout={layout}
+      onChange={setLayout}
+      count={count}
+      minCount={MIN_COUNT}
+      maxCount={ALL_DASHBOARDS.length}
+      onCountChange={setCount}
+    />
 
     {/* Hand tracking is desktop-only: detection + post-processing together
         overwhelm phone GPUs, and touch already covers those devices. */}

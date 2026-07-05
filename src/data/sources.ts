@@ -64,7 +64,7 @@ interface MeteoLocation {
   current: { temperature_2m: number };
 }
 
-const DAY_NAME = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_NAME = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 
 async function loadWeather(): Promise<void> {
   const zurich = await cached('weather-ch3', 15 * MIN, () =>
@@ -80,7 +80,7 @@ async function loadWeather(): Promise<void> {
   live.weather = {
     currentTemp: zurich.current.temperature_2m,
     forecast: zurich.daily.time.map((day, i) => ({
-      day: i === 0 ? 'Today' : DAY_NAME[new Date(`${day}T12:00:00`).getDay()],
+      day: i === 0 ? 'Heute' : DAY_NAME[new Date(`${day}T12:00:00`).getDay()],
       code: zurich.daily.weather_code[i],
       min: zurich.daily.temperature_2m_min[i],
       max: zurich.daily.temperature_2m_max[i],
@@ -333,11 +333,14 @@ function trend(
   points: [number, number][],
   fmt: (v: number) => string,
   xLabels: string[],
+  // Long spans with sharp single-year spikes (world wars) need a finer
+  // sampling or the peaks get skipped between samples.
+  samples = 28,
 ): TrendSeries {
   const series = yearly(points);
   const s = niceScale(Math.min(...series), Math.max(...series), fmt);
   return {
-    series: norm(resample(series, 28), s.lo, s.hi),
+    series: norm(resample(series, samples), s.lo, s.hi),
     ticks: s.ticks,
     latest: series[series.length - 1],
     yoyPct: ((series[series.length - 1] - series[series.length - 2]) / series[series.length - 2]) * 100,
@@ -361,12 +364,12 @@ async function loadPopulation(): Promise<void> {
   live.swissPop = trend(
     [...CH_CENSUS, ...points.che],
     (v) => `${(v / 1e6).toFixed(0)}M`,
-    ['1500', '1675', '1850', 'today'],
+    ['1500', '1675', '1850', 'heute'],
   );
   live.worldPop = trend(
     [...WORLD_HISTORY, ...points.wld],
     (v) => `${(v / 1e9).toFixed(0)}B`,
-    ['Year 0', '675', '1350', 'today'],
+    ['Jahr 0', '675', '1350', 'heute'],
   );
 }
 
@@ -375,14 +378,14 @@ async function loadPopulation(): Promise<void> {
 // year per country) plus the Switzerland / Germany / US series since 1990.
 
 async function loadHomicide(): Promise<void> {
-  const data = await cached('homicide', 24 * 60 * MIN, async () => {
+  const data = await cached('homicide2', 24 * 60 * MIN, async () => {
     const [world, trio, pop] = await Promise.all([
       fetchJson<[unknown, WorldBankRow[]]>(
         'https://api.worldbank.org/v2/country/all/indicator/VC.IHR.PSRC.P5' +
           '?format=json&date=2016:2024&per_page=3000',
       ),
       fetchJson<[unknown, WorldBankRow[]]>(
-        'https://api.worldbank.org/v2/country/CHE;DEU;USA/indicator/VC.IHR.PSRC.P5' +
+        'https://api.worldbank.org/v2/country/CHE;DEU;USA;RUS;BRA;JPN/indicator/VC.IHR.PSRC.P5' +
           '?format=json&date=1990:2024&per_page=400',
       ),
       fetchJson<[unknown, WorldBankRow[]]>(
@@ -422,10 +425,20 @@ async function loadHomicide(): Promise<void> {
       che: series('CHE'),
       deu: series('DEU'),
       usa: series('USA'),
+      rus: series('RUS'),
+      bra: series('BRA'),
+      jpn: series('JPN'),
     };
   });
 
-  const all = [...data.che, ...data.deu, ...data.usa];
+  const all = [
+    ...data.che,
+    ...data.deu,
+    ...data.usa,
+    ...data.rus,
+    ...data.bra,
+    ...data.jpn,
+  ];
   const s = niceScale(Math.min(...all), Math.max(...all), (v) => v.toFixed(0));
   live.homicide = {
     byIso: data.byIso,
@@ -434,6 +447,9 @@ async function loadHomicide(): Promise<void> {
     che: norm(data.che, s.lo, s.hi),
     deu: norm(data.deu, s.lo, s.hi),
     usa: norm(data.usa, s.lo, s.hi),
+    rus: norm(data.rus, s.lo, s.hi),
+    bra: norm(data.bra, s.lo, s.hi),
+    jpn: norm(data.jpn, s.lo, s.hi),
     cheLatest: data.che[data.che.length - 1] ?? 0.5,
     ticks: s.ticks,
   };
@@ -533,68 +549,6 @@ function climatePanel(): NonNullable<typeof live.climate> {
 export const CLIMATE_PANEL = climatePanel();
 
 // ---------------------------------------------------------------------------
-// Gold priced in Swiss francs vs the SNB monetary base, 100 years. History
-// comes from documented anchors (gold was pegged until 1971 — CHF ~150/oz —
-// the base figures are approximate SNB year-end levels); today's gold price
-// arrives live via the PAXG token (1 PAXG = 1 fine troy ounce) in CHF.
-
-const GOLD_CHF_OZ: [number, number][] = [
-  [1925, 107],
-  [1945, 150],
-  [1971, 150],
-  [1974, 600],
-  [1980, 1500],
-  [1985, 700],
-  [1999, 450],
-  [2005, 560],
-  [2011, 1615],
-  [2015, 1100],
-  [2020, 1870],
-  [2024, 2150],
-];
-
-/** SNB monetary base, billions of CHF (approximate year-end levels). */
-const SNB_BASE_BN: [number, number][] = [
-  [1925, 1],
-  [1950, 4.6],
-  [1971, 14],
-  [1985, 30],
-  [2000, 41],
-  [2008, 49],
-  [2012, 340],
-  [2015, 470],
-  [2020, 700],
-  [2022, 740],
-  [2025, 460],
-];
-
-function goldPanel(latestGold: number): NonNullable<typeof live.gold> {
-  const year = new Date().getFullYear();
-  const gold = resample(yearly([...GOLD_CHF_OZ, [year, latestGold]]), 40);
-  const base = resample(yearly(SNB_BASE_BN), 40);
-  const s = niceScale(0, Math.max(...gold), (v) => `${(v / 1000).toFixed(1)}k`);
-  return {
-    gold: norm(gold, s.lo, s.hi),
-    // Own scale: the point is the shared shape, not shared units.
-    base: norm(base, 0, Math.max(...base) * 1.02),
-    ticks: s.ticks,
-    latest: latestGold,
-  };
-}
-
-export const GOLD_FALLBACK = goldPanel(3300);
-
-async function loadGold(): Promise<void> {
-  const chf = await cached('gold-chf', 60 * MIN, async () => {
-    const d = await fetchJson<{ 'pax-gold': { chf: number } }>(
-      'https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=chf',
-    );
-    return d['pax-gold'].chf;
-  });
-  live.gold = goldPanel(chf);
-}
-
-// ---------------------------------------------------------------------------
 // Real-data fallbacks for the population panels: built from the bundled
 // anchors, so even with every API unreachable the curves keep their true
 // shape instead of demo noise.
@@ -602,13 +556,237 @@ async function loadGold(): Promise<void> {
 export const SWISS_POP_FALLBACK: TrendSeries = trend(
   [...CH_CENSUS, [2025, 9_092_436]],
   (v) => `${(v / 1e6).toFixed(0)}M`,
-  ['1500', '1675', '1850', 'today'],
+  ['1500', '1675', '1850', 'heute'],
 );
 
 export const WORLD_POP_FALLBACK: TrendSeries = trend(
   [...WORLD_HISTORY, [2025, 8.215e9]],
   (v) => `${(v / 1e9).toFixed(0)}B`,
-  ['Year 0', '675', '1350', 'today'],
+  ['Jahr 0', '675', '1350', 'heute'],
+);
+
+// ---------------------------------------------------------------------------
+// Bundled real-data panels without a live API: deaths in armed conflicts
+// (UCDP via Our World in Data), forcibly displaced people (UNHCR Global
+// Trends), US federal net interest (OMB/CBO) and US overdose deaths (CDC).
+// These figures are revised yearly at best, so they ship as anchors just
+// like the census series above.
+
+const CONFLICT_ANCHORS: [number, number][] = [
+  [1900, 20_000],
+  [1905, 100_000], // Russo-Japanese war
+  [1913, 150_000], // Balkan wars
+  [1914, 1_500_000],
+  [1916, 3_000_000], // Verdun, Somme
+  [1918, 3_500_000],
+  [1920, 800_000], // Russian civil war
+  [1925, 100_000],
+  [1930, 80_000],
+  [1937, 600_000], // Sino-Japanese war, Spain
+  [1939, 2_000_000],
+  [1942, 10_000_000],
+  [1944, 15_000_000], // WWII peak
+  [1945, 12_000_000],
+  [1947, 500_000], // partition of India, Chinese civil war
+  [1950, 700_000], // Korea
+  [1953, 350_000],
+  [1960, 150_000],
+  [1965, 300_000], // Vietnam
+  [1971, 500_000], // Bangladesh
+  [1979, 200_000],
+  [1984, 250_000], // Iran-Iraq
+  [1989, 144_000],
+  [1992, 110_000],
+  [1994, 810_000], // Rwanda
+  [1996, 90_000],
+  [1999, 130_000],
+  [2004, 60_000],
+  [2009, 55_000],
+  [2012, 90_000],
+  [2014, 130_000], // Syria peak
+  [2017, 100_000],
+  [2020, 85_000],
+  [2022, 310_000], // Ukraine, Tigray
+  [2023, 235_000],
+  [2024, 190_000],
+];
+
+export const CONFLICT_PANEL: TrendSeries = trend(
+  CONFLICT_ANCHORS,
+  (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(0)}M` : `${Math.round(v / 1000)}k`),
+  ['1900', '1941', '1983', 'heute'],
+  64,
+);
+
+const REFUGEE_ANCHORS: [number, number][] = [
+  [1990, 35e6],
+  [1995, 40e6],
+  [2000, 38e6],
+  [2005, 37e6],
+  [2010, 41e6],
+  [2013, 51e6],
+  [2015, 65e6],
+  [2017, 71e6],
+  [2019, 79e6],
+  [2021, 89e6],
+  [2022, 108e6],
+  [2023, 117e6],
+  [2024, 123e6],
+];
+
+export const REFUGEE_PANEL: TrendSeries = trend(
+  REFUGEE_ANCHORS,
+  (v) => `${Math.round(v / 1e6)}M`,
+  ['1990', '2001', '2013', 'heute'],
+);
+
+const US_INTEREST_ANCHORS: [number, number][] = [
+  [1990, 184e9],
+  [1995, 232e9],
+  [2000, 222e9],
+  [2005, 184e9],
+  [2010, 196e9],
+  [2015, 223e9],
+  [2019, 375e9],
+  [2020, 345e9],
+  [2021, 352e9],
+  [2022, 475e9],
+  [2023, 659e9],
+  [2024, 882e9],
+  [2025, 1_000e9],
+];
+
+export const US_INTEREST_PANEL: TrendSeries = trend(
+  US_INTEREST_ANCHORS,
+  (v) => (v >= 1e12 ? `$${(v / 1e12).toFixed(1)}T` : `$${Math.round(v / 1e9)}B`),
+  ['1990', '2002', '2013', 'heute'],
+);
+
+const OVERDOSE_ANCHORS: [number, number][] = [
+  // Pre-1999 figures are NCHS drug-poisoning estimates (the modern CDC
+  // series starts 1999): low thousands through the 50s/60s, first heroin
+  // wave around 1970, slow climb through the 80s/90s.
+  [1950, 2_000],
+  [1960, 3_000],
+  [1970, 7_000],
+  [1975, 5_500],
+  [1979, 6_100],
+  [1985, 8_000],
+  [1990, 10_000],
+  [1995, 14_000],
+  [1999, 16_849],
+  [2002, 23_518],
+  [2005, 29_813],
+  [2008, 36_450],
+  [2011, 41_340],
+  [2014, 47_055],
+  [2016, 63_632],
+  [2017, 70_237],
+  [2019, 70_630],
+  [2020, 91_799],
+  [2021, 106_699],
+  [2022, 107_941],
+  [2023, 105_007],
+  [2024, 87_000],
+];
+
+export const OVERDOSE_PANEL: TrendSeries = trend(
+  OVERDOSE_ANCHORS,
+  (v) => `${Math.round(v / 1000)}k`,
+  ['1950', '1975', '2000', 'heute'],
+);
+
+// --- More bundled panels (yearly-revised sources, no keyless live APIs) ---
+
+// Global life expectancy at birth, years (UN WPP / OWID).
+export const LIFE_PANEL: TrendSeries = trend(
+  [
+    [1900, 32], [1918, 30], [1930, 40], [1950, 46], [1960, 51],
+    [1970, 58], [1980, 61], [1990, 64], [2000, 66], [2010, 70],
+    [2019, 72.8], [2021, 71], [2024, 73.3],
+  ],
+  (v) => `${Math.round(v)}y`,
+  ['1900', '1941', '1983', 'heute'],
+);
+
+// US M2 money supply, USD (Federal Reserve H.6).
+export const M2_PANEL: TrendSeries = trend(
+  [
+    [1960, 0.3e12], [1970, 0.6e12], [1980, 1.5e12], [1990, 3.2e12],
+    [2000, 4.9e12], [2008, 8.2e12], [2015, 12.3e12], [2020, 19.1e12],
+    [2022, 21.7e12], [2024, 21.4e12],
+  ],
+  (v) => `$${(v / 1e12).toFixed(0)}T`,
+  ['1960', '1981', '2003', 'heute'],
+);
+
+// People online worldwide (ITU).
+export const INTERNET_PANEL: TrendSeries = trend(
+  [
+    [1990, 0.003e9], [1995, 0.04e9], [2000, 0.41e9], [2005, 1.02e9],
+    [2010, 2.0e9], [2015, 3.2e9], [2020, 4.7e9], [2024, 5.5e9],
+  ],
+  (v) => `${(v / 1e9).toFixed(1)}B`,
+  ['1990', '2001', '2013', 'heute'],
+);
+
+// Nuclear test explosions per year (Arms Control Association).
+export const NUKE_TESTS_PANEL: TrendSeries = trend(
+  [
+    [1945, 3], [1951, 18], [1957, 55], [1958, 116], [1959, 0],
+    [1961, 71], [1962, 178], [1964, 60], [1968, 79], [1972, 57],
+    [1980, 51], [1985, 36], [1990, 18], [1992, 8], [1996, 5],
+    [1998, 6], [2000, 0], [2006, 1], [2013, 1], [2017, 1], [2024, 0],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['1945', '1971', '1998', 'heute'],
+  64,
+);
+
+// Adult obesity share worldwide, % (WHO / NCD-RisC).
+export const OBESITY_PANEL: TrendSeries = trend(
+  [
+    [1975, 4.7], [1985, 6.4], [1995, 8.5], [2005, 10.3],
+    [2010, 11.7], [2016, 13.1], [2022, 16],
+  ],
+  (v) => `${v.toFixed(0)}%`,
+  ['1975', '1991', '2008', 'heute'],
+);
+
+// Births per woman by continent — UN WPP 2024 from 1950 on, pre-1950 from
+// Gapminder/OWID estimates (coarser, but the transition shapes are real).
+const CONTINENT_FERTILITY_ANCHORS: { name: string; pts: [number, number][] }[] = [
+  { name: 'Afrika', pts: [[1900, 6.6], [1930, 6.6], [1950, 6.6], [1970, 6.7], [1990, 5.9], [2000, 5.1], [2010, 4.7], [2024, 4.1]] },
+  { name: 'Asien', pts: [[1900, 5.5], [1930, 5.6], [1950, 5.8], [1970, 5.6], [1990, 3.3], [2000, 2.6], [2010, 2.2], [2024, 1.9]] },
+  { name: 'Lateinamerika', pts: [[1900, 6.0], [1930, 5.9], [1950, 5.8], [1970, 5.3], [1990, 3.3], [2000, 2.6], [2010, 2.2], [2024, 1.8]] },
+  { name: 'Nordamerika', pts: [[1900, 3.8], [1920, 3.2], [1935, 2.2], [1950, 3.3], [1958, 3.7], [1970, 2.3], [1990, 2.0], [2010, 1.9], [2024, 1.6]] },
+  { name: 'Europa', pts: [[1900, 4.5], [1915, 3.4], [1930, 2.5], [1950, 2.7], [1970, 2.2], [1990, 1.7], [2000, 1.4], [2010, 1.6], [2024, 1.4]] },
+];
+
+/** All six continents normalized onto one shared scale. */
+export const CONTINENT_FERTILITY = (() => {
+  const yearlySets = CONTINENT_FERTILITY_ANCHORS.map((c) => yearly(c.pts));
+  const all = yearlySets.flat();
+  const s = niceScale(Math.min(...all), Math.max(...all), (v) => v.toFixed(1));
+  return {
+    rows: CONTINENT_FERTILITY_ANCHORS.map((c, i) => ({
+      name: c.name,
+      data: norm(resample(yearlySets[i], 48), s.lo, s.hi),
+    })),
+    ticks: s.ticks,
+    /** Global births per woman, for the headline. */
+    world: 2.2,
+  };
+})();
+
+// Purchasing power of one 1913 US dollar (BLS CPI).
+export const DOLLAR_PANEL: TrendSeries = trend(
+  [
+    [1913, 1.0], [1920, 0.49], [1933, 0.76], [1945, 0.55], [1960, 0.33],
+    [1975, 0.18], [1985, 0.092], [2000, 0.057], [2010, 0.045], [2024, 0.032],
+  ],
+  (v) => `${(v * 100).toFixed(0)}¢`,
+  ['1913', '1950', '1987', 'heute'],
 );
 
 // ---------------------------------------------------------------------------
@@ -631,14 +809,13 @@ export interface LiveFeed {
  * stays in sync with what the panels actually load.
  */
 export const LIVE_FEEDS: LiveFeed[] = [
-  { code: 'ZRH', source: 'OPEN-METEO', city: 'ZÜRICH', item: '7-day forecast', load: loadWeather },
-  { code: 'SFO', source: 'WIKIMEDIA', city: 'SAN FRANCISCO', item: 'top pageviews', load: loadWiki },
-  { code: 'SFO', source: 'WIKIMEDIA', city: 'SAN FRANCISCO', item: 'swiss trends', load: loadSwissTrends },
-  { code: 'WAS', source: 'US TREASURY', city: 'WASHINGTON', item: 'national debt', load: loadDebt },
-  { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'military spend', load: loadMilitary },
-  { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'population', load: loadPopulation },
-  { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'homicide rate', load: loadHomicide },
-  { code: 'SIN', source: 'COINGECKO', city: 'SINGAPORE', item: 'gold spot · CHF', load: loadGold },
+  { code: 'ZRH', source: 'OPEN-METEO', city: 'ZÜRICH', item: '7-Tage-Prognose', load: loadWeather },
+  { code: 'SFO', source: 'WIKIMEDIA', city: 'SAN FRANCISCO', item: 'Top-Artikel', load: loadWiki },
+  { code: 'SFO', source: 'WIKIMEDIA', city: 'SAN FRANCISCO', item: 'Schweizer Trends', load: loadSwissTrends },
+  { code: 'WAS', source: 'US TREASURY', city: 'WASHINGTON', item: 'Staatsschulden', load: loadDebt },
+  { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Militärausgaben', load: loadMilitary },
+  { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Bevölkerung', load: loadPopulation },
+  { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Mordrate', load: loadHomicide },
 ];
 
 let started = false;

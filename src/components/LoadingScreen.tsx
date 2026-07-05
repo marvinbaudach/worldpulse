@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import { LIVE_FEEDS } from '../data/sources';
 
@@ -66,31 +66,10 @@ const grow = keyframes`
   from { width: 4%; }
   to { width: 88%; }
 `;
-// A feed row snapping on: quick CRT-like flicker instead of a soft fade.
-const flicker = keyframes`
-  0% { opacity: 0; }
-  20% { opacity: 1; }
-  35% { opacity: 0.35; }
-  55% { opacity: 1; }
-  70% { opacity: 0.6; }
-  100% { opacity: 1; }
-`;
 // Expanding ping ring around a station dot when its feed connects.
 const ping = keyframes`
   from { transform: scale(0.4); opacity: 0.9; }
   to { transform: scale(2.6); opacity: 0; }
-`;
-// Idle pending dots for feeds still waiting on their handshake.
-const blink = keyframes`
-  0%, 100% { opacity: 0.25; }
-  50% { opacity: 0.7; }
-`;
-// Data packets travelling along the uplink route while feeds come in.
-const travel = keyframes`
-  from { left: 0%; opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  to { left: 100%; opacity: 0; }
 `;
 
 // Exit: an iris that collapses into the exact point the carousel panels
@@ -176,22 +155,6 @@ const RouteLine = styled.div`
   background: rgba(255, 255, 255, 0.1);
 `;
 
-const Packet = styled.div<{ $delay: string }>`
-  position: absolute;
-  top: 3.5px;
-  width: 14px;
-  height: 2px;
-  margin-top: -0.5px;
-  border-radius: 1px;
-  background: linear-gradient(90deg, transparent, #3987e5);
-  animation: ${travel} 1.4s linear infinite;
-  animation-delay: ${(p) => p.$delay};
-
-  @media (prefers-reduced-motion: reduce) {
-    display: none;
-  }
-`;
-
 const Station = styled.div`
   position: relative;
   display: flex;
@@ -254,15 +217,7 @@ const Row = styled.div<{ $on: boolean }>`
   align-items: baseline;
   gap: 10px;
   color: ${(p) => (p.$on ? '#aab8c5' : '#3a4552')};
-  ${(p) =>
-    p.$on &&
-    css`
-      animation: ${flicker} 0.28s steps(1, end);
-    `}
-
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-  }
+  transition: color 0.45s ease;
 `;
 
 const Source = styled.span`
@@ -286,17 +241,8 @@ const Item = styled.span`
 
 const Stat = styled.span<{ $on: boolean }>`
   flex: 0 0 auto;
-  font-variant-numeric: tabular-nums;
-  color: ${(p) => (p.$on ? '#4da06f' : '#3a4552')};
-  ${(p) =>
-    !p.$on &&
-    css`
-      animation: ${blink} 1.1s ease-in-out infinite;
-    `}
-
-  @media (prefers-reduced-motion: reduce) {
-    animation: none;
-  }
+  color: ${(p) => (p.$on ? '#4da06f' : '#2c3542')};
+  transition: color 0.45s ease;
 `;
 
 const BarTrack = styled.div`
@@ -338,17 +284,6 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
   const pctRef = useRef(0);
   // How many provider groups have "connected" so far; done snaps them all on.
   const [connectedCount, setConnectedCount] = useState(0);
-
-  // Stable per-group fake latency/size, generated once — real fetches race in
-  // the background (data/sources.ts), this is choreography for the boot beat.
-  const stats = useMemo(
-    () =>
-      GROUPS.map((g) => ({
-        ms: 24 + Math.round(Math.random() * 180),
-        kb: ((2 + Math.random() * 46) * g.count).toFixed(1),
-      })),
-    [],
-  );
 
   // Stagger the group connections across the boot beat — spread over a fixed
   // window (with a little jitter so it reads as real handshakes, not a
@@ -404,12 +339,10 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
 
       <Column $leaving={leaving}>
         <Wordmark $done={done}>PULSE</Wordmark>
-        <Sub>ACQUIRING GLOBAL FEEDS</Sub>
+        <Sub>GLOBALE DATENQUELLEN WERDEN GELADEN</Sub>
 
         <Route aria-hidden>
           <RouteLine />
-          <Packet $delay="0s" />
-          <Packet $delay="-0.7s" />
           {STATIONS.map((code) => {
             const on = GROUPS.some((g, i) => g.code === code && i < connected);
             return (
@@ -429,9 +362,7 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
                 <Source>{group.source}</Source>
                 <City>{group.city}</City>
                 <Item>{group.label}</Item>
-                <Stat $on={on}>
-                  {on ? `${stats[i].ms}ms · ${stats[i].kb}kB ✓` : '· · ·'}
-                </Stat>
+                <Stat $on={on}>{on ? '✓' : '·'}</Stat>
               </Row>
             );
           })}
@@ -442,7 +373,7 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
         </BarTrack>
         <Status>
           <span>
-            {done ? TOTAL_FEEDS : connectedFeeds}/{TOTAL_FEEDS} FEEDS
+            {done ? TOTAL_FEEDS : connectedFeeds}/{TOTAL_FEEDS} QUELLEN
           </span>
           <span>{pct}%</span>
         </Status>

@@ -155,10 +155,10 @@ const HintText = styled.span`
 `;
 
 const LABEL: Record<HandTrackingStatus, string> = {
-  idle: '✋ Hand control',
-  starting: '✋ Starting…',
-  running: '✋ Hand control on',
-  error: '✋ Camera unavailable — retry',
+  idle: '✋ Handsteuerung',
+  starting: '✋ Startet…',
+  running: '✋ Handsteuerung aktiv',
+  error: '✋ Kamera nicht verfügbar — erneut versuchen',
 };
 
 /**
@@ -241,22 +241,22 @@ export function HandControls({ status, onToggle, hand, scrub }: HandControlsProp
             <Hint>
               <HintIcon>🖐️</HintIcon>
               <HintText>
-                <b>Flick</b>
-                Swipe your open hand quickly sideways to spin the ring
+                <b>Wischen</b>
+                Offene Hand schnell zur Seite bewegen, um den Ring zu drehen
               </HintText>
             </Hint>
             <Hint>
               <HintIcon>🤏</HintIcon>
               <HintText>
-                <b>Pinch</b>
-                A quick pinch on a panel opens it — pinch again to put it back
+                <b>Kneifen</b>
+                Kurzes Kneifen auf einem Panel öffnet es — erneut kneifen legt es zurück
               </HintText>
             </Hint>
             <Hint>
               <HintIcon>🧲</HintIcon>
               <HintText>
-                <b>Hold &amp; pull</b>
-                Hold the pinch and pull your hand closer or push it away
+                <b>Halten &amp; ziehen</b>
+                Kneifgriff halten und die Hand heranziehen oder wegschieben
               </HintText>
             </Hint>
           </Hints>

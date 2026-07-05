@@ -5,14 +5,18 @@ import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
 import type { Group, Mesh, MeshPhysicalMaterial } from 'three';
 import type { HeroStart } from './HeroCard';
 import { GlassPlate, GLASS_OPACITY, GLASS_THICKNESS } from './GlassPlate';
+import type { Slot } from '../layouts';
 import { createDashboardTexture, SETTLED_T, type Dashboard } from '../dashboards';
 import { onLiveUpdate } from '../data/store';
 
 interface CarouselItemProps {
   /** The animated dashboard this panel renders. */
   dashboard: Dashboard;
-  /** Angular position on the ring (radians). */
-  angle: number;
+  /** Target transform in the current formation (see layouts.ts). */
+  slot: Slot;
+  /** Index in the formation — staggers the fly-to-slot morph. */
+  index: number;
+  /** Ring radius; still the reference extent for the depth dimming. */
   radius: number;
   width: number;
   height: number;
@@ -37,6 +41,16 @@ type ImageMaterial = {
 
 const worldPos = new Vector3();
 
+// Per-panel delay when flying to a new formation, so the morph ripples
+// through the set instead of moving as one rigid block.
+const MORPH_STAGGER = 0.06;
+
+/** Lerp an angle along the shortest arc (so yaws never unwind the long way). */
+function lerpAngle(a: number, b: number, t: number): number {
+  const d = ((((b - a + Math.PI) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) - Math.PI;
+  return a + d * t;
+}
+
 // Ring panel canvas resolution (4:5, matching the panel geometry). 768 wide
 // keeps the chart text crisp on hidpi screens where a front panel can cover
 // well over 512 device pixels.
@@ -59,7 +73,8 @@ const GLASS_GAP = 0.01;
 
 export function CarouselItem({
   dashboard,
-  angle,
+  slot,
+  index,
   radius,
   width,
   height,
@@ -105,9 +120,17 @@ export function CarouselItem({
     [dash, dashboard.live],
   );
 
-  // Position on the ring; the group faces outward toward the viewer.
-  const x = Math.sin(angle) * radius;
-  const z = Math.cos(angle) * radius;
+  // Formation morph: when the slot changes, the old target is held for a
+  // per-index beat (see MORPH_STAGGER) so the flight ripples through the set.
+  const slotRef = useRef(slot);
+  const heldSlot = useRef(slot);
+  const switchAt = useRef(0);
+
+  // Sphere slots pitch the panel; 'YXZ' applies yaw before pitch so the
+  // pitch stays a clean "lean back" in every direction.
+  useEffect(() => {
+    if (groupRef.current) groupRef.current.rotation.order = 'YXZ';
+  }, []);
 
   useFrame((state) => {
     const group = groupRef.current;
@@ -126,9 +149,19 @@ export function CarouselItem({
       return;
     }
 
-    // One-time entrance: panels fly out from the center to their ring slot,
-    // staggered and scaling up as they arrive.
     const now = state.clock.elapsedTime;
+
+    // Formation switch: hold the previous target for a per-index beat so the
+    // panels ripple over to the new formation one after another.
+    if (slotRef.current !== slot) {
+      heldSlot.current = slotRef.current;
+      slotRef.current = slot;
+      switchAt.current = now + index * MORPH_STAGGER;
+    }
+    const target = now >= switchAt.current ? slot : heldSlot.current;
+
+    // One-time entrance: panels fly out from the center to their slot,
+    // staggered and scaling up as they arrive.
     if (entranceStart.current === null) entranceStart.current = now;
     const p = MathUtils.clamp(
       (now - entranceStart.current - entranceDelay) / ENTRANCE_DURATION,
@@ -137,7 +170,9 @@ export function CarouselItem({
     );
     if (p < 1) {
       const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
-      group.position.set(x * e, 0, z * e);
+      group.position.set(target.x * e, target.y * e, target.z * e);
+      group.rotation.x = target.rotX;
+      group.rotation.y = target.rotY;
       const s = 0.5 + 0.5 * e;
       group.scale.set(s, s, 1);
       mat.opacity = e;
@@ -155,15 +190,15 @@ export function CarouselItem({
     const pressed = press.current;
     // Positive rotation.x lifts the top edge toward the viewer, so the
     // cursor side (pointer.y = +1 at the top) needs the negative direction.
-    group.rotation.x = MathUtils.lerp(
+    group.rotation.x = lerpAngle(
       group.rotation.x,
-      -pointer.current.y * TILT_X * pressed,
+      target.rotX - pointer.current.y * TILT_X * pressed,
       0.15,
     );
-    group.rotation.y = MathUtils.lerp(
+    group.rotation.y = lerpAngle(
       group.rotation.y,
-      angle + pointer.current.x * TILT_Y * pressed,
-      0.15,
+      target.rotY + pointer.current.x * TILT_Y * pressed,
+      0.12,
     );
     const glass = glassRef.current;
     if (glass) {
@@ -171,18 +206,24 @@ export function CarouselItem({
     }
 
     // Push the panel back by exactly the distance the far edge would have
-    // swung forward, turning the center-pivot rotation into an edge-pivot
+    // swung forward, turning the center-pivot press tilt into an edge-pivot
     // press: the edge opposite the cursor stays fixed in space.
     const sink =
-      (height / 2) * Math.abs(Math.sin(group.rotation.x)) +
-      (width / 2) * Math.abs(Math.sin(group.rotation.y - angle));
+      (height / 2) * Math.abs(Math.sin(group.rotation.x - target.rotX)) +
+      (width / 2) * Math.abs(Math.sin(group.rotation.y - target.rotY));
 
-    // Settled: pin the panel to its ring slot every frame. The entrance branch
-    // above only lands the panel here on its final frame, so if startup jank
-    // makes the clock jump straight past the entrance window, the panels would
-    // otherwise stay frozen wherever the fly-out left them — collapsed near
-    // the center. Setting it here keeps the arrangement frame-rate independent.
-    group.position.set(x - Math.sin(angle) * sink, 0, z - Math.cos(angle) * sink);
+    // The slot's outward normal ('YXZ': yaw, then pitch) — the press sink
+    // pushes the panel along it, away from the viewer side.
+    const nx = Math.sin(target.rotY) * Math.cos(target.rotX);
+    const ny = -Math.sin(target.rotX);
+    const nz = Math.cos(target.rotY) * Math.cos(target.rotX);
+
+    // Damped flight toward the slot: fast enough to feel pinned when settled,
+    // slow enough that a formation switch reads as panels flying over.
+    const k = 0.085;
+    group.position.x += (target.x - nx * sink - group.position.x) * k;
+    group.position.y += (target.y - ny * sink - group.position.y) * k;
+    group.position.z += (target.z - nz * sink - group.position.z) * k;
 
     // World position determines closeness to the camera (camera looks along +Z).
     group.getWorldPosition(worldPos);
@@ -230,7 +271,10 @@ export function CarouselItem({
   };
 
   return (
-    <group ref={groupRef} position={[x, 0, z]} rotation={[0, angle, 0]}>
+    // Position and rotation are driven entirely from useFrame (the entrance
+    // starts at the center anyway), so no transform props that React could
+    // re-apply mid-morph.
+    <group ref={groupRef}>
       <Image
         ref={imgRef}
         texture={dash.tex}
