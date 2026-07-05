@@ -50,6 +50,14 @@ export interface LiveData {
   swissPop?: TrendSeries;
   /** World population since 1960 (World Bank). */
   worldPop?: TrendSeries;
+  /** Gold in CHF/oz vs SNB monetary base, both normalized to own scale. */
+  gold?: {
+    gold: number[];
+    base: number[];
+    /** Gridline labels for the gold scale (CHF per ounce, in thousands). */
+    ticks: string[];
+    latest: number;
+  };
   /** Country outlines for the map panels, keyed by ISO3 country code. */
   worldMap?: { id: string; rings: number[][][] }[];
   /** Intentional homicides per 100k (World Bank, latest year per country). */

@@ -11,7 +11,12 @@ import {
 import type { Frame } from './draw';
 import { SERIES } from './theme';
 import { live } from '../data/store';
-import { DEBT_TREND_FALLBACK, SWISS_POP_FALLBACK, WORLD_POP_FALLBACK } from '../data/sources';
+import {
+  DEBT_TREND_FALLBACK,
+  GOLD_FALLBACK,
+  SWISS_POP_FALLBACK,
+  WORLD_POP_FALLBACK,
+} from '../data/sources';
 
 export interface Dashboard {
   id: string;
@@ -149,6 +154,27 @@ const POOL: Dashboard[] = [
         ],
         ticks: hm?.ticks ?? ['0', '5', '10'],
         xLabels: ['1990', '2002', '2013', 'today'],
+      });
+    },
+  },
+  {
+    id: 'gold-chf',
+    title: 'Gold vs Franc Printing · 100 Years',
+    draw: (f) => {
+      const g = live.gold ?? GOLD_FALLBACK;
+      lineChart(f, {
+        label: 'Gold in CHF vs SNB Base · 100y',
+        value: g.latest,
+        unit: '',
+        fmt: (v) => `CHF ${Math.round(v).toLocaleString('en-US')}`,
+        delta: null,
+        seed: 47,
+        series: [
+          { name: 'Gold CHF/oz', color: yellow, data: g.gold },
+          { name: 'SNB base (scaled)', color: aqua, data: g.base },
+        ],
+        ticks: g.ticks,
+        xLabels: ['1925', '1958', '1991', 'today'],
       });
     },
   },

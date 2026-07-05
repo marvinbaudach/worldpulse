@@ -17,17 +17,27 @@ function norm(series: number[], lo: number, hi: number): number[] {
   return series.map((v) => (v - lo) / span);
 }
 
-/** Padded min/max of one or more series, for a shared plot scale. */
-function range(series: number[][], pad = 0.08): { lo: number; hi: number } {
-  const all = series.flat();
-  const min = Math.min(...all);
-  const max = Math.max(...all);
-  const p = Math.max(1e-9, (max - min) * pad);
-  return { lo: min - p, hi: max + p };
-}
-
-function ticks3(lo: number, hi: number, fmt: (v: number) => string): string[] {
-  return [lo, (lo + hi) / 2, hi].map(fmt);
+/**
+ * Nice axis: bounds snapped to a round step (1/2/2.5/5 x 10^k) and a label
+ * for every gridline, so the y-axis reads 0/2/4/6... instead of 0.1/4.9/9.8.
+ */
+function niceScale(
+  min: number,
+  max: number,
+  fmt: (v: number) => string,
+): { lo: number; hi: number; ticks: string[] } {
+  const span = Math.max(1e-9, max - min);
+  const mag = Math.pow(10, Math.floor(Math.log10(span / 4)));
+  const step =
+    [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => span / s <= 4.5) ?? 10 * mag;
+  const lo = min >= 0 ? Math.max(0, Math.floor(min / step) * step) : Math.floor(min / step) * step;
+  const hi = Math.ceil(max / step) * step;
+  const n = Math.round((hi - lo) / step);
+  return {
+    lo,
+    hi,
+    ticks: Array.from({ length: n + 1 }, (_, i) => fmt(lo + i * step)),
+  };
 }
 
 /** Evenly resample a series down to n points (keeps first and last). */
@@ -221,11 +231,10 @@ const DEBT_HISTORY: [number, number][] = [
 function debtTrend(latest: number): { series: number[]; ticks: string[] } {
   const year = new Date().getFullYear();
   const series = yearly([...DEBT_HISTORY, [year, latest]]);
-  const lo = 0;
-  const hi = latest;
+  const s = niceScale(0, latest, (v) => `$${(v / 1e12).toFixed(0)}T`);
   return {
-    series: norm(resample(series, 40), lo, hi),
-    ticks: ticks3(lo, hi, (v) => `$${(v / 1e12).toFixed(0)}T`),
+    series: norm(resample(series, 40), s.lo, s.hi),
+    ticks: s.ticks,
   };
 }
 
@@ -326,11 +335,10 @@ function trend(
   xLabels: string[],
 ): TrendSeries {
   const series = yearly(points);
-  const r = range([series]);
-  r.lo = Math.max(0, r.lo); // population axes never dip below zero
+  const s = niceScale(Math.min(...series), Math.max(...series), fmt);
   return {
-    series: norm(resample(series, 28), r.lo, r.hi),
-    ticks: ticks3(r.lo, r.hi, fmt),
+    series: norm(resample(series, 28), s.lo, s.hi),
+    ticks: s.ticks,
     latest: series[series.length - 1],
     yoyPct: ((series[series.length - 1] - series[series.length - 2]) / series[series.length - 2]) * 100,
     xLabels,
@@ -352,12 +360,12 @@ async function loadPopulation(): Promise<void> {
 
   live.swissPop = trend(
     [...CH_CENSUS, ...points.che],
-    (v) => `${(v / 1e6).toFixed(1)}M`,
+    (v) => `${(v / 1e6).toFixed(0)}M`,
     ['1500', '1675', '1850', 'today'],
   );
   live.worldPop = trend(
     [...WORLD_HISTORY, ...points.wld],
-    (v) => `${(v / 1e9).toFixed(1)}B`,
+    (v) => `${(v / 1e9).toFixed(0)}B`,
     ['Year 0', '675', '1350', 'today'],
   );
 }
@@ -417,18 +425,80 @@ async function loadHomicide(): Promise<void> {
     };
   });
 
-  const r = range([data.che, data.deu, data.usa]);
-  r.lo = Math.max(0, r.lo);
+  const all = [...data.che, ...data.deu, ...data.usa];
+  const s = niceScale(Math.min(...all), Math.max(...all), (v) => v.toFixed(0));
   live.homicide = {
     byIso: data.byIso,
     rows: data.top,
     world: data.world,
-    che: norm(data.che, r.lo, r.hi),
-    deu: norm(data.deu, r.lo, r.hi),
-    usa: norm(data.usa, r.lo, r.hi),
+    che: norm(data.che, s.lo, s.hi),
+    deu: norm(data.deu, s.lo, s.hi),
+    usa: norm(data.usa, s.lo, s.hi),
     cheLatest: data.che[data.che.length - 1] ?? 0.5,
-    ticks: ticks3(r.lo, r.hi, (v) => v.toFixed(1)),
+    ticks: s.ticks,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Gold priced in Swiss francs vs the SNB monetary base, 100 years. History
+// comes from documented anchors (gold was pegged until 1971 — CHF ~150/oz —
+// the base figures are approximate SNB year-end levels); today's gold price
+// arrives live via the PAXG token (1 PAXG = 1 fine troy ounce) in CHF.
+
+const GOLD_CHF_OZ: [number, number][] = [
+  [1925, 107],
+  [1945, 150],
+  [1971, 150],
+  [1974, 600],
+  [1980, 1500],
+  [1985, 700],
+  [1999, 450],
+  [2005, 560],
+  [2011, 1615],
+  [2015, 1100],
+  [2020, 1870],
+  [2024, 2150],
+];
+
+/** SNB monetary base, billions of CHF (approximate year-end levels). */
+const SNB_BASE_BN: [number, number][] = [
+  [1925, 1],
+  [1950, 4.6],
+  [1971, 14],
+  [1985, 30],
+  [2000, 41],
+  [2008, 49],
+  [2012, 340],
+  [2015, 470],
+  [2020, 700],
+  [2022, 740],
+  [2025, 460],
+];
+
+function goldPanel(latestGold: number): NonNullable<typeof live.gold> {
+  const year = new Date().getFullYear();
+  const gold = resample(yearly([...GOLD_CHF_OZ, [year, latestGold]]), 40);
+  const base = resample(yearly(SNB_BASE_BN), 40);
+  const s = niceScale(0, Math.max(...gold), (v) => `${(v / 1000).toFixed(1)}k`);
+  return {
+    gold: norm(gold, s.lo, s.hi),
+    // Own scale: the point is the shared shape, not shared units.
+    base: norm(base, 0, Math.max(...base) * 1.02),
+    ticks: s.ticks,
+    latest: latestGold,
+  };
+}
+
+export const GOLD_FALLBACK = goldPanel(3300);
+
+async function loadGold(): Promise<void> {
+  const chf = await cached('gold-chf', 60 * MIN, async () => {
+    const d = await fetchJson<{ 'pax-gold': { chf: number } }>(
+      'https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=chf',
+    );
+    return d['pax-gold'].chf;
+  });
+  live.gold = goldPanel(chf);
 }
 
 // ---------------------------------------------------------------------------
@@ -438,13 +508,13 @@ async function loadHomicide(): Promise<void> {
 
 export const SWISS_POP_FALLBACK: TrendSeries = trend(
   [...CH_CENSUS, [2025, 9_092_436]],
-  (v) => `${(v / 1e6).toFixed(1)}M`,
+  (v) => `${(v / 1e6).toFixed(0)}M`,
   ['1500', '1675', '1850', 'today'],
 );
 
 export const WORLD_POP_FALLBACK: TrendSeries = trend(
   [...WORLD_HISTORY, [2025, 8.215e9]],
-  (v) => `${(v / 1e9).toFixed(1)}B`,
+  (v) => `${(v / 1e9).toFixed(0)}B`,
   ['Year 0', '675', '1350', 'today'],
 );
 
@@ -468,6 +538,7 @@ export function loadLiveData(): void {
     ['military', loadMilitary],
     ['population', loadPopulation],
     ['homicide', loadHomicide],
+    ['gold', loadGold],
   ];
   sources.forEach(([name, run]) => {
     run()
