@@ -533,10 +533,13 @@ export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
     const armed = new Map(cfg.states.map((s) => [s.iso, s.count]));
     for (const country of cfg.world) {
       const count = armed.get(country.id);
+      // Nuclear states breathe: fill and border pulse, phase-salted per
+      // country so the map never throbs in unison.
+      const pulse = count === undefined ? 0 : 0.5 + 0.5 * Math.sin(t * 2.2 + (count % 97));
       ctx.fillStyle =
         count === undefined
           ? 'rgba(214,222,236,0.08)'
-          : `rgba(208,59,59,${(0.22 + 0.5 * heat(count)).toFixed(2)})`;
+          : `rgba(208,59,59,${(0.18 + 0.5 * heat(count) + 0.12 * pulse).toFixed(2)})`;
       for (const ring of country.rings) {
         ctx.beginPath();
         ring.forEach(([lon, lat], i) => {
@@ -545,6 +548,11 @@ export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
         });
         ctx.closePath();
         ctx.fill();
+        if (count !== undefined) {
+          ctx.strokeStyle = `rgba(255,107,94,${(0.15 + 0.55 * pulse).toFixed(2)})`;
+          ctx.lineWidth = 1.4 * u;
+          ctx.stroke();
+        }
       }
     }
   } else {

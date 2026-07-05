@@ -7,6 +7,7 @@
 
 import { cached, fetchJson } from './cache';
 import { emitLiveUpdate, live, type TrendSeries } from './store';
+import { WORLD } from './world';
 
 const MIN = 60_000;
 
@@ -443,32 +444,21 @@ async function loadHomicide(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Country outlines (GeoJSON, ~250 kB from a static CDN) for the map panels.
-// Not cached: localStorage quota is precious and the CDN is cache-friendly.
+// Real-data fallbacks for the population panels: built from the bundled
+// anchors, so even with every API unreachable the curves keep their true
+// shape instead of demo noise.
 
-interface WorldGeo {
-  features: {
-    id: string;
-    geometry: { type: string; coordinates: number[][][] | number[][][][] };
-  }[];
-}
+export const SWISS_POP_FALLBACK: TrendSeries = trend(
+  [...CH_CENSUS, [2025, 9_092_436]],
+  (v) => `${(v / 1e6).toFixed(1)}M`,
+  ['1920', '1955', '1990', 'today'],
+);
 
-async function loadWorldMap(): Promise<void> {
-  const geo = await fetchJson<WorldGeo>(
-    'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
-  );
-  live.worldMap = geo.features.map((f) => {
-    const polys =
-      f.geometry.type === 'Polygon'
-        ? [f.geometry.coordinates as number[][][]]
-        : (f.geometry.coordinates as number[][][][]);
-    const rings = polys
-      .map((poly) => poly[0]) // outer ring only — holes are invisible at panel size
-      .filter((outer) => outer.length >= 12) // skip micro-islands
-      .map((outer) => outer.filter((_, i) => i % 2 === 0)); // halve the points
-    return { id: f.id, rings };
-  });
-}
+export const WORLD_POP_FALLBACK: TrendSeries = trend(
+  [...WORLD_HISTORY, [2025, 8.215e9]],
+  (v) => `${(v / 1e9).toFixed(1)}B`,
+  ['Year 0', '675', '1350', 'today'],
+);
 
 // ---------------------------------------------------------------------------
 
@@ -478,6 +468,8 @@ let started = false;
 export function loadLiveData(): void {
   if (started) return; // StrictMode double-mount guard
   started = true;
+  // The country outlines ship in the bundle — no fetch, no failure mode.
+  live.worldMap = WORLD;
   // Heartbeat for the "live" panels (debt clock): re-render once a second.
   setInterval(() => emitLiveUpdate('tick'), 1000);
   const sources: [string, () => Promise<void>][] = [
@@ -489,7 +481,6 @@ export function loadLiveData(): void {
     ['population', loadPopulation],
     ['fx', loadFx],
     ['homicide', loadHomicide],
-    ['worldmap', loadWorldMap],
   ];
   sources.forEach(([name, run]) => {
     run()

@@ -11,6 +11,7 @@ import {
 import type { Frame } from './draw';
 import { SERIES } from './theme';
 import { live } from '../data/store';
+import { SWISS_POP_FALLBACK, WORLD_POP_FALLBACK } from '../data/sources';
 
 export interface Dashboard {
   id: string;
@@ -177,17 +178,17 @@ const POOL: Dashboard[] = [
     id: 'swiss-pop',
     title: 'Swiss Population · 100 Years',
     draw: (f) => {
-      const p = live.swissPop;
+      const p = live.swissPop ?? SWISS_POP_FALLBACK;
       areaChart(f, {
         label: 'Swiss Population · since 1920',
-        value: p?.latest ?? 9_092_000,
+        value: p.latest,
         fmt: (v) => `${(v / 1e6).toFixed(2)}M`,
-        delta: p?.yoyPct ?? 0.8,
+        delta: p.yoyPct,
         seed: 19,
         color: magenta,
-        data: p?.series,
-        ticks: p?.ticks ?? ['4M', '6.5M', '9M'],
-        xLabels: p?.xLabels ?? ['1920', '1955', '1990', 'today'],
+        data: p.series,
+        ticks: p.ticks,
+        xLabels: p.xLabels,
       });
     },
   },
@@ -195,17 +196,19 @@ const POOL: Dashboard[] = [
     id: 'world-pop',
     title: 'World Population · 2000 Years',
     draw: (f) => {
-      const p = live.worldPop;
+      const p = live.worldPop ?? WORLD_POP_FALLBACK;
       areaChart(f, {
         label: 'World Population · 2000 Years',
-        value: p?.latest ?? 8.23e9,
+        value: p.latest,
         fmt: (v) => `${(v / 1e9).toFixed(2)}B`,
-        delta: p?.yoyPct ?? 0.9,
+        // No delta chip: a YoY figure under a 2000-year curve reads as if
+        // it were the growth over the whole span.
+        delta: null,
         seed: 29,
         color: blue,
-        data: p?.series,
-        ticks: p?.ticks ?? ['0B', '4B', '8B'],
-        xLabels: p?.xLabels ?? ['Year 0', '675', '1350', 'today'],
+        data: p.series,
+        ticks: p.ticks,
+        xLabels: p.xLabels,
       });
     },
   },
