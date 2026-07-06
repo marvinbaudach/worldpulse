@@ -34,6 +34,9 @@ const FLICK_COOLDOWN = 0.7; // seconds; swallows the hand's return stroke
 
 // Beyond this pixel movement a gesture counts as a drag, not a click.
 const CLICK_THRESHOLD = 6;
+// Angular-velocity kick per arrow-key press; holding the key keeps kicking
+// while friction bleeds it back toward the idle spin.
+const KEY_SPIN = 0.9;
 // Tilt limits so the ring never flips fully over (balanced around the initial
 // tilt so dragging up or down both have room).
 const MIN_TILT = -1.0;
@@ -132,14 +135,29 @@ export function useCarouselRotation({
       velocity.current += e.deltaY * wheelSensitivity;
     };
 
+    // Arrow keys spin the ring while no hero is open (the hero handles the
+    // arrows itself to step between cards).
+    const onKey = (e: KeyboardEvent) => {
+      if (pausedRef.current?.()) return;
+      const dir = e.key === 'ArrowLeft' ? 1 : e.key === 'ArrowRight' ? -1 : 0;
+      if (!dir) return;
+      velocity.current = MathUtils.clamp(
+        velocity.current + dir * KEY_SPIN,
+        -MAX_FLICK,
+        MAX_FLICK,
+      );
+    };
+
     el.style.cursor = 'grab';
     el.addEventListener('pointerdown', onDown);
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerup', onUp);
     el.addEventListener('pointercancel', onUp);
     el.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('keydown', onKey);
 
     return () => {
+      window.removeEventListener('keydown', onKey);
       el.removeEventListener('pointerdown', onDown);
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerup', onUp);

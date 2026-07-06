@@ -30,10 +30,10 @@ interface CarouselItemProps {
   entranceDelay: number;
   /** False while a hero is open, so panels stop absorbing click-away taps. */
   interactive: boolean;
-  /** While hidden, the panel writes its live world pose here each frame so
-      the hero copy can fly back to wherever the slot is now — the slot may
-      have moved if the formation or panel count changed meanwhile. */
-  reportPose?: RefObject<HeroStart | null>;
+  /** While a hero is open, every panel writes its live world pose here each
+      frame — the hero flies back to (or, on arrow-key switches, in from)
+      the slot's current position, which may have moved meanwhile. */
+  poses?: RefObject<Map<string, HeroStart>>;
 }
 
 /** Shape of drei's Image shader material, as far as this component needs it. */
@@ -87,7 +87,7 @@ export function CarouselItem({
   wasDrag,
   entranceDelay,
   interactive,
-  reportPose,
+  poses,
 }: CarouselItemProps) {
   const groupRef = useRef<Group>(null);
   const imgRef = useRef<Mesh>(null);
@@ -125,14 +125,14 @@ export function CarouselItem({
     [dash, dashboard.live],
   );
 
-  // Drop the reported pose when this panel unhides or unmounts, so a later
-  // hero (or a shrunken pool) never flies back toward a stale transform.
-  useEffect(() => {
-    if (!hidden || !reportPose) return;
-    return () => {
-      reportPose.current = null;
-    };
-  }, [hidden, reportPose]);
+  // Drop this panel's pose when it unmounts, so a hero never flies toward
+  // a slot that no longer exists (e.g. after the count shrank).
+  useEffect(
+    () => () => {
+      poses?.current.delete(dashboard.id);
+    },
+    [poses, dashboard.id],
+  );
 
   // Formation morph: when the slot changes, the old target is held for a
   // per-index beat (see MORPH_STAGGER) so the flight ripples through the set.
@@ -158,6 +158,18 @@ export function CarouselItem({
     // flying toward its slot below, so formation or count changes made with
     // the hero open still move it to the right place.
     if (hidden) hovered.current = false;
+
+    // With a hero open, publish the live world pose (from last frame's
+    // transform) — fly-back and arrow-key switch targets.
+    if (poses && !interactive) {
+      img.updateWorldMatrix(true, false);
+      let pose = poses.current.get(dashboard.id);
+      if (!pose) {
+        pose = { position: new Vector3(), quaternion: new Quaternion(), scale: new Vector3() };
+        poses.current.set(dashboard.id, pose);
+      }
+      img.matrixWorld.decompose(pose.position, pose.quaternion, pose.scale);
+    }
 
     const now = state.clock.elapsedTime;
 
@@ -249,24 +261,10 @@ export function CarouselItem({
     // Pressed glass catches a touch more light, selling the contact.
     const targetGlass = GLASS_OPACITY + pressed * 0.08;
     if (hidden) {
-      // Fade out under the hero copy and report the live pose so the hero
-      // flies back to the slot's current position, not the click-time one.
+      // Fade out under the hero copy; the pose keeps being published above.
       mat.opacity = MathUtils.lerp(mat.opacity, 0, 0.2);
       if (glassMat) glassMat.opacity = MathUtils.lerp(glassMat.opacity, 0, 0.2);
       wasHidden.current = true;
-      if (reportPose) {
-        img.updateWorldMatrix(true, false);
-        reportPose.current ??= {
-          position: new Vector3(),
-          quaternion: new Quaternion(),
-          scale: new Vector3(),
-        };
-        img.matrixWorld.decompose(
-          reportPose.current.position,
-          reportPose.current.quaternion,
-          reportPose.current.scale,
-        );
-      }
       return;
     }
     if (wasHidden.current) {

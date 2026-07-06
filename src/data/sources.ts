@@ -844,6 +844,31 @@ export const DE_FOREIGN_SUSPECTS_PANEL: TrendSeries = trend(
   ['2005', '2011', '2018', 'heute'],
 );
 
+// US unemployment: recent college graduates vs all workers, % (NY Fed /
+// BLS, rounded). Aggregate unemployment shows no AI effect yet — the
+// canary is the entry-level gap widening since 2023: the rungs AI
+// automates first are exactly the jobs graduates start in.
+const AI_JOBS_ANCHORS: { name: string; pts: [number, number][] }[] = [
+  { name: 'Absolventen', pts: [[2015, 5.0], [2018, 3.9], [2019, 3.9], [2020, 9.0], [2021, 5.6], [2022, 4.0], [2023, 4.4], [2024, 5.0], [2025, 5.8]] },
+  { name: 'Gesamt', pts: [[2015, 5.3], [2018, 3.9], [2019, 3.7], [2020, 8.1], [2021, 5.4], [2022, 3.6], [2023, 3.6], [2024, 4.0], [2025, 4.2]] },
+];
+
+/** Both unemployment series normalized onto one shared scale. */
+export const AI_JOBS_COMPARE = (() => {
+  const yearlySets = AI_JOBS_ANCHORS.map((c) => yearly(c.pts));
+  const all = yearlySets.flat();
+  const s = niceScale(Math.min(...all), Math.max(...all), (v) => `${v.toFixed(0)}%`);
+  return {
+    rows: AI_JOBS_ANCHORS.map((c, i) => ({
+      name: c.name,
+      data: norm(resample(yearlySets[i], 48), s.lo, s.hi),
+    })),
+    ticks: s.ticks,
+    /** Latest recent-graduate rate, for the headline. */
+    gradLatest: 5.8,
+  };
+})();
+
 // People online worldwide (ITU).
 export const INTERNET_PANEL: TrendSeries = trend(
   [

@@ -43,27 +43,35 @@ const COUNT_KEY = 'worldpulse-panel-count';
 interface RingProps {
   onSelect: (id: string, start: HeroStart) => void;
   selectedId: string | null;
+  /** Card currently flying back after an arrow-key switch — its ring panel
+      stays hidden until the outgoing hero lands. */
+  outgoingId: string | null;
   paused: () => boolean;
   hand: RefObject<HandState>;
   layout: LayoutMode;
   dashboards: Dashboard[];
   radius: number;
-  returnPose: RefObject<HeroStart | null>;
+  poses: RefObject<Map<string, HeroStart>>;
+  /** False while the user paused the auto-spin (Space). */
+  spinning: boolean;
 }
 
 function Ring({
   onSelect,
   selectedId,
+  outgoingId,
   paused,
   hand,
   layout,
   dashboards,
   radius,
-  returnPose,
+  poses,
+  spinning,
 }: RingProps) {
   const interactive = selectedId === null;
   const { groupRef, tiltRef, wasDrag } = useCarouselRotation({
-    autoSpin: 0.12,
+    // Space toggles the idle spin; drag, wheel and inertia stay alive.
+    autoSpin: spinning ? 0.12 : 0,
     paused,
     hand,
     // The visual lift of the front row is sin(tilt) * radius, so the start
@@ -92,12 +100,12 @@ function Ring({
             radius={radius}
             width={PANEL_W}
             height={PANEL_H}
-            hidden={dashboard.id === selectedId}
+            hidden={dashboard.id === selectedId || dashboard.id === outgoingId}
             onSelect={onSelect}
             wasDrag={wasDrag}
             entranceDelay={i * 0.06}
             interactive={interactive}
-            reportPose={returnPose}
+            poses={poses}
           />
         ))}
       </group>
@@ -111,6 +119,11 @@ export function Carousel3D() {
     null,
   );
   const [closing, setClosing] = useState(false);
+  // Arrow-key switch: the previous hero flies back to its slot while the
+  // next one flies in — both in the air at once, so nothing pops.
+  const [outgoing, setOutgoing] = useState<{ id: string; start: HeroStart } | null>(
+    null,
+  );
   // Demo formations: the panels morph between arrangements (see layouts.ts).
   const [layout, setLayout] = useState<LayoutMode>('ring');
   // User-adjustable panel count; radius, fog and hero depth follow it.
@@ -134,8 +147,11 @@ export function Carousel3D() {
   // grabs a panel and hand depth drags it along the hero flight path.
   const handTracking = useHandTracking();
   const scrubRef = useRef<number | null>(null);
-  // Live pose of the hidden ring panel — the hero's fly-back target.
-  const returnPoseRef = useRef<HeroStart | null>(null);
+  // Live poses of the ring panels while a hero is open — fly-back and
+  // arrow-key switch targets.
+  const posesRef = useRef(new Map<string, HeroStart>());
+  // Space toggles the carousel's idle spin.
+  const [spinning, setSpinning] = useState(true);
 
   // Adaptive quality: integrated GPUs are fill-rate bound, so the render
   // resolution is the main lever. PerformanceMonitor samples the frame rate
@@ -166,12 +182,32 @@ export function Carousel3D() {
   };
 
   // Close the hero via Escape or the scroll wheel (click-away is handled by
-  // the canvas onPointerMissed below).
+  // the canvas onPointerMissed below); arrow keys step to the neighboring
+  // panel — the fresh HeroCard (keyed by id) flies in from its ring slot.
   useEffect(() => {
     if (!selected || closing) return;
     const close = () => setClosing(true);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
+      const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (!dir) return;
+      const i = dashboards.findIndex((d) => d.id === selected.id);
+      if (i < 0) return;
+      const next = dashboards[(i + dir + dashboards.length) % dashboards.length];
+      if (next.id === selected.id) return;
+      // Clone the live pose: the registry entry keeps mutating every frame.
+      const pose = posesRef.current.get(next.id);
+      setOutgoing(selected);
+      setSelected({
+        id: next.id,
+        start: pose
+          ? {
+              position: pose.position.clone(),
+              quaternion: pose.quaternion.clone(),
+              scale: pose.scale.clone(),
+            }
+          : selected.start,
+      });
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('wheel', close, { passive: true });
@@ -179,10 +215,24 @@ export function Carousel3D() {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('wheel', close);
     };
-  }, [selected, closing]);
+  }, [selected, closing, dashboards]);
+
+  // Space pauses/resumes the idle spin, hero open or not.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || e.repeat) return;
+      e.preventDefault();
+      setSpinning((s) => !s);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   const selectedDashboard = selected
     ? ALL_DASHBOARDS.find((d) => d.id === selected.id)
+    : undefined;
+  const outgoingDashboard = outgoing
+    ? ALL_DASHBOARDS.find((d) => d.id === outgoing.id)
     : undefined;
 
   // Pinch released: pulled past halfway the card stays open (its time-driven
@@ -226,12 +276,14 @@ export function Carousel3D() {
       <Ring
         onSelect={open}
         selectedId={selected?.id ?? null}
+        outgoingId={outgoing?.id ?? null}
         paused={() => selected !== null}
         hand={handTracking.handRef}
         layout={layout}
         dashboards={dashboards}
         radius={radius}
-        returnPose={returnPoseRef}
+        poses={posesRef}
+        spinning={spinning}
       />
 
       {handTracking.status === 'running' && (
@@ -244,15 +296,33 @@ export function Carousel3D() {
         />
       )}
 
+      {outgoing && outgoingDashboard && (
+        <HeroCard
+          // The replaced hero: mounts front-and-center and flies straight
+          // back to its ring slot while the next card comes in.
+          key={`out-${outgoing.id}`}
+          dashboard={outgoingDashboard}
+          start={outgoing.start}
+          targetPosition={heroTarget}
+          closing
+          startOpen
+          onClosed={() => setOutgoing(null)}
+          poses={posesRef}
+        />
+      )}
+
       {selected && selectedDashboard && (
         <HeroCard
+          // Keyed by id: an arrow-key switch remounts the hero, so the new
+          // card plays its full fly-in from the ring slot.
+          key={selected.id}
           dashboard={selectedDashboard}
           start={selected.start}
           targetPosition={heroTarget}
           closing={closing}
           onClosed={finishClose}
           scrub={scrubRef}
-          returnPose={returnPoseRef}
+          poses={posesRef}
         />
       )}
 

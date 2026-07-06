@@ -23,15 +23,18 @@ interface HeroCardProps {
   /** When true the card flies back and calls onClosed once it arrives. */
   closing: boolean;
   onClosed: () => void;
+  /** Mount already front-and-center (progress 1) instead of flying in —
+      used for the outgoing card of an arrow-key switch. */
+  startOpen?: boolean;
   /** While non-null the flight progress follows this value (0..1) instead of
       running on time — this is how a hand gesture drags the card along its
       flight path. Back to null, the time-driven open/close takes over from
       wherever the scrub left the card. */
   scrub?: RefObject<number | null>;
-  /** Live pose of the (hidden) ring panel, written every frame. Used instead
-      of `start` when set, so the fly-back lands on the slot's current
-      position even after a formation or count change. */
-  returnPose?: RefObject<HeroStart | null>;
+  /** Live poses of all ring panels, written every frame while a hero is
+      open. Used instead of `start` when available, so the fly-back lands on
+      the slot's current position even after a formation or count change. */
+  poses?: RefObject<Map<string, HeroStart>>;
 }
 
 const OPEN_TIME = 0.75; // seconds for the dramatic fly-in
@@ -91,14 +94,15 @@ export function HeroCard({
   targetPosition,
   closing,
   onClosed,
+  startOpen,
   scrub,
-  returnPose,
+  poses,
 }: HeroCardProps) {
   const pivotRef = useRef<Group>(null);
   const innerRef = useRef<Group>(null);
   const imgRef = useRef<Mesh>(null);
   const glassRef = useRef<Mesh>(null);
-  const progress = useRef(0);
+  const progress = useRef(startOpen ? 1 : 0);
   // The hero animates for as long as it is open: the intro replays during the
   // fly-in and the live elements keep moving afterwards.
   const openedAt = useRef<number | null>(null);
@@ -130,7 +134,7 @@ export function HeroCard({
     }
     // Ring-side end of the flight: the panel's live pose when available (the
     // slot may have moved since the click), the click-time capture otherwise.
-    const from = returnPose?.current ?? start;
+    const from = poses?.current.get(dashboard.id) ?? start;
     const t = easeInOutCubic(progress.current);
     // Flourish envelope: 0 at both ends, 1 at mid-flight — every extra move
     // (arc, yaw) is scaled by it, so start and landing poses stay exact.

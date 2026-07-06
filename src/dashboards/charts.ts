@@ -297,6 +297,108 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
   });
 }
 
+export interface WealthSplitCfg {
+  label: string;
+  value: number;
+  fmt: (v: number) => string;
+  /** Caption above the population bar / below the wealth bar. */
+  axisTop: string;
+  axisBottom: string;
+  /** Population share vs wealth share per group, both in % of the total. */
+  groups: { name: string; pop: number; wealth: number; color: string }[];
+  source: string;
+}
+
+/**
+ * Inequality split: one 100% bar for people, one for wealth, with a band
+ * connecting each group's share of both — a thin populace sliver ballooning
+ * into half the wealth bar is the whole story at a glance.
+ */
+export function wealthSplit(f: Frame, cfg: WealthSplitCfg): void {
+  const { ctx, u, t, w, h } = f;
+  drawSurface(f);
+  const top = drawHeader(f, cfg.label, cfg.value, cfg.fmt, null);
+  const pad = 36 * u;
+  const x0 = pad;
+  const x1 = w - pad;
+  const W = x1 - x0;
+  const bh = 26 * u;
+  const yPop = top + 46 * u;
+  const yWealth = yPop + 170 * u;
+  const gap = 1.5 * u;
+
+  ctx.font = `600 ${13 * u}px ${FONT}`;
+  ctx.fillStyle = MUTED;
+  ctx.fillText(cfg.axisTop.toUpperCase(), x0, yPop - 12 * u);
+  ctx.fillText(cfg.axisBottom.toUpperCase(), x0, yWealth + bh + 26 * u);
+
+  let px = x0;
+  let wx = x0;
+  cfg.groups.forEach((g, i) => {
+    const gp = stagger(t, i, 0.15);
+    const pw = (W * g.pop) / 100;
+    const ww = (W * g.wealth) / 100;
+    ctx.globalAlpha = Math.max(0, gp);
+
+    // Connecting band: the group's population share flowing into its
+    // wealth share.
+    ctx.fillStyle = g.color;
+    ctx.globalAlpha = Math.max(0, gp) * 0.22;
+    ctx.beginPath();
+    ctx.moveTo(px + gap, yPop + bh);
+    ctx.lineTo(px + pw - gap, yPop + bh);
+    ctx.lineTo(wx + ww - gap, yWealth);
+    ctx.lineTo(wx + gap, yWealth);
+    ctx.closePath();
+    ctx.fill();
+
+    // The two bar segments.
+    ctx.globalAlpha = Math.max(0, gp);
+    roundRect(ctx, px + gap, yPop, Math.max(pw - 2 * gap, 2 * u), bh, 3 * u);
+    ctx.fill();
+    roundRect(ctx, wx + gap, yWealth, Math.max(ww - 2 * gap, 2 * u), bh, 3 * u);
+    ctx.fill();
+
+    // Percent inside every segment wide enough to hold it.
+    ctx.fillStyle = INK;
+    ctx.font = `600 ${12 * u}px ${FONT}`;
+    ctx.textAlign = 'center';
+    if (pw > 44 * u) ctx.fillText(`${g.pop} %`, px + pw / 2, yPop + bh / 2 + 4 * u);
+    if (ww > 44 * u) ctx.fillText(`${g.wealth} %`, wx + ww / 2, yWealth + bh / 2 + 4 * u);
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+
+    px += pw;
+    wx += ww;
+  });
+
+  // Legend: group name left, its wealth share right.
+  const ly0 = yWealth + bh + 62 * u;
+  const rowH = 30 * u;
+  cfg.groups.forEach((g, i) => {
+    const gp = stagger(t, i + 4, 0.08);
+    const y = ly0 + rowH * i;
+    ctx.globalAlpha = Math.max(0, gp);
+    ctx.fillStyle = g.color;
+    ctx.beginPath();
+    ctx.arc(x0 + 5 * u, y - 5 * u, 5 * u, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = INK_SECONDARY;
+    ctx.font = `500 ${16 * u}px ${FONT}`;
+    ctx.fillText(g.name, x0 + 18 * u, y);
+    ctx.fillStyle = INK;
+    ctx.font = `600 ${16 * u}px ${FONT}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${g.wealth} %`, x1, y);
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+  });
+
+  ctx.fillStyle = MUTED;
+  ctx.font = `400 ${13 * u}px ${FONT}`;
+  ctx.fillText(cfg.source, pad, h - 22 * u);
+}
+
 export interface TimelineCfg {
   label: string;
   value: number;
@@ -794,6 +896,9 @@ export interface ChoroplethCfg {
   /** Value per ISO3 country; countries without data stay neutral. */
   valueByIso?: Record<string, number>;
   world?: { id: string; rings: number[][][] }[];
+  /** Optional lon/lat window for a regional map (e.g. Europe); the drawing
+      is clipped to the map area, countries outside simply fall off. */
+  bounds?: { lonMin: number; lonMax: number; latMin: number; latMax: number };
   rows: { name: string; v: number }[];
   rowFmt: (v: number) => string;
   source: string;
@@ -811,16 +916,23 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
 
   const mx0 = pad;
   const mw = w - 2 * pad;
-  const mh = mw / 2;
+  const b = cfg.bounds ?? { lonMin: -180, lonMax: 180, latMin: -60, latMax: 85 };
+  // Height follows the window's aspect, capped so regional maps (taller
+  // than they are wide in lon/lat) still leave room for the row list.
+  const mh = Math.min((mw * (b.latMax - b.latMin)) / (b.lonMax - b.lonMin), mw * 0.62);
   const my0 = top + 4 * u;
-  const px = (lon: number) => mx0 + ((lon + 180) / 360) * mw;
-  const py = (lat: number) => my0 + ((85 - Math.min(85, Math.max(-60, lat))) / 145) * mh;
+  const px = (lon: number) => mx0 + ((lon - b.lonMin) / (b.lonMax - b.lonMin)) * mw;
+  const py = (lat: number) => my0 + ((b.latMax - lat) / (b.latMax - b.latMin)) * mh;
 
-  const values = Object.values(cfg.valueByIso ?? {}).toSorted((a, b) => a - b);
+  const values = Object.values(cfg.valueByIso ?? {}).toSorted((a, b2) => a - b2);
   const ref = values.length ? values[Math.floor(values.length * 0.95)] : 1;
   const p = easeOut(t / 1.1);
 
   if (cfg.world) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(mx0, my0, mw, mh);
+    ctx.clip();
     for (const country of cfg.world) {
       const v = cfg.valueByIso?.[country.id];
       ctx.fillStyle =
@@ -837,6 +949,7 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
         ctx.fill();
       }
     }
+    ctx.restore();
   }
 
   const rows = cfg.rows;

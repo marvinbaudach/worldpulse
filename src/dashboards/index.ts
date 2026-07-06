@@ -8,11 +8,13 @@ import {
   nukeMap,
   timelineChart,
   treemap,
+  wealthSplit,
 } from './charts';
 import type { Frame } from './draw';
 import { SERIES } from './theme';
 import { live, type TrendSeries } from '../data/store';
 import {
+  AI_JOBS_COMPARE,
   CLIMATE_PANEL,
   CONFLICT_PANEL,
   DEBT_TREND_FALLBACK,
@@ -130,6 +132,15 @@ const CPI_INVERTED: Record<string, number> = Object.fromEntries(
     SSD: 8,
   }).map(([iso, score]) => [iso, 90 - score]),
 );
+
+// General government gross debt in % of GDP, EU members only (IMF WEO
+// 2024/25, rounded) — non-EU countries stay neutral on the Europe map.
+const EU_DEBT: Record<string, number> = {
+  GRC: 148, ITA: 137, FRA: 113, BEL: 105, ESP: 102, PRT: 94, AUT: 82,
+  FIN: 82, HUN: 73, CYP: 70, SVN: 67, DEU: 63, HRV: 60, SVK: 59,
+  POL: 55, ROU: 55, MLT: 47, LVA: 45, NLD: 45, CZE: 44, IRL: 41,
+  LTU: 38, SWE: 33, DNK: 29, LUX: 26, BGR: 24, EST: 23,
+};
 
 const POOL: Dashboard[] = [
   {
@@ -375,12 +386,36 @@ const POOL: Dashboard[] = [
           { name: 'Italien', v: 137 },
           { name: 'USA', v: 123 },
           { name: 'Frankreich', v: 113 },
-          { name: 'Kanada', v: 107 },
+          { name: 'Großbritannien', v: 101 },
+          { name: 'China', v: 88 },
+          { name: 'Deutschland', v: 63 },
+          { name: 'Schweiz', v: 38 },
+          { name: 'Russland', v: 20 },
+        ],
+      }),
+  },
+  {
+    id: 'eu-debt-map',
+    title: 'Schuldenlast in der EU',
+    draw: (f) =>
+      choroplethMap(f, {
+        // Europe window of the world map; the red ramp marks the most
+        // indebted EU members, the top-5 list calls them out below.
+        label: 'Staatsschulden / BIP · EU',
+        value: 82,
+        fmt: (v) => `Ø ${v.toFixed(0)}%`,
+        valueByIso: EU_DEBT,
+        world: live.worldMap,
+        bounds: { lonMin: -12, lonMax: 35, latMin: 34, latMax: 71 },
+        rows: [
+          { name: 'Griechenland', v: 148 },
+          { name: 'Italien', v: 137 },
+          { name: 'Frankreich', v: 113 },
           { name: 'Belgien', v: 105 },
           { name: 'Spanien', v: 102 },
-          { name: 'Großbritannien', v: 101 },
-          { name: 'Schweiz', v: 38 },
         ],
+        rowFmt: (v) => `${v.toFixed(0)}%`,
+        source: 'IWF WEO 2024/25 · Bruttostaatsschulden',
       }),
   },
   {
@@ -430,6 +465,27 @@ const POOL: Dashboard[] = [
       }),
   },
   trendCard('m2-history', 'US-Geldmenge seit 1900', 'US-Geldmenge M2 · seit 1900', M2_PANEL, yellow, (v) => `$${(v / 1e12).toFixed(1)}T`, 97),
+  {
+    id: 'ai-jobs',
+    title: 'KI und Berufseinstieg · USA',
+    draw: (f) =>
+      lineChart(f, {
+        // Since 2023 the recent-graduate rate decouples from the overall
+        // one — the entry-level rungs AI automates first.
+        label: 'Arbeitslos · 🇺🇸 Absolventen vs. Gesamt',
+        value: AI_JOBS_COMPARE.gradLatest,
+        unit: '',
+        fmt: (v) => `${v.toFixed(1)}%`,
+        delta: null,
+        seed: 157,
+        series: [
+          { name: 'Absolventen', color: magenta, data: AI_JOBS_COMPARE.rows[0].data },
+          { name: 'Gesamt', color: blue, data: AI_JOBS_COMPARE.rows[1].data },
+        ],
+        ticks: AI_JOBS_COMPARE.ticks,
+        xLabels: ['2015', '2018', '2022', 'heute'],
+      }),
+  },
   trendCard('de-insolvenzen', 'Firmeninsolvenzen Deutschland', 'Firmeninsolvenzen · 🇩🇪 · Destatis', DE_INSOLVENCY_PANEL, red, (v) => `${(v / 1000).toFixed(1)}k`, 137),
   {
     id: 'de-industry',
@@ -576,22 +632,21 @@ const POOL: Dashboard[] = [
     id: 'wealth',
     title: 'Globale Vermögensverteilung',
     draw: (f) =>
-      hBarChart(f, {
-        // UBS Global Wealth Report 2024 — Anteil am weltweiten Nettovermögen.
-        // Die ärmere Hälfte der Menschheit hält zusammen rund 1 Prozent.
-        label: 'Vermögensanteile · UBS',
+      wealthSplit(f, {
+        // UBS Global Wealth Report 2024 — share of global net wealth per
+        // population group. The poorer half of humanity holds ~1 percent.
+        label: 'Wem gehört das Vermögen?',
         value: 454e12,
         fmt: (v) => `$${Math.round(v / 1e12)}T`,
-        rowFmt: (v) => `${Math.round(v)}%`,
-        delta: null,
-        color: yellow,
-        unit: '',
-        rows: [
-          { name: 'Reichstes 1 %', v: 46 },
-          { name: 'Nächste 9 %', v: 39 },
-          { name: 'Mittlere 40 %', v: 14 },
-          { name: 'Ärmere Hälfte (50 %)', v: 1 },
+        axisTop: 'Bevölkerung',
+        axisBottom: 'Vermögen',
+        groups: [
+          { name: 'Reichstes 1 %', pop: 1, wealth: 46, color: red },
+          { name: 'Nächste 9 %', pop: 9, wealth: 39, color: yellow },
+          { name: 'Mittlere 40 %', pop: 40, wealth: 14, color: blue },
+          { name: 'Ärmere Hälfte', pop: 50, wealth: 1, color: '#4a5468' },
         ],
+        source: 'UBS Global Wealth Report 2024',
       }),
   },
   {
