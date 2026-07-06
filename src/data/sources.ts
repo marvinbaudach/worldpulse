@@ -720,6 +720,31 @@ export const M2_PANEL: TrendSeries = trend(
   ['1960', '1981', '2003', 'heute'],
 );
 
+// Broad money (M2) indexed to 2000 = 1x — USA (Fed H.6) vs euro area (ECB)
+// vs Switzerland (SNB). Indexing makes the growth comparable across
+// currencies; anchors are rounded from the central banks' series.
+const M2_COMPARE_ANCHORS: { name: string; pts: [number, number][] }[] = [
+  { name: 'USA', pts: [[1995, 0.73], [2000, 1.0], [2005, 1.37], [2010, 1.8], [2015, 2.51], [2020, 3.9], [2022, 4.43], [2024, 4.37]] },
+  { name: 'Eurozone', pts: [[1995, 0.75], [2000, 1.0], [2005, 1.35], [2010, 1.8], [2015, 2.05], [2020, 2.65], [2024, 2.85]] },
+  { name: 'Schweiz', pts: [[1995, 0.85], [2000, 1.0], [2005, 1.2], [2010, 1.75], [2015, 2.3], [2020, 2.55], [2024, 2.5]] },
+];
+
+/** All three money stocks normalized onto one shared scale. */
+export const M2_COMPARE = (() => {
+  const yearlySets = M2_COMPARE_ANCHORS.map((c) => yearly(c.pts));
+  const all = yearlySets.flat();
+  const s = niceScale(Math.min(...all), Math.max(...all), (v) => `${v.toFixed(1)}×`);
+  return {
+    rows: M2_COMPARE_ANCHORS.map((c, i) => ({
+      name: c.name,
+      data: norm(resample(yearlySets[i], 48), s.lo, s.hi),
+    })),
+    ticks: s.ticks,
+    /** Latest US multiple, for the headline. */
+    usLatest: 4.4,
+  };
+})();
+
 // People online worldwide (ITU).
 export const INTERNET_PANEL: TrendSeries = trend(
   [
@@ -743,14 +768,17 @@ export const NUKE_TESTS_PANEL: TrendSeries = trend(
   64,
 );
 
-// Adult obesity share worldwide, % (WHO / NCD-RisC).
+// Adult obesity share worldwide, % (WHO / NCD-RisC, series starts 1975).
+// Pre-1975 points are rough back-extrapolations — no global surveys exist
+// that far back, only sparse national data suggesting a low, slow rise.
 export const OBESITY_PANEL: TrendSeries = trend(
   [
+    [1950, 2.5], [1960, 3.1], [1970, 4.1],
     [1975, 4.7], [1985, 6.4], [1995, 8.5], [2005, 10.3],
     [2010, 11.7], [2016, 13.1], [2022, 16],
   ],
   (v) => `${v.toFixed(0)}%`,
-  ['1975', '1991', '2008', 'heute'],
+  ['1950', '1975', '2000', 'heute'],
 );
 
 // Births per woman by continent — UN WPP 2024 from 1950 on, pre-1950 from

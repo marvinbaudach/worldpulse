@@ -6,6 +6,7 @@ import {
   hBarChart,
   lineChart,
   nukeMap,
+  timelineChart,
   treemap,
   weatherForecast,
 } from './charts';
@@ -20,7 +21,7 @@ import {
   CONTINENT_FERTILITY,
   INTERNET_PANEL,
   LIFE_PANEL,
-  M2_PANEL,
+  M2_COMPARE,
   NUKE_TESTS_PANEL,
   OBESITY_PANEL,
   OVERDOSE_PANEL,
@@ -99,6 +100,32 @@ const NUKE_TOTAL = NUKE_STATES.reduce((sum, s) => sum + s.count, 0);
  * store; until then it falls back to the seeded demo series. Each page load
  * shows a random selection (see DASHBOARDS below).
  */
+// Transparency International CPI 2024 scores (100 = clean), stored
+// inverted and shifted so the cleanest country (Denmark, 90) sits at the
+// neutral end of the red ramp and the most corrupt render darkest.
+const CPI_INVERTED: Record<string, number> = Object.fromEntries(
+  Object.entries({
+    DNK: 90, FIN: 88, NZL: 83, SGP: 84, NOR: 81, CHE: 81, SWE: 80,
+    NLD: 78, AUS: 77, IRL: 77, ISL: 77, EST: 76, URY: 76, DEU: 75,
+    CAN: 75, GBR: 71, JPN: 71, BEL: 69, ARE: 68, FRA: 67, AUT: 67,
+    USA: 65, ISR: 64, KOR: 64, CHL: 63, LTU: 63, ESP: 56, ITA: 54,
+    POL: 53, GEO: 53, MYS: 50, CRI: 58, RWA: 57, BWA: 57, SAU: 59,
+    QAT: 59, CZE: 56, SVK: 49, GRC: 49, JOR: 49, NAM: 49, HRV: 47,
+    ROU: 46, KWT: 46, CIV: 45, SEN: 45, JAM: 45, CHN: 43, BGR: 43,
+    GHA: 42, ZAF: 41, TZA: 41, HUN: 41, CUB: 41, KAZ: 40, VNM: 40,
+    COL: 39, ZMB: 39, TUN: 39, IND: 38, ARG: 37, IDN: 37, MAR: 37,
+    ETH: 37, DOM: 36, SRB: 35, UKR: 35, TUR: 34, THA: 34, DZA: 34,
+    NPL: 34, BRA: 34, PHL: 33, PAN: 33, MNG: 33, BLR: 33, KEN: 32,
+    UZB: 32, LKA: 32, ECU: 32, AGO: 32, PER: 31, EGY: 30, SLV: 30,
+    BOL: 28, PAK: 27, IRQ: 26, NGA: 26, UGA: 26, CMR: 26, MEX: 26,
+    MDG: 26, KGZ: 25, LAO: 25, MOZ: 25, GTM: 25, PRY: 24, BGD: 23,
+    IRN: 23, RUS: 22, AZE: 22, LBN: 22, HND: 22, KHM: 21, ZWE: 21,
+    COD: 20, TJK: 19, TKM: 17, AFG: 17, HTI: 16, MMR: 16, SDN: 15,
+    PRK: 15, NIC: 14, YEM: 13, LBY: 13, SYR: 12, VEN: 10, SOM: 9,
+    SSD: 8,
+  }).map(([iso, score]) => [iso, 90 - score]),
+);
+
 const POOL: Dashboard[] = [
   {
     id: 'military',
@@ -369,7 +396,7 @@ const POOL: Dashboard[] = [
           { name: 'Belgien', v: 105 },
           { name: 'Spanien', v: 102 },
           { name: 'Großbritannien', v: 101 },
-          { name: 'Portugal', v: 94 },
+          { name: 'Schweiz', v: 38 },
         ],
       }),
   },
@@ -398,7 +425,27 @@ const POOL: Dashboard[] = [
       }),
   },
   trendCard('life-exp', 'Globale Lebenserwartung', 'Lebenserwartung · seit 1900', LIFE_PANEL, green, (v) => `${v.toFixed(1)}y`, 89),
-  trendCard('m2', 'US-Geldmenge · M2', 'US-Geldmenge M2', M2_PANEL, yellow, (v) => `$${(v / 1e12).toFixed(1)}T`, 97),
+  {
+    id: 'm2',
+    title: 'Geldmenge · USA vs. Schweiz',
+    draw: (f) =>
+      lineChart(f, {
+        // M2 growth indexed to 2000 = 1x — comparable across currencies.
+        label: 'Geldmenge M2 · 2000 = 1×',
+        value: M2_COMPARE.usLatest,
+        unit: '',
+        fmt: (v) => `${v.toFixed(1)}×`,
+        delta: null,
+        seed: 97,
+        series: [
+          { name: 'USA', color: yellow, data: M2_COMPARE.rows[0].data },
+          { name: 'Eurozone', color: violet, data: M2_COMPARE.rows[1].data },
+          { name: 'Schweiz', color: red, data: M2_COMPARE.rows[2].data },
+        ],
+        ticks: M2_COMPARE.ticks,
+        xLabels: ['1995', '2005', '2014', 'heute'],
+      }),
+  },
   trendCard('internet', 'Menschen online weltweit', 'Internetnutzer · ITU', INTERNET_PANEL, blue, (v) => `${(v / 1e9).toFixed(1)}B`, 103),
   trendCard('nuke-tests', 'Atomtests pro Jahr', 'Atomtests · seit 1945', NUKE_TESTS_PANEL, red, (v) => `${Math.round(v)}`, 107),
   trendCard('obesity', 'Adipositas weltweit', 'Adipositas-Quote', OBESITY_PANEL, magenta, (v) => `${v.toFixed(0)}%`, 109),
@@ -425,27 +472,6 @@ const POOL: Dashboard[] = [
       }),
   },
   trendCard('dollar', 'Kaufkraft des Dollars seit 1913', '1913er-Dollar · Restwert', DOLLAR_PANEL, yellow, (v) => `${(v * 100).toFixed(0)}¢`, 127),
-  {
-    id: 'pandemics',
-    title: 'Tödlichste Pandemien',
-    draw: (f) =>
-      hBarChart(f, {
-        // Midpoint estimates; death tolls this old are ranges, not counts.
-        label: 'Tödlichste Pandemien',
-        value: 300e6,
-        delta: null,
-        color: red,
-        unit: '',
-        rows: [
-          { name: 'Pocken · 20. Jh.', v: 300e6 },
-          { name: 'Schwarzer Tod', v: 100e6 },
-          { name: 'Spanische Grippe', v: 50e6 },
-          { name: 'HIV/AIDS', v: 42e6 },
-          { name: 'Justinianische Pest', v: 40e6 },
-          { name: 'COVID-19', v: 21e6 },
-        ],
-      }),
-  },
   {
     id: 'armies',
     title: 'Größte Armeen · aktive Soldaten',
@@ -536,6 +562,120 @@ const POOL: Dashboard[] = [
       }),
   },
   {
+    id: 'incarceration',
+    title: 'Gefängnisquote international',
+    draw: (f) =>
+      hBarChart(f, {
+        // World Prison Brief (2023–25 figures), prisoners per 100k
+        // population, shown as share of the population behind bars.
+        // Germany and Japan anchor the low end for contrast.
+        label: 'Inhaftierte · Anteil der Bevölkerung',
+        value: 11.5e6,
+        fmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
+        rowFmt: (v) => `${(v / 1000).toFixed(2)} %`,
+        delta: null,
+        color: violet,
+        unit: '',
+        rows: [
+          { name: 'El Salvador', v: 1086 },
+          { name: 'Kuba', v: 794 },
+          { name: 'Ruanda', v: 637 },
+          { name: 'USA', v: 531 },
+          { name: 'Türkei', v: 408 },
+          { name: 'Brasilien', v: 390 },
+          { name: 'Russland', v: 300 },
+          { name: 'Schweiz', v: 73 },
+          { name: 'Deutschland', v: 67 },
+          { name: 'Japan', v: 33 },
+        ],
+      }),
+  },
+  {
+    id: 'obesity-nations',
+    title: 'Adipositas international',
+    draw: (f) =>
+      hBarChart(f, {
+        // Adult obesity prevalence (BMI >= 30), WHO / NCD-RisC 2022
+        // estimates. Nauru tops the global list; Japan and Vietnam
+        // anchor the low end for contrast.
+        label: 'Adipositas · Anteil der Erwachsenen',
+        value: 8.9e8,
+        fmt: (v) => `${(v / 1e6).toFixed(0)} Mio`,
+        rowFmt: (v) => `${v.toFixed(0)} %`,
+        delta: null,
+        color: orange,
+        unit: '',
+        rows: [
+          { name: 'Nauru', v: 66 },
+          { name: 'Kuwait', v: 45 },
+          { name: 'USA', v: 42 },
+          { name: 'Ägypten', v: 39 },
+          { name: 'Türkei', v: 37 },
+          { name: 'Mexiko', v: 36 },
+          { name: 'Deutschland', v: 23 },
+          { name: 'China', v: 8 },
+          { name: 'Japan', v: 5 },
+          { name: 'Vietnam', v: 2 },
+        ],
+      }),
+  },
+  {
+    id: 'corruption',
+    title: 'Korruption weltweit',
+    draw: (f) =>
+      choroplethMap(f, {
+        // Transparency International CPI 2024, inverted (100 - score) so
+        // the most corrupt countries render darkest on the red ramp.
+        // The top-5 list below calls out the worst performers.
+        label: 'Korruption · dunkler = korrupter',
+        value: 57,
+        fmt: (v) => `Ø ${v.toFixed(0)}/100`,
+        valueByIso: CPI_INVERTED,
+        world: live.worldMap,
+        rows: [
+          { name: 'Südsudan', v: 92 },
+          { name: 'Somalia', v: 91 },
+          { name: 'Venezuela', v: 90 },
+          { name: 'Syrien', v: 88 },
+          { name: 'Libyen', v: 87 },
+          { name: 'Schweiz', v: 19 },
+        ],
+        rowFmt: (v) => `${v.toFixed(0)} /100`,
+        source: 'Transparency International CPI 2024 · invertiert',
+      }),
+  },
+  {
+    id: 'us-wars',
+    title: 'Kriege der USA · seit 1945',
+    draw: (f) =>
+      timelineChart(f, {
+        // US wars and interventions as catalogued by Daniele Ganser
+        // ("Imperium USA" / "Illegale Kriege"). Death tolls are midpoints
+        // of common estimates and heavily contested — treat as magnitudes.
+        label: 'US-Kriege · Tote seit 1945',
+        value: 6.86e6,
+        fmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
+        color: red,
+        yearStart: 1946,
+        yearEnd: 2026,
+        source: 'nach Daniele Ganser · Schätzwerte, teils umstritten',
+        events: [
+          { name: 'Korea', from: 1950, to: 1953, deaths: 3_000_000 },
+          { name: 'Iran · Putsch', from: 1953, deaths: 300 },
+          { name: 'Guatemala · Putsch', from: 1954, deaths: 200 },
+          { name: 'Kuba · Schweinebucht', from: 1961, deaths: 300 },
+          { name: 'Vietnam', from: 1964, to: 1975, deaths: 3_000_000 },
+          { name: 'Nicaragua · Contras', from: 1981, to: 1990, deaths: 30_000 },
+          { name: 'Golfkrieg', from: 1990, to: 1991, deaths: 100_000 },
+          { name: 'Serbien', from: 1999, deaths: 3_500 },
+          { name: 'Afghanistan', from: 2001, to: 2021, deaths: 176_000 },
+          { name: 'Irak', from: 2003, to: 2011, deaths: 500_000 },
+          { name: 'Libyen', from: 2011, deaths: 30_000 },
+          { name: 'Syrien', from: 2014, to: 2019, deaths: 20_000 },
+        ],
+      }),
+  },
+  {
     id: 'recent-wars',
     title: 'Tote der jüngsten Kriege',
     draw: (f) =>
@@ -613,14 +753,29 @@ function shuffled<T>(list: T[]): T[] {
 }
 
 /**
- * Each page load shuffles the whole pool once; the carousel then shows the
- * first `count` entries (user-adjustable), so raising the count only appends
- * panels without reshuffling the ones already on screen.
+ * Hand-picked headliners: the page always opens with these; the rest of the
+ * pool only appears when the user raises the count past DEFAULT_COUNT.
  */
-export const ALL_DASHBOARDS: Dashboard[] = shuffled(POOL);
+const FEATURED = new Set([
+  'us-wars', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
+  'us-debt', 'us-interest', 'm2', 'dollar', 'wealth', 'homicide-map',
+  'world-pop', 'climate', 'life-exp', 'conflict-deaths', 'refugees',
+  'military', 'energy-mix', 'fertility', 'recent-wars',
+]);
+
+/**
+ * Featured panels come first (shuffled among themselves each page load),
+ * the remaining pool shuffled after them; the carousel shows the first
+ * `count` entries, so raising the count only appends panels without
+ * reshuffling the ones already on screen.
+ */
+export const ALL_DASHBOARDS: Dashboard[] = [
+  ...shuffled(POOL.filter((d) => FEATURED.has(d.id))),
+  ...shuffled(POOL.filter((d) => !FEATURED.has(d.id))),
+];
 
 /** Panels shown by default; the count control moves between the bounds. */
-export const DEFAULT_COUNT = 9;
+export const DEFAULT_COUNT = 20;
 export const MIN_COUNT = 5;
 
 export interface DashboardTexture {
