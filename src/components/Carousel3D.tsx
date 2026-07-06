@@ -37,10 +37,11 @@ const PANEL_H = 3.0;
 const radiusFor = (count: number) => (PANEL_W * count) / (2 * Math.PI) + 0.6;
 const DEFAULT_RADIUS = radiusFor(ALL_DASHBOARDS.length);
 
-// Zoom bounds and per-keypress step for the +/- camera dolly.
+// Zoom bounds and hold-to-zoom rate (factor per second) for the +/- dolly:
+// tap for a small nudge, hold to glide all the way in or out.
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 2.5;
-const ZOOM_STEP = 1.12;
+const ZOOM_RATE = 2.0;
 
 // localStorage keys for the persisted theme filter and formation.
 const TAG_KEY = 'worldpulse-tag';
@@ -190,7 +191,7 @@ export function Carousel3D() {
   // dropped from the stack entirely while a hero is open (see EffectComposer),
   // so the offset itself can stay constant.
   const heroOpen = selected !== null;
-  const aberration = useMemo(() => new Vector2(0.0008, 0.0008), []);
+  const aberration = useMemo(() => new Vector2(0.0003, 0.0003), []);
 
   const open = (id: string, start: HeroStart) => {
     if (selected) return; // one hero at a time
@@ -264,17 +265,53 @@ export function Carousel3D() {
         else document.documentElement.requestFullscreen?.();
       } else if (k === 'h' && !isMobile) {
         handTracking.toggle();
-      } else if (e.key === '+' || e.key === '=') {
-        // Zoom only frames the ring; while a hero owns the screen the dolly
-        // would sail straight past the fixed card, so leave it be.
-        if (!heroOpen) setZoom((z) => Math.min(ZOOM_MAX, z * ZOOM_STEP));
-      } else if (e.key === '-' || e.key === '_') {
-        if (!heroOpen) setZoom((z) => Math.max(ZOOM_MIN, z / ZOOM_STEP));
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isMobile, handTracking.toggle, heroOpen]);
+  }, [isMobile, handTracking.toggle]);
+
+  // Hold +/- to zoom continuously: keydown latches a direction, keyup releases
+  // it, and a rAF loop dollies the ring by ZOOM_RATE per second while held —
+  // so a tap nudges and a held key glides. Zoom only frames the ring, so it
+  // idles while a hero owns the screen.
+  useEffect(() => {
+    const isIn = (e: KeyboardEvent) => e.key === '+' || e.key === '=';
+    const isOut = (e: KeyboardEvent) => e.key === '-' || e.key === '_';
+    let dir = 0;
+    let raf = 0;
+    let last = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (!dir || heroOpen) {
+        last = now;
+        return;
+      }
+      const dt = last ? (now - last) / 1000 : 0;
+      last = now;
+      const factor = Math.pow(ZOOM_RATE, dir * dt);
+      setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * factor)));
+    };
+    const onDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isIn(e)) dir = 1;
+      else if (isOut(e)) dir = -1;
+    };
+    const onUp = (e: KeyboardEvent) => {
+      if ((isIn(e) && dir === 1) || (isOut(e) && dir === -1)) {
+        dir = 0;
+        last = 0;
+      }
+    };
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('keydown', onDown);
+      window.removeEventListener('keyup', onUp);
+    };
+  }, [heroOpen]);
 
   const selectedDashboard = selected
     ? ALL_DASHBOARDS.find((d) => d.id === selected.id)

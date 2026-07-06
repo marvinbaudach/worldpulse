@@ -10,7 +10,7 @@ import {
   wealthSplit,
 } from './charts';
 import { SERIES } from './theme';
-import { CHINA_SURVEILLANCE, CPI_INVERTED, EU_DEBT_ABS, NUKE_STATES, NUKE_TOTAL } from './geo';
+import { CPI_INVERTED, EU_DEBT_ABS, NUKE_STATES, NUKE_TOTAL } from './geo';
 import type { Dashboard } from './types';
 import { live, type TrendSeries } from '../data/store';
 import {
@@ -42,7 +42,12 @@ import {
   PISA_DE,
   REFUGEE_PANEL,
   SWISS_POP_FALLBACK,
+  TEEN_MDE,
+  TEEN_RX_PANEL,
   TEEN_SADNESS,
+  TEEN_SCREEN_PANEL,
+  TEEN_SUICIDE,
+  YOUTH_SUICIDE,
   US_ALCOHOL_DEATHS_PANEL,
   US_HOMICIDE_PANEL,
   US_INTEREST_PANEL,
@@ -958,11 +963,11 @@ const POOL: Dashboard[] = [
   },
   {
     id: 'teen-depression',
-    title: 'Depression bei US-Teenagern',
+    title: 'Niedergeschlagenheit der Jugend seit 1999',
     draw: (f) =>
       lineChart(f, {
-        // CDC YRBS: persistent sadness/hopelessness. The gap opens after
-        // ~2012 as smartphones saturate teen life; girls climb far steeper.
+        // CDC YRBS: persistent sadness/hopelessness back to 1999. Flat through
+        // the pre-smartphone years, then girls climb steeply after ~2012.
         label: 'Anhaltende Niedergeschlagenheit · 🇺🇸 · 14–18 J.',
         value: TEEN_SADNESS.girlsLatest,
         unit: '',
@@ -970,13 +975,73 @@ const POOL: Dashboard[] = [
         delta: null,
         seed: 181,
         series: [
-          { name: 'Mädchen', color: magenta, data: TEEN_SADNESS.rows[0].data },
-          { name: 'Jungen', color: blue, data: TEEN_SADNESS.rows[1].data },
+          { name: 'Mädchen', color: magenta, data: TEEN_SADNESS.girls },
+          { name: 'Jungen', color: blue, data: TEEN_SADNESS.boys },
         ],
         ticks: TEEN_SADNESS.ticks,
-        xLabels: ['2011', '2015', '2019', '2023'],
+        xLabels: ['1999', '2007', '2015', '2023'],
+        shade: { mask: TEEN_SADNESS.socialMask, label: '📱 Smartphone-Ära' },
       }),
   },
+  {
+    id: 'teen-mde',
+    title: 'Depression bei US-Jugendlichen',
+    draw: (f) =>
+      lineChart(f, {
+        // SAMHSA NSDUH: past-year major depressive episode, ages 12–17. Flat
+        // near 8% through 2011, then climbing steeply — tracks the smartphone era.
+        label: 'Depressive Episode im Jahr · 🇺🇸 · 12–17 J.',
+        value: TEEN_MDE.latest,
+        unit: '',
+        fmt: (v) => `${v.toFixed(0)}%`,
+        delta: null,
+        seed: 187,
+        series: [{ name: 'Betroffene', color: magenta, data: TEEN_MDE.data }],
+        ticks: TEEN_MDE.ticks,
+        xLabels: ['2004', '2010', '2016', '2022'],
+        shade: { mask: TEEN_MDE.mask, label: '📱 Smartphone-Ära' },
+      }),
+  },
+  {
+    id: 'youth-suicide',
+    title: 'Suizidrate junger Teenager USA',
+    draw: (f) =>
+      lineChart(f, {
+        // CDC WONDER: suicide rate ages 10–14 per 100k. Low and flat through
+        // the pre-smartphone years, then roughly tripling after ~2010.
+        label: 'Suizidrate · 🇺🇸 · 10–14 J. · je 100.000',
+        value: YOUTH_SUICIDE.latest,
+        unit: '',
+        fmt: (v) => v.toFixed(1),
+        delta: null,
+        seed: 191,
+        series: [{ name: 'Suizidrate', color: red, data: YOUTH_SUICIDE.data }],
+        ticks: YOUTH_SUICIDE.ticks,
+        xLabels: ['1999', '2007', '2015', '2021'],
+        shade: { mask: YOUTH_SUICIDE.mask, label: '📱 Smartphone-Ära' },
+      }),
+  },
+  {
+    id: 'teen-suicide',
+    title: 'Suizidrate Jugendlicher USA',
+    draw: (f) =>
+      lineChart(f, {
+        // CDC WONDER: suicide rate ages 15–19 per 100k. Low around 2007,
+        // then rising ~60% to a 2017–18 peak and holding high.
+        label: 'Suizidrate · 🇺🇸 · 15–19 J. · je 100.000',
+        value: TEEN_SUICIDE.latest,
+        unit: '',
+        fmt: (v) => v.toFixed(1),
+        delta: null,
+        seed: 197,
+        series: [{ name: 'Suizidrate', color: red, data: TEEN_SUICIDE.data }],
+        ticks: TEEN_SUICIDE.ticks,
+        xLabels: ['1999', '2007', '2015', '2021'],
+        shade: { mask: TEEN_SUICIDE.mask, label: '📱 Smartphone-Ära' },
+      }),
+  },
+  trendCard('teen-screen', 'Bildschirmzeit US-Teenager', 'Unterhaltungsmedien · 🇺🇸 · 13–18 J. · Std./Tag', TEEN_SCREEN_PANEL, violet, (v) => `${v.toFixed(1)} h`, 193),
+  trendCard('teen-antidepressants', 'Antidepressiva bei US-Jugendlichen', 'Verordnungen · 🇺🇸 · 12–17 J. · Index 2016 = 100', TEEN_RX_PANEL, aqua, (v) => `${Math.round(v)}`, 199),
   {
     id: 'obesity-fastfood',
     title: 'Adipositas USA & die Fast-Food-Ära',
@@ -1122,30 +1187,6 @@ const POOL: Dashboard[] = [
         ],
         ticks: CASHLESS_COMPARE.ticks,
         xLabels: ['2016', '2019', '2022', 'heute'],
-      }),
-  },
-  {
-    id: 'china-surveillance',
-    title: 'Chinas Überwachungstechnik weltweit',
-    draw: (f) =>
-      choroplethMap(f, {
-        // Carnegie AIGS Index + IPVM/press on Huawei/Hikvision/Dahua exports.
-        // Darker = state "safe city" system; light = Chinese cameras common.
-        label: 'Chinesische Überwachungstechnik · dunkler = Staatssystem',
-        value: 80,
-        fmt: (v) => `${Math.round(v)} Länder`,
-        valueByIso: CHINA_SURVEILLANCE,
-        world: live.worldMap,
-        rows: [
-          { name: 'China · Hersteller', v: 3 },
-          { name: 'Ecuador · ECU-911', v: 2 },
-          { name: 'Serbien · Belgrad', v: 2 },
-          { name: 'Paraguay · Asunción', v: 2 },
-          { name: 'Deutschland · Hikvision', v: 1 },
-          { name: 'Schweiz · Hikvision', v: 1 },
-        ],
-        rowFmt: (v) => (v >= 3 ? 'Hersteller' : v >= 2 ? 'Safe-City' : 'Kameras'),
-        source: 'Carnegie AIGS-Index / IPVM · dokumentiert, nicht abschließend',
       }),
   },
   {
@@ -1483,6 +1524,11 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'recent-wars': ['krieg'],
   'pisa-de': ['deutschland', 'soziales'],
   'teen-depression': ['gesundheit', 'soziales'],
+  'teen-mde': ['gesundheit', 'soziales'],
+  'youth-suicide': ['gesundheit', 'soziales'],
+  'teen-suicide': ['gesundheit', 'soziales'],
+  'teen-screen': ['gesundheit', 'soziales'],
+  'teen-antidepressants': ['gesundheit', 'soziales'],
   'obesity-fastfood': ['gesundheit'],
   surveillance: ['welt', 'soziales', 'schweiz'],
   'cameras-world': ['welt', 'soziales'],
@@ -1492,7 +1538,6 @@ const TAGS_BY_ID: Record<string, string[]> = {
   cbdc: ['geld', 'welt'],
   cashless: ['geld', 'welt', 'deutschland'],
   '5g-stations': ['welt', 'deutschland', 'schweiz'],
-  'china-surveillance': ['welt', 'soziales', 'deutschland', 'schweiz'],
   inflation: ['geld', 'welt', 'deutschland', 'schweiz'],
   'digital-id': ['welt', 'soziales', 'deutschland', 'schweiz'],
   'alcohol-nations': ['gesundheit', 'welt', 'deutschland', 'schweiz'],
@@ -1517,9 +1562,10 @@ const FEATURED = new Set([
   'world-pop', 'climate', 'de-insolvenzen', 'conflict-deaths', 'refugees',
   'military', 'gdp-growth', 'de-industry', 'recent-wars',
   'youth-unemployment', 'unemployment', 'poverty',
-  'pisa-de', 'teen-depression', 'obesity-fastfood', 'surveillance',
+  'pisa-de', 'teen-depression', 'teen-mde', 'youth-suicide', 'teen-suicide',
+  'teen-screen', 'teen-antidepressants', 'obesity-fastfood', 'surveillance',
   'cameras-world', 'internet-shutdowns', 'gov-data-requests',
-  'sdg-progress', 'cbdc', 'cashless', '5g-stations', 'china-surveillance',
+  'sdg-progress', 'cbdc', 'cashless', '5g-stations',
   'un-resolutions', 'un-vetoes', 'de-family', 'single-households', 'inflation',
   'digital-id', 'alcohol-nations', 'alcohol-deaths', 'c40-cities', 'c40-reach',
 ]);

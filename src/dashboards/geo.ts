@@ -60,20 +60,3 @@ export const EU_DEBT_ABS: Record<string, number> = {
   LTU: 30 * BN, BGR: 25 * BN, CYP: 24 * BN, LUX: 22 * BN,
   LVA: 20 * BN, MLT: 11 * BN, EST: 9 * BN,
 };
-
-// Spread of Chinese surveillance technology (Carnegie AIGS Index; IPVM and
-// press reporting on Huawei/Hikvision/Dahua/ZTE deployments). Documented, not
-// exhaustive. Two tiers so the ramp separates state "safe city" / AI
-// surveillance systems from countries where Chinese cameras are merely
-// widespread — 3 = manufacturer origin, 2 = state safe-city system,
-// 1 = Chinese cameras common.
-export const CHINA_SURVEILLANCE: Record<string, number> = {
-  CHN: 3,
-  // State "safe city" / AI-surveillance deals with Chinese vendors.
-  ECU: 2, VEN: 2, BOL: 2, PRY: 2, SRB: 2, ZWE: 2, KEN: 2, UGA: 2,
-  AGO: 2, ETH: 2, ZMB: 2, PAK: 2, KAZ: 2, KGZ: 2, LAO: 2, KHM: 2,
-  ARE: 2, SAU: 2, AZE: 2, MNG: 2, EGY: 2, TZA: 2, NGA: 2, ZAF: 2,
-  // Chinese cameras (Hikvision/Dahua) widespread, incl. public space.
-  DEU: 1, CHE: 1, GBR: 1, FRA: 1, ITA: 1, ESP: 1, USA: 1, BRA: 1,
-  IND: 1, MEX: 1, POL: 1, NLD: 1, BEL: 1, AUT: 1, SWE: 1, AUS: 1,
-};

@@ -538,17 +538,119 @@ export const PISA_DE = compareSeries(
   { deuLatest: 475 },
 );
 
+// Interpolate sparse year->value anchors onto n even samples and flag which
+// samples fall in a given era, so a single-series line can carry a shaded
+// band (like the fast-food panel). Baseline forced to 0 so flat early years
+// read as genuinely low, not scaled up to fill the panel.
+function maskedTrend(anchors: [number, number][], fmt: (v: number) => string, maskFrom: number) {
+  const [y0, y1] = [anchors[0][0], anchors[anchors.length - 1][0]];
+  const n = 60;
+  const raw: number[] = [];
+  const years: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const y = y0 + ((y1 - y0) * i) / (n - 1);
+    years.push(y);
+    raw.push(interpAt(anchors, y));
+  }
+  const s = niceScale(0, Math.max(...raw), fmt);
+  return {
+    data: norm(raw, s.lo, s.hi),
+    ticks: s.ticks,
+    latest: anchors[anchors.length - 1][1],
+    mask: years.map((y) => y >= maskFrom),
+  };
+}
+
 // US high-schoolers reporting persistent feelings of sadness or hopelessness,
-// % (CDC Youth Risk Behavior Survey). The gap opens after ~2012 as
-// smartphones and social media saturate teen life; girls climb far steeper.
-export const TEEN_SADNESS = compareSeries(
+// % (CDC Youth Risk Behavior Survey), now reaching back to 1999. The rate is
+// roughly flat through the pre-smartphone years, then girls climb steeply
+// after ~2012 as smartphones and social media saturate teen life. Both series
+// share one scale; the shaded band marks the smartphone era.
+const TEEN_SAD_GIRLS: [number, number][] = [
+  [1999, 35], [2001, 34], [2003, 36], [2005, 37], [2007, 36], [2009, 33],
+  [2011, 36], [2013, 36], [2015, 40], [2017, 41], [2019, 47], [2021, 57], [2023, 53],
+];
+const TEEN_SAD_BOYS: [number, number][] = [
+  [1999, 22], [2001, 22], [2003, 22], [2005, 21], [2007, 21], [2009, 19],
+  [2011, 21], [2013, 21], [2015, 20], [2017, 21], [2019, 27], [2021, 29], [2023, 28],
+];
+
+function teenSadnessPanel() {
+  const y0 = 1999;
+  const y1 = 2023;
+  const n = 60;
+  const years: number[] = [];
+  const girlsRaw: number[] = [];
+  const boysRaw: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const y = y0 + ((y1 - y0) * i) / (n - 1);
+    years.push(y);
+    girlsRaw.push(interpAt(TEEN_SAD_GIRLS, y));
+    boysRaw.push(interpAt(TEEN_SAD_BOYS, y));
+  }
+  const s = niceScale(0, Math.max(...girlsRaw), (v) => `${v.toFixed(0)}%`);
+  return {
+    girls: norm(girlsRaw, s.lo, s.hi),
+    boys: norm(boysRaw, s.lo, s.hi),
+    ticks: s.ticks,
+    girlsLatest: 53,
+    socialMask: years.map((y) => y >= 2012),
+  };
+}
+export const TEEN_SADNESS = teenSadnessPanel();
+
+// US suicide rate, ages 10–14, per 100k (CDC WONDER). A low, flat baseline
+// through the pre-smartphone years, then roughly tripling after ~2010 —
+// young girls' rate rose fastest. A correlation, not proof of cause.
+export const YOUTH_SUICIDE = maskedTrend(
   [
-    { name: 'Mädchen', pts: [[2011, 36], [2013, 36], [2015, 40], [2017, 41], [2019, 47], [2021, 57], [2023, 53]] },
-    { name: 'Jungen', pts: [[2011, 21], [2013, 21], [2015, 21], [2017, 21], [2019, 27], [2021, 29], [2023, 28]] },
+    [1999, 0.9], [2003, 0.7], [2007, 0.9], [2010, 1.1], [2013, 1.3],
+    [2015, 1.5], [2017, 2.5], [2018, 2.9], [2020, 2.6], [2021, 2.3],
+  ],
+  (v) => v.toFixed(1),
+  2012,
+);
+
+// US adolescents (12–17) with a past-year major depressive episode, %
+// (SAMHSA NSDUH). Flat near 8% through 2011, then climbing steeply as
+// smartphones and social media take over teen life.
+export const TEEN_MDE = maskedTrend(
+  [
+    [2004, 9.0], [2007, 8.2], [2010, 8.0], [2011, 8.2], [2013, 10.7],
+    [2015, 12.5], [2017, 13.3], [2019, 15.7], [2021, 20.1], [2022, 19.5],
   ],
   (v) => `${v.toFixed(0)}%`,
-  /** Latest girls' rate, for the headline. */
-  { girlsLatest: 53 },
+  2012,
+);
+
+// US suicide rate, ages 15–19, per 100k (CDC WONDER). A low around 2007,
+// then rising ~60% to a 2017–18 peak and holding high. Broader teen band
+// alongside the 10–14 panel; shaded = smartphone era.
+export const TEEN_SUICIDE = maskedTrend(
+  [
+    [1999, 8.0], [2003, 7.3], [2007, 6.9], [2010, 7.5], [2013, 8.3],
+    [2015, 9.8], [2017, 11.4], [2018, 11.4], [2020, 10.5], [2021, 10.9],
+  ],
+  (v) => v.toFixed(1),
+  2012,
+);
+
+// Daily entertainment screen media among US teens (13–18), hours (Common
+// Sense Media Census). Up by roughly a third in six years — and this
+// excludes school and homework screen time.
+export const TEEN_SCREEN_PANEL: TrendSeries = trend(
+  [[2015, 6.7], [2019, 7.4], [2021, 8.6], [2023, 8.4]],
+  (v) => `${v.toFixed(1)} h`,
+  ['2015', '2019', '2021', '2023'],
+);
+
+// Monthly antidepressant dispensing to US adolescents (12–17), index
+// 2016 = 100 (Chua et al., Pediatrics; IQVIA). The climb steepened sharply
+// during the pandemic, fastest among teenage girls.
+export const TEEN_RX_PANEL: TrendSeries = trend(
+  [[2016, 100], [2018, 114], [2019, 121], [2020, 131], [2021, 155], [2022, 166]],
+  (v) => `${Math.round(v)}`,
+  ['2016', '2018', '2020', '2022'],
 );
 
 // US adult obesity share, % (NHANES). The shaded band marks the fast-food
