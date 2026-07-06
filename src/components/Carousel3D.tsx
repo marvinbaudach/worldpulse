@@ -294,6 +294,7 @@ export function Carousel3D() {
     </Canvas>
 
     <LayoutControls
+      hidden={heroOpen}
       layout={layout}
       onChange={setLayout}
       count={count}

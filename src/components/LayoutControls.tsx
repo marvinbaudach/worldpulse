@@ -9,14 +9,19 @@ interface LayoutControlsProps {
   minCount: number;
   maxCount: number;
   onCountChange: (count: number) => void;
+  /** True while a hero is open — the bar slips away so nothing competes
+      with the fullscreen card. */
+  hidden: boolean;
 }
 
 // Bottom center: HandControls owns the top-left, PerfHud the top-right.
-const Bar = styled.div`
+const Bar = styled.div<{ $hidden: boolean }>`
   position: fixed;
   bottom: 18px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, ${(p) => (p.$hidden ? '14px' : '0')});
+  opacity: ${(p) => (p.$hidden ? 0 : 1)};
+  pointer-events: ${(p) => (p.$hidden ? 'none' : 'auto')};
   z-index: 10;
   display: flex;
   gap: 4px;
@@ -25,6 +30,9 @@ const Bar = styled.div`
   border-radius: 999px;
   background: rgba(10, 14, 24, 0.55);
   backdrop-filter: blur(8px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
 `;
 
 const Mode = styled.button<{ $active: boolean }>`
@@ -94,12 +102,16 @@ export function LayoutControls({
   minCount,
   maxCount,
   onCountChange,
+  hidden,
 }: LayoutControlsProps) {
   const step = (delta: number) =>
     onCountChange(Math.min(maxCount, Math.max(minCount, count + delta)));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // With the bar hidden behind a hero, the hotkeys would mutate the
+      // formation invisibly — swallow them until the hero closes.
+      if (hidden) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const i = Number(e.key) - 1;
       if (i >= 0 && i < LAYOUT_MODES.length) onChange(LAYOUT_MODES[i].id);
@@ -111,7 +123,7 @@ export function LayoutControls({
   });
 
   return (
-    <Bar>
+    <Bar $hidden={hidden}>
       {LAYOUT_MODES.map((mode) => (
         <Mode
           key={mode.id}
