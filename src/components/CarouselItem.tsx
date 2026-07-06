@@ -182,8 +182,18 @@ export function CarouselItem({
     }
     const target = now >= switchAt.current ? slot : heldSlot.current;
 
+    // Depth cue from how far up front the panel sits (1 = nearest the camera,
+    // 0 = back of the ring), from last frame's world position. Computed here so
+    // the entrance and the settled state share one "focus" size: the panel
+    // flies straight to its final scale instead of arriving small and then
+    // growing the last 8 % — that late grow-in was the settling jolt.
+    group.getWorldPosition(worldPos);
+    const facing = (worldPos.z / radius + 1) / 2;
+    const eased = Math.pow(MathUtils.clamp(facing, 0, 1), 1.5);
+    const focus = 1 + eased * 0.08;
+
     // One-time entrance: panels fly out from the center to their slot,
-    // staggered and scaling up as they arrive.
+    // staggered and scaling up to their focus size as they arrive.
     if (entranceStart.current === null) entranceStart.current = now;
     const p = MathUtils.clamp(
       (now - entranceStart.current - entranceDelay) / ENTRANCE_DURATION,
@@ -195,7 +205,7 @@ export function CarouselItem({
       group.position.set(target.x * e, target.y * e, target.z * e);
       group.rotation.x = target.rotX;
       group.rotation.y = target.rotY;
-      const s = 0.5 + 0.5 * e;
+      const s = (0.5 + 0.5 * e) * focus;
       group.scale.set(s, s, 1);
       mat.opacity = e;
       mat.grayscale = 0;
@@ -247,12 +257,6 @@ export function CarouselItem({
     group.position.y += (target.y - ny * sink - group.position.y) * k;
     group.position.z += (target.z - nz * sink - group.position.z) * k;
 
-    // World position determines closeness to the camera (camera looks along +Z).
-    group.getWorldPosition(worldPos);
-    // facing: 1 = right up front (near), 0 = at the back of the ring.
-    const facing = (worldPos.z / radius + 1) / 2;
-    const eased = Math.pow(MathUtils.clamp(facing, 0, 1), 1.5);
-
     // Back panels: darker, desaturated and slightly zoomed out -> depth.
     // Minimum opacity kept higher so the back sides stay recognizable.
     const targetOpacity = 0.4 + eased * 0.6;
@@ -282,13 +286,9 @@ export function CarouselItem({
     }
 
     // Front panels slightly larger -> "focus" feel (scales the whole group).
-    // Eased toward, not snapped: the entrance ends at scale 1, so setting the
-    // focus scale directly would pop a front panel to 1.08 in a single frame —
-    // the little jolt right as a panel finished settling (most visible after a
-    // filter, when every panel replays the entrance in a staggered ripple).
-    const focus = 1 + eased * 0.08;
-    const s = MathUtils.lerp(group.scale.x, focus, 0.15);
-    group.scale.set(s, s, 1);
+    // The entrance already arrives at this scale, so there is no separate
+    // grow-in step to jolt; it only drifts as the ring slowly spins.
+    group.scale.set(focus, focus, 1);
   });
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
