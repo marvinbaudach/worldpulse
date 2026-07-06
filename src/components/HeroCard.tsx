@@ -4,7 +4,7 @@ import { Image } from '@react-three/drei';
 import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
 import type { Group, Mesh, MeshPhysicalMaterial } from 'three';
 import { GlassPlate, GLASS_OPACITY } from './GlassPlate';
-import { createDashboardTexture, type Dashboard } from '../dashboards';
+import { createDashboardTexture, SETTLED_T, type Dashboard } from '../dashboards';
 
 /** World-space transform captured from the clicked ring panel. */
 export interface HeroStart {
@@ -109,9 +109,12 @@ export function HeroCard({
   const imgRef = useRef<Mesh>(null);
   const glassRef = useRef<Mesh>(null);
   const progress = useRef(startOpen ? 1 : 0);
-  // The hero animates for as long as it is open: the intro replays during the
-  // fly-in and the live elements keep moving afterwards.
-  const openedAt = useRef<number | null>(null);
+  // Timestamp the card became fully open. The chart intro is held until then,
+  // so the diagram animates in only once the hero has finished flying in — not
+  // during the flight. Stays null until the fly-in lands; an already-open card
+  // (the outgoing hero flying back, startOpen) skips this and holds its settled
+  // chart.
+  const settledAt = useRef<number | null>(null);
 
   const dash = useMemo(() => createDashboardTexture(dashboard, TEX_W, TEX_H), [dashboard]);
   useEffect(() => () => dash.dispose(), [dash]);
@@ -122,12 +125,21 @@ export function HeroCard({
     const img = imgRef.current;
     if (!pivot || !inner || !img) return;
 
-    if (openedAt.current === null) openedAt.current = state.clock.elapsedTime;
+    // Start the chart intro only once the fly-in has landed (progress hits 1);
+    // during the flight the diagram holds its pre-animation start frame.
+    if (settledAt.current === null && !startOpen && progress.current > 0.999) {
+      settledAt.current = state.clock.elapsedTime;
+    }
+    // Outgoing hero (already open) shows its settled chart at once; an incoming
+    // one holds t = 0 until it has landed, then plays the intro from there.
+    const chartT =
+      startOpen ? SETTLED_T
+      : settledAt.current === null ? 0
+      : state.clock.elapsedTime - settledAt.current;
     // Redraw only while the intro is still playing (or for the live panels
-    // that keep ticking); once settled the high-res canvas holds its last
-    // frame instead of re-rendering and re-uploading a big texture every frame.
-    const heroT = state.clock.elapsedTime - openedAt.current;
-    if (heroT < INTRO_SETTLE || dashboard.live) dash.render(heroT);
+    // that keep ticking); afterwards the high-res canvas holds its last frame
+    // instead of re-rendering and re-uploading a big texture every frame.
+    if (chartT < INTRO_SETTLE || dashboard.live) dash.render(chartT);
 
     const scrubT = scrub?.current ?? null;
     if (scrubT !== null) {

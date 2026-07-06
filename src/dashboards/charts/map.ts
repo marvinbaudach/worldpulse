@@ -135,7 +135,7 @@ export interface ChoroplethCfg {
  * high percentile so outliers don't wash out the rest), top-5 list below.
  */
 export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
-  const { ctx, u, t, w } = f;
+  const { ctx, u, t, w, h } = f;
   drawSurface(f);
   const top = drawHeader(f, cfg.label, cfg.value, cfg.fmt, null);
   const pad = 36 * u;
@@ -143,10 +143,15 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
   const mx0 = pad;
   const mw = w - 2 * pad;
   const b = cfg.bounds ?? { lonMin: -180, lonMax: 180, latMin: -60, latMax: 85 };
-  // Height follows the window's aspect, capped so regional maps (taller
-  // than they are wide in lon/lat) still leave room for the row list.
-  const mh = Math.min((mw * (b.latMax - b.latMin)) / (b.lonMax - b.lonMin), mw * 0.62);
   const my0 = top + 4 * u;
+  // Reserve enough height below the map for the ranked list, so the map never
+  // grows so tall (regional windows are near-square) that the rows get squeezed
+  // and the bars overlap the labels of the row beneath.
+  const listGap = 18 * u;
+  const rowMin = 42 * u;
+  const mapMax = h - 46 * u - my0 - listGap - cfg.rows.length * rowMin;
+  // Height follows the window's aspect, capped so the row list always fits.
+  const mh = Math.min((mw * (b.latMax - b.latMin)) / (b.lonMax - b.lonMin), mapMax);
   const px = (lon: number) => mx0 + ((lon - b.lonMin) / (b.lonMax - b.lonMin)) * mw;
   const py = (lat: number) => my0 + ((b.latMax - lat) / (b.latMax - b.latMin)) * mh;
 
@@ -159,6 +164,12 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
     ctx.beginPath();
     ctx.rect(mx0, my0, mw, mh);
     ctx.clip();
+    // Thin dark seam between every country so neighbours with the same shade
+    // (e.g. France and Italy, both maxed out) stay readable as two countries
+    // instead of merging into one red block.
+    ctx.strokeStyle = 'rgba(5,7,12,0.65)';
+    ctx.lineWidth = 1 * u;
+    ctx.lineJoin = 'round';
     for (const country of cfg.world) {
       const v = cfg.valueByIso?.[country.id];
       ctx.fillStyle =
@@ -173,6 +184,7 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
         });
         ctx.closePath();
         ctx.fill();
+        ctx.stroke();
       }
     }
     ctx.restore();
