@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactElement, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { Canvas } from '@react-three/fiber';
 import {
   EffectComposer,
@@ -206,6 +206,32 @@ export function Carousel3D() {
     setClosing(false);
   };
 
+  // Flip from the open hero to a neighbouring one: the current card flies back
+  // to its ring slot (outgoing) while the next flies in, keyed by id. Shared by
+  // the arrow keys and the mobile swipe.
+  const switchHero = useCallback(
+    (cur: { id: string; start: HeroStart }, dir: number) => {
+      const i = dashboards.findIndex((d) => d.id === cur.id);
+      if (i < 0) return;
+      const next = dashboards[(i + dir + dashboards.length) % dashboards.length];
+      if (next.id === cur.id) return;
+      // Clone the live pose: the registry entry keeps mutating every frame.
+      const pose = posesRef.current.get(next.id);
+      setOutgoing(cur);
+      setSelected({
+        id: next.id,
+        start: pose
+          ? {
+              position: pose.position.clone(),
+              quaternion: pose.quaternion.clone(),
+              scale: pose.scale.clone(),
+            }
+          : cur.start,
+      });
+    },
+    [dashboards],
+  );
+
   // Close the hero via Escape or the scroll wheel (click-away is handled by
   // the canvas onPointerMissed below); arrow keys step to the neighboring
   // panel — the fresh HeroCard (keyed by id) flies in from its ring slot.
@@ -215,24 +241,7 @@ export function Carousel3D() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close();
       const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-      if (!dir) return;
-      const i = dashboards.findIndex((d) => d.id === selected.id);
-      if (i < 0) return;
-      const next = dashboards[(i + dir + dashboards.length) % dashboards.length];
-      if (next.id === selected.id) return;
-      // Clone the live pose: the registry entry keeps mutating every frame.
-      const pose = posesRef.current.get(next.id);
-      setOutgoing(selected);
-      setSelected({
-        id: next.id,
-        start: pose
-          ? {
-              position: pose.position.clone(),
-              quaternion: pose.quaternion.clone(),
-              scale: pose.scale.clone(),
-            }
-          : selected.start,
-      });
+      if (dir) switchHero(selected, dir);
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('wheel', close, { passive: true });
@@ -240,7 +249,7 @@ export function Carousel3D() {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('wheel', close);
     };
-  }, [selected, closing, dashboards]);
+  }, [selected, closing, dashboards, switchHero]);
 
   // Space pauses/resumes the idle spin, hero open or not.
   useEffect(() => {
@@ -313,40 +322,37 @@ export function Carousel3D() {
     };
   }, [heroOpen]);
 
-  // Pinch to zoom the ring on touch devices — the phone stand-in for the +/-
-  // keys. Two fingers: scale the zoom by how the finger distance changes each
-  // move (incremental, so it never fights the current zoom); like the keys it
-  // idles while a hero owns the screen.
+  // Swipe left/right on an open hero to page to the neighbouring one — the
+  // easy way through the cards on a phone, where there are no arrow keys. A
+  // fast, clearly horizontal flick only; vertical drags stay with the card's
+  // own pull-to-dismiss.
   useEffect(() => {
-    if (!isMobile) return;
-    const spread = (t: TouchList) =>
-      Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-    let last = 0;
+    if (!isMobile || !selected || closing) return;
+    let x0 = 0;
+    let y0 = 0;
+    let t0 = 0;
     const onStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) last = spread(e.touches);
-    };
-    const onMove = (e: TouchEvent) => {
-      if (e.touches.length !== 2 || heroOpen || !last) return;
-      e.preventDefault();
-      const d = spread(e.touches);
-      const scale = d / last;
-      last = d;
-      setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * scale)));
+      if (e.touches.length !== 1) return;
+      x0 = e.touches[0].clientX;
+      y0 = e.touches[0].clientY;
+      t0 = Date.now();
     };
     const onEnd = (e: TouchEvent) => {
-      if (e.touches.length < 2) last = 0;
+      const t = e.changedTouches[0];
+      if (!t || Date.now() - t0 > 600) return;
+      const dx = t.clientX - x0;
+      const dy = t.clientY - y0;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        switchHero(selected, dx < 0 ? 1 : -1);
+      }
     };
-    window.addEventListener('touchstart', onStart, { passive: false });
-    window.addEventListener('touchmove', onMove, { passive: false });
-    window.addEventListener('touchend', onEnd);
-    window.addEventListener('touchcancel', onEnd);
+    window.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('touchend', onEnd, { passive: true });
     return () => {
       window.removeEventListener('touchstart', onStart);
-      window.removeEventListener('touchmove', onMove);
       window.removeEventListener('touchend', onEnd);
-      window.removeEventListener('touchcancel', onEnd);
     };
-  }, [isMobile, heroOpen]);
+  }, [isMobile, selected, closing, dashboards, switchHero]);
 
   const selectedDashboard = selected
     ? ALL_DASHBOARDS.find((d) => d.id === selected.id)
@@ -398,7 +404,9 @@ export function Carousel3D() {
         parallax={false}
         zoom={zoom}
       />
-      <Aurora />
+      {/* The aurora is a fullscreen shader pass — skip it on phones, where it
+          costs fill rate the GPU needs for the ring and hero cards. */}
+      {!isMobile && <Aurora />}
       <Dust radius={radius} count={isMobile ? 120 : 320} />
 
       <Ring

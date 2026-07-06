@@ -32,12 +32,27 @@ const Bar = styled.div`
   padding: 4px;
   border-radius: 999px;
   ${glassSurface}
+
+  /* Phones can't fit every chip on one line, and a wrapped multi-row block
+     eats the screen. Keep the single pill row but let it scroll sideways —
+     one swipe reaches the rest. Scrollbar hidden; the rounded pill clips it. */
+  @media (max-width: 640px) {
+    max-width: calc(100vw - 20px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 `;
 
 const Chip = styled.button<{ $active: boolean }>`
   padding: 7px 13px;
   border: none;
   border-radius: 999px;
+  flex: 0 0 auto;
+  white-space: nowrap;
   background: ${(p) => (p.$active ? 'rgba(57, 135, 229, 0.28)' : 'transparent')};
   color: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.55)')};
   font: 600 11px/1 inherit;
