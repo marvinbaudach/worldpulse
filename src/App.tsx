@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { Carousel3D } from './components/Carousel3D';
+import { MobileDeck } from './components/MobileDeck';
 import { PerfHud } from './components/PerfHud';
 import { LoadingScreen } from './components/LoadingScreen';
 import { GlobalStyle } from './GlobalStyle';
 import { loadLiveData } from './data/sources';
+import { useIsMobile } from './hooks/useIsMobile';
 
 // "Loading" is a staged boot sequence: it gives the pulse loader one full
 // beat before the iris hands the screen center over to the blooming ring,
@@ -28,6 +30,8 @@ const Stage = styled.main`
 export default function App() {
   const [done, setDone] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
+  // Phones skip the WebGL ring entirely for a light 2D-canvas card deck.
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Fire off the public-API fetches and the price socket during the boot
@@ -40,8 +44,8 @@ export default function App() {
   return (
     <Stage>
       <GlobalStyle />
-      {done && <Carousel3D />}
-      <PerfHud />
+      {done && (isMobile ? <MobileDeck /> : <Carousel3D />)}
+      {!isMobile && <PerfHud />}
 
       {showLoader && (
         <LoadingScreen done={done} onExited={() => setShowLoader(false)} />
