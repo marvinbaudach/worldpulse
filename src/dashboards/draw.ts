@@ -143,6 +143,10 @@ export function drawHeader(
 }
 
 /** Letter-spaced text (canvas has no letter-spacing of its own). */
+// Grapheme segmentation keeps multi-code-point glyphs (flag emoji, ZWJ
+// sequences) intact when the header spaces characters out one by one.
+const graphemes = new Intl.Segmenter();
+
 export function drawTracked(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -151,7 +155,7 @@ export function drawTracked(
   tracking: number,
 ): void {
   let cx = x;
-  for (const ch of text) {
+  for (const { segment: ch } of graphemes.segment(text)) {
     ctx.fillText(ch, cx, y);
     cx += ctx.measureText(ch).width + tracking;
   }

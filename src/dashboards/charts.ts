@@ -873,8 +873,9 @@ export interface TreemapCfg {
   label: string;
   value: number;
   fmt: (v: number) => string;
-  /** Block areas; `muted` renders as a neutral filler (e.g. "Rest of world"). */
-  rows: { name: string; v: number; muted?: boolean }[];
+  /** Block areas; `muted` renders as a neutral filler (e.g. "Rest of world");
+      `short` (e.g. a flag) labels blocks too narrow for the full name. */
+  rows: { name: string; v: number; muted?: boolean; short?: string }[];
 }
 
 /**
@@ -937,18 +938,22 @@ export function treemap(f: Frame, cfg: TreemapCfg): void {
       roundRect(ctx, x + gap / 2, y + gap / 2, bw - gap, sh - gap, 4 * u);
       ctx.fill();
 
-      // Direct labels once the block is big enough to hold them.
+      // Direct labels once the block is big enough to hold them; narrower
+      // blocks fall back to the short label (flag) plus the share, so no
+      // block above a sliver stays anonymous.
+      const pct = `${((r.v / total) * 100).toFixed(1)}%`;
       if (bw > 78 * u && sh > 44 * u) {
         ctx.fillStyle = r.muted ? INK_SECONDARY : INK;
         ctx.font = `500 ${13 * u}px ${FONT}`;
         ctx.fillText(r.name, x + 10 * u, y + 22 * u, bw - 20 * u);
         ctx.font = `700 ${16 * u}px ${FONT}`;
-        ctx.fillText(
-          `${((r.v / total) * 100).toFixed(1)}%`,
-          x + 10 * u,
-          y + 42 * u,
-          bw - 20 * u,
-        );
+        ctx.fillText(pct, x + 10 * u, y + 42 * u, bw - 20 * u);
+      } else if (bw > 30 * u && sh > 40 * u) {
+        ctx.fillStyle = r.muted ? INK_SECONDARY : INK;
+        ctx.font = `500 ${12 * u}px ${FONT}`;
+        ctx.fillText(r.short ?? r.name, x + 7 * u, y + 19 * u, bw - 14 * u);
+        ctx.font = `700 ${12 * u}px ${FONT}`;
+        ctx.fillText(pct, x + 7 * u, y + 36 * u, bw - 14 * u);
       }
       ctx.globalAlpha = 1;
 
