@@ -24,12 +24,12 @@ const TopBar = styled.div`
 const FilterButton = styled.button`
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
+  gap: 10px;
+  padding: 15px 26px;
   border: none;
   border-radius: 999px;
   color: #cfe4ff;
-  font: 600 12px/1 inherit;
+  font: 600 16px/1 inherit;
   letter-spacing: 0.14em;
   cursor: pointer;
   ${glassSurface}
