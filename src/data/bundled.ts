@@ -653,6 +653,59 @@ export const TEEN_RX_PANEL: TrendSeries = trend(
   ['2016', '2018', '2020', '2022'],
 );
 
+// Installed nuclear generating capacity in Germany, GW net (BMWK / IAEA PRIS).
+// 19 reactors in 2000; the 2011 Fukushima decision shut the 8 oldest at once,
+// and the last three went off-grid in April 2023 — the full phase-out.
+export const DE_NUCLEAR_PANEL: TrendSeries = trend(
+  [
+    [2000, 22.4], [2004, 21.3], [2006, 20.3], [2010, 20.5], [2011, 12.7],
+    [2015, 12.1], [2017, 10.8], [2019, 9.5], [2022, 4.3], [2023, 0],
+  ],
+  (v) => `${v.toFixed(1)} GW`,
+  ['2000', '2008', '2016', '2023'],
+);
+
+// Total installed net electricity generating capacity in Germany, GW (BNetzA
+// / Fraunhofer ISE / AGEB, all sources). It roughly doubles from 2000 to
+// today even as nuclear goes to zero — wind and solar were built out faster
+// than the retirements. Caveat: much of the new capacity is intermittent, so
+// nameplate GW overstates the firm, dispatchable power the grid can lean on.
+export const DE_TOTAL_CAP_PANEL: TrendSeries = trend(
+  [
+    [2002, 120], [2008, 141], [2010, 153], [2015, 195], [2018, 209],
+    [2020, 222], [2023, 245],
+  ],
+  (v) => `${Math.round(v)} GW`,
+  ['2002', '2009', '2016', '2023'],
+);
+
+// Grid-stabilization interventions in Germany: yearly redispatch volume,
+// TWh (Bundesnetzagentur "Netz- und Systemsicherheit"). Near zero before the
+// Energiewende, then leaping as wind in the north has to be throttled and
+// southern plants ramped to hold the grid — a real measure of rising strain.
+// Note: this is intervention effort, NOT customer blackouts; actual outage
+// minutes (SAIDI) stayed among the world's lowest.
+export const DE_GRID_INTERVENTIONS_PANEL: TrendSeries = trend(
+  [
+    [2010, 0.3], [2012, 2.6], [2014, 5.2], [2015, 16.0], [2017, 20.4],
+    [2019, 13.7], [2021, 12.2], [2023, 14.8],
+  ],
+  (v) => `${v.toFixed(1)} TWh`,
+  ['2010', '2014', '2019', '2023'],
+);
+
+// Installed coal generating capacity in the USA, GW (EIA). Peaks around 2011,
+// then retiring steadily as cheap gas and renewables displace it — roughly a
+// third of the fleet gone in a decade.
+export const US_COAL_PANEL: TrendSeries = trend(
+  [
+    [2000, 305], [2005, 313], [2011, 318], [2014, 300], [2016, 275],
+    [2019, 229], [2021, 212], [2023, 190],
+  ],
+  (v) => `${Math.round(v)} GW`,
+  ['2000', '2008', '2016', '2023'],
+);
+
 // US adult obesity share, % (NHANES). The shaded band marks the fast-food
 // era: the 1970s drive-through boom and, from the 1980s, cheap high-fructose
 // corn syrup in soft drinks — the decades US obesity roughly tripled.
