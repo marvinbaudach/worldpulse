@@ -78,6 +78,42 @@ export function drawSource(f: Frame, source: string): void {
  * with a magnitude-ramped bar under each. Shared by the nuke and choropleth
  * maps.
  */
+// Flag emoji per country, keyed by the German names the panels use plus the
+// English World Bank names the live military/homicide feeds return. Ranked
+// row labels get their flag appended automatically (drawRankedList, hBarChart)
+// so every country list carries one without hand-editing each panel.
+const COUNTRY_FLAGS: Record<string, string> = {
+  USA: '🇺🇸', China: '🇨🇳', Russland: '🇷🇺', Deutschland: '🇩🇪', Indien: '🇮🇳',
+  Japan: '🇯🇵', Schweiz: '🇨🇭', Frankreich: '🇫🇷', Italien: '🇮🇹', Spanien: '🇪🇸',
+  Griechenland: '🇬🇷', Großbritannien: '🇬🇧', Schweden: '🇸🇪', Österreich: '🇦🇹',
+  Belgien: '🇧🇪', Dänemark: '🇩🇰', Irland: '🇮🇪', Niederlande: '🇳🇱', Portugal: '🇵🇹',
+  Norwegen: '🇳🇴', Nordkorea: '🇰🇵', Südkorea: '🇰🇷', Pakistan: '🇵🇰', Iran: '🇮🇷',
+  Vietnam: '🇻🇳', Ägypten: '🇪🇬', 'El Salvador': '🇸🇻', Kuba: '🇨🇺', Ruanda: '🇷🇼',
+  Türkei: '🇹🇷', Brasilien: '🇧🇷', Nauru: '🇳🇷', Kuwait: '🇰🇼', Mexiko: '🇲🇽',
+  Monaco: '🇲🇨', Singapur: '🇸🇬', Nigeria: '🇳🇬', Tschad: '🇹🇩', Lesotho: '🇱🇸',
+  Jamaika: '🇯🇲', Südafrika: '🇿🇦', Honduras: '🇭🇳', Südsudan: '🇸🇸', Somalia: '🇸🇴',
+  Venezuela: '🇻🇪', Syrien: '🇸🇾', Libyen: '🇱🇾', Argentinien: '🇦🇷', Sudan: '🇸🇩',
+  Ecuador: '🇪🇨', Serbien: '🇷🇸', Paraguay: '🇵🇾', Ukraine: '🇺🇦', Irak: '🇮🇶',
+  Afghanistan: '🇦🇫', Jemen: '🇾🇪', Gaza: '🇵🇸', Estland: '🇪🇪', 'Saudi-Arabien': '🇸🇦',
+  Israel: '🇮🇱', Polen: '🇵🇱', Australien: '🇦🇺',
+  'United States': '🇺🇸', 'Russian Federation': '🇷🇺', Germany: '🇩🇪', India: '🇮🇳',
+  'Saudi Arabia': '🇸🇦', 'United Kingdom': '🇬🇧', France: '🇫🇷', 'Korea, Rep.': '🇰🇷',
+  Italy: '🇮🇹', Australia: '🇦🇺', Poland: '🇵🇱', Jamaica: '🇯🇲', 'South Africa': '🇿🇦',
+  Brazil: '🇧🇷', Mexico: '🇲🇽',
+};
+
+const HAS_FLAG = /\p{Regional_Indicator}/u;
+
+/** Country name with its flag appended, when we know one and it carries none
+    yet. Trailing descriptors ("· seit 2011", "(Stadt)") are ignored for the
+    lookup, so "Syrien · seit 2011" still resolves to the Syrian flag. */
+export function withFlag(name: string): string {
+  if (HAS_FLAG.test(name)) return name;
+  const key = name.replace(/\s*[·(].*$/u, '').trim();
+  const flag = COUNTRY_FLAGS[key];
+  return flag ? `${name} ${flag}` : name;
+}
+
 export function drawRankedList(
   f: Frame,
   opts: {
@@ -104,7 +140,7 @@ export function drawRankedList(
     ctx.globalAlpha = p;
     ctx.fillStyle = INK_SECONDARY;
     ctx.font = `500 ${16 * u}px ${FONT}`;
-    ctx.fillText(s.name, pad, y + 13 * u);
+    ctx.fillText(withFlag(s.name), pad, y + 13 * u);
     ctx.fillStyle = INK;
     ctx.font = `600 ${16 * u}px ${FONT}`;
     ctx.textAlign = 'right';

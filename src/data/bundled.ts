@@ -661,6 +661,19 @@ export const DE_SINGLE_HH_PANEL: TrendSeries = trend(
   ['1900', '1940', '1980', 'heute'],
 );
 
+// US alcohol-induced deaths per year (CDC WONDER, alcohol-induced causes:
+// liver disease, poisoning, etc. — excludes drunk-driving crashes). A steady
+// climb, then the pandemic spike: +40% from 2019 to the 2021 peak.
+export const US_ALCOHOL_DEATHS_PANEL: TrendSeries = trend(
+  [
+    [1999, 19_500], [2005, 21_600], [2010, 25_700], [2015, 33_200],
+    [2018, 37_300], [2019, 39_000], [2020, 49_000], [2021, 54_300],
+    [2022, 51_200],
+  ],
+  (v) => `${Math.round(v / 1000)}k`,
+  ['1999', '2007', '2015', 'heute'],
+);
+
 // Purchasing power of one 1913 US dollar (BLS CPI).
 export const DOLLAR_PANEL: TrendSeries = trend(
   [

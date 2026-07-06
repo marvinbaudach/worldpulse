@@ -13,7 +13,7 @@ import {
   type Frame,
 } from '../draw';
 import { FONT, GRID, INK, INK_SECONDARY, MUTED } from '../theme';
-import { MONTHS, barGradient, lighten, plotRect, withAlpha } from './shared';
+import { MONTHS, barGradient, lighten, plotRect, withAlpha, withFlag } from './shared';
 
 export interface BarCfg {
   label: string;
@@ -113,7 +113,7 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
     const y = top + 10 * u + rowH * i + Math.max(0, (rowH - groupH) / 2);
     ctx.fillStyle = INK_SECONDARY;
     ctx.font = `500 ${17 * u}px ${FONT}`;
-    ctx.fillText(d.name, pad, y + 14 * u);
+    ctx.fillText(withFlag(d.name), pad, y + 14 * u);
     ctx.fillStyle = INK;
     ctx.font = `600 ${17 * u}px ${FONT}`;
     ctx.textAlign = 'right';

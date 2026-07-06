@@ -43,6 +43,7 @@ import {
   REFUGEE_PANEL,
   SWISS_POP_FALLBACK,
   TEEN_SADNESS,
+  US_ALCOHOL_DEATHS_PANEL,
   US_HOMICIDE_PANEL,
   US_INTEREST_PANEL,
   US_OBESITY_FASTFOOD,
@@ -1278,6 +1279,127 @@ const POOL: Dashboard[] = [
   },
   trendCard('single-households', 'Einpersonenhaushalte · Deutschland', 'Einpersonenhaushalte · 🇩🇪 · Anteil · seit 1900', DE_SINGLE_HH_PANEL, violet, (v) => `${v.toFixed(0)}%`, 193),
   {
+    id: 'digital-id',
+    title: 'Digitale ID · Bevölkerungsabdeckung',
+    draw: (f) =>
+      hBarChart(f, {
+        // Share of the population with a usable national digital ID (World
+        // Bank ID4D / national programs, rounded estimates). Estonia and
+        // India's Aadhaar are near-universal; Switzerland's state e-ID only
+        // launches around 2026, so it anchors the low end.
+        label: 'Digitale ID · Bevölkerungsabdeckung · Schätzwerte',
+        value: 99,
+        fmt: (v) => `${Math.round(v)}%`,
+        rowFmt: (v) => `${Math.round(v)}%`,
+        delta: null,
+        color: aqua,
+        unit: '',
+        rows: [
+          { name: 'Estland 🇪🇪', v: 99 },
+          { name: 'Indien 🇮🇳', v: 99 },
+          { name: 'Singapur 🇸🇬', v: 97 },
+          { name: 'Schweden 🇸🇪', v: 95 },
+          { name: 'Belgien 🇧🇪', v: 90 },
+          { name: 'Nigeria 🇳🇬', v: 65 },
+          { name: 'Österreich 🇦🇹', v: 60 },
+          { name: 'Deutschland 🇩🇪', v: 55 },
+          { name: 'USA 🇺🇸', v: 20 },
+          { name: 'Schweiz 🇨🇭', v: 5 },
+        ],
+      }),
+  },
+  {
+    id: 'alcohol-nations',
+    title: 'Alkoholkonsum international',
+    draw: (f) =>
+      hBarChart(f, {
+        // Recorded alcohol per capita, litres of pure alcohol, adults 15+
+        // (WHO 2019). Eastern Europe tops it; Germany drinks heavily too,
+        // Türkiye anchors the low end.
+        label: 'Alkohol · Liter Reinalkohol pro Kopf · WHO',
+        value: 15.2,
+        fmt: (v) => `${v.toFixed(1)} L`,
+        rowFmt: (v) => `${v.toFixed(1)} L`,
+        delta: null,
+        color: magenta,
+        unit: '',
+        rows: [
+          { name: 'Moldau 🇲🇩', v: 15.2 },
+          { name: 'Tschechien 🇨🇿', v: 14.4 },
+          { name: 'Litauen 🇱🇹', v: 13.2 },
+          { name: 'Irland 🇮🇪', v: 13.0 },
+          { name: 'Deutschland 🇩🇪', v: 12.8 },
+          { name: 'Frankreich 🇫🇷', v: 12.3 },
+          { name: 'Österreich 🇦🇹', v: 12.0 },
+          { name: 'Russland 🇷🇺', v: 11.7 },
+          { name: 'Schweiz 🇨🇭', v: 11.5 },
+          { name: 'Türkei 🇹🇷', v: 1.5 },
+        ],
+      }),
+  },
+  {
+    id: 'alcohol-deaths',
+    title: 'US-Alkoholtote pro Jahr',
+    draw: (f) =>
+      areaChart(f, {
+        // CDC: alcohol-induced deaths rose steadily, then spiked ~40% in the
+        // pandemic — economic and social stress driving heavier drinking.
+        label: 'Alkoholtote · 🇺🇸 · pro Jahr · CDC',
+        value: US_ALCOHOL_DEATHS_PANEL.latest,
+        fmt: (v) => `${(v / 1000).toFixed(0)}k`,
+        delta: US_ALCOHOL_DEATHS_PANEL.yoyPct,
+        seed: 197,
+        color: red,
+        data: US_ALCOHOL_DEATHS_PANEL.series,
+        ticks: US_ALCOHOL_DEATHS_PANEL.ticks,
+        xLabels: US_ALCOHOL_DEATHS_PANEL.xLabels,
+      }),
+  },
+  {
+    id: 'c40-cities',
+    title: 'Größte C40-Städte',
+    draw: (f) =>
+      hBarChart(f, {
+        // C40 is a ~100-city climate network (Bloomberg-funded). Many members
+        // are among the world's largest urban agglomerations (UN metro pops).
+        label: 'Größte C40-Städte · Einwohner (Metro)',
+        value: 37,
+        fmt: (v) => `${Math.round(v)} Mio`,
+        rowFmt: (v) => `${Math.round(v)} Mio`,
+        delta: null,
+        color: blue,
+        unit: '',
+        rows: [
+          { name: 'Tokio 🇯🇵', v: 37 },
+          { name: 'Delhi 🇮🇳', v: 33 },
+          { name: 'Shanghai 🇨🇳', v: 29 },
+          { name: 'Dhaka 🇧🇩', v: 23 },
+          { name: 'São Paulo 🇧🇷', v: 22 },
+          { name: 'Kairo 🇪🇬', v: 22 },
+          { name: 'Mexiko-Stadt 🇲🇽', v: 22 },
+          { name: 'Peking 🇨🇳', v: 22 },
+          { name: 'Mumbai 🇮🇳', v: 21 },
+          { name: 'Istanbul 🇹🇷', v: 16 },
+        ],
+      }),
+  },
+  {
+    id: 'c40-reach',
+    title: 'Reichweite von C40',
+    draw: (f) =>
+      treemap(f, {
+        // C40's ~100 member cities house ~700M people and produce roughly a
+        // quarter of global GDP (C40 / Bloomberg figures).
+        label: 'C40 · ~100 Städte · 700 Mio Menschen',
+        value: 110e12,
+        fmt: (v) => `$${(v / 1e12).toFixed(0)}T`,
+        rows: [
+          { name: 'C40-Städte', v: 25, short: '🌆' },
+          { name: 'übrige Welt', v: 75, muted: true },
+        ],
+      }),
+  },
+  {
     id: 'swiss-trends',
     title: 'Schweizer Trends · Wikipedia',
     dynamic: true,
@@ -1372,6 +1494,11 @@ const TAGS_BY_ID: Record<string, string[]> = {
   '5g-stations': ['welt', 'deutschland', 'schweiz'],
   'china-surveillance': ['welt', 'soziales', 'deutschland', 'schweiz'],
   inflation: ['geld', 'welt', 'deutschland', 'schweiz'],
+  'digital-id': ['welt', 'soziales', 'deutschland', 'schweiz'],
+  'alcohol-nations': ['gesundheit', 'welt', 'deutschland', 'schweiz'],
+  'alcohol-deaths': ['gesundheit'],
+  'c40-cities': ['welt'],
+  'c40-reach': ['welt', 'geld'],
   'un-resolutions': ['welt', 'krieg'],
   'un-vetoes': ['welt', 'krieg'],
   'de-family': ['deutschland', 'soziales'],
@@ -1394,6 +1521,7 @@ const FEATURED = new Set([
   'cameras-world', 'internet-shutdowns', 'gov-data-requests',
   'sdg-progress', 'cbdc', 'cashless', '5g-stations', 'china-surveillance',
   'un-resolutions', 'un-vetoes', 'de-family', 'single-households', 'inflation',
+  'digital-id', 'alcohol-nations', 'alcohol-deaths', 'c40-cities', 'c40-reach',
 ]);
 
 /**
