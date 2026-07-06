@@ -20,7 +20,7 @@ const Card = styled.div`
   position: absolute;
   top: 50%;
   left: 50%;
-  width: min(94vw, 560px);
+  width: min(94vw, 560px, 72vh);
   height: 96%;
   border-radius: 18px;
   overflow: hidden;
