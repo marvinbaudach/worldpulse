@@ -911,6 +911,36 @@ const POOL: Dashboard[] = [
       }),
   },
   {
+    id: 'modern-slavery',
+    title: 'Moderne Sklaverei · Länder',
+    draw: (f) =>
+      hBarChart(f, {
+        // Global Slavery Index 2023 (Walk Free) — people living in modern
+        // slavery: forced labour, debt bondage, forced marriage. ~50M
+        // worldwide per the ILO/Walk Free 2021 global estimate; absolute
+        // counts are highest in the most populous countries.
+        label: 'Moderne Sklaverei · Menschen · GSI 2023',
+        value: 50e6,
+        fmt: (v) => `${(v / 1e6).toFixed(0)} Mio`,
+        rowFmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
+        delta: null,
+        color: red,
+        unit: '',
+        rows: [
+          { name: 'Indien 🇮🇳', v: 11.0e6 },
+          { name: 'China 🇨🇳', v: 5.8e6 },
+          { name: 'Nordkorea 🇰🇵', v: 2.7e6 },
+          { name: 'Pakistan 🇵🇰', v: 2.3e6 },
+          { name: 'Russland 🇷🇺', v: 1.9e6 },
+          { name: 'Indonesien 🇮🇩', v: 1.8e6 },
+          { name: 'Nigeria 🇳🇬', v: 1.6e6 },
+          { name: 'Türkei 🇹🇷', v: 1.3e6 },
+          { name: 'Bangladesch 🇧🇩', v: 1.2e6 },
+          { name: 'USA 🇺🇸', v: 1.1e6 },
+        ],
+      }),
+  },
+  {
     id: 'us-bases',
     title: 'US-Militärstützpunkte weltweit',
     draw: (f) =>
@@ -1561,6 +1591,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   incarceration: ['soziales', 'schweiz'],
   corruption: ['soziales', 'welt', 'schweiz'],
   'us-bases': ['krieg', 'welt'],
+  'modern-slavery': ['welt', 'soziales'],
   'us-wars': ['krieg'],
   'recent-wars': ['krieg'],
   'teen-mde': ['gesundheit', 'soziales'],
@@ -1595,7 +1626,7 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
  * front on load; the rest of the pool follows behind them.
  */
 const FEATURED = new Set([
-  'us-wars', 'us-bases', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
+  'us-wars', 'us-bases', 'modern-slavery', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
   'us-debt', 'us-interest', 'm2', 'dollar', 'wealth', 'homicide-map',
   'world-pop', 'oil-consumption', 'de-insolvenz-jobs', 'conflict-deaths', 'refugees',
   'military', 'gdp-growth', 'de-industry', 'recent-wars',
