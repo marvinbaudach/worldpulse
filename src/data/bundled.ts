@@ -327,15 +327,19 @@ export const US_HOMICIDE_PANEL: TrendSeries = trend(
   ['1900', '1941', '1983', 'heute'],
 );
 
-// Global life expectancy at birth, years (UN WPP / OWID).
+// Global life expectancy at birth, years (Riley 2005 / OWID pre-1950, UN WPP
+// after). Roughly flat near ~29 for centuries — reliable global estimates
+// start ~1770 — then the modern jump: the 1918 dip is the flu pandemic.
 export const LIFE_PANEL: TrendSeries = trend(
   [
-    [1900, 32], [1918, 30], [1930, 40], [1950, 46], [1960, 51],
+    [1770, 28.5], [1800, 28.5], [1820, 29], [1850, 29.3], [1870, 29.7],
+    [1900, 32], [1913, 34], [1918, 30], [1930, 40], [1950, 46], [1960, 51],
     [1970, 58], [1980, 61], [1990, 64], [2000, 66], [2010, 70],
     [2019, 72.8], [2021, 71], [2024, 73.3],
   ],
   (v) => `${Math.round(v)}y`,
-  ['1900', '1941', '1983', 'heute'],
+  ['1770', '1854', '1939', 'heute'],
+  40,
 );
 
 // US M2 money supply, USD. Pre-1959 from Friedman & Schwartz's monetary

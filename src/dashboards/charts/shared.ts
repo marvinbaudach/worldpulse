@@ -94,26 +94,27 @@ export function drawRankedList(
   const rowH = (h - 46 * u - top) / Math.max(1, rows.length);
   const barMax = Math.max(...rows.map((r) => r.v), 1);
   const grad = barGradient(ctx, pad, w - pad, color);
-  // Label + bar form one group ~31u tall; center it in the row slot so the
-  // label stays tied to its own bar instead of drifting toward the row above.
-  const groupH = 31 * u;
+  // Label sits right above its bar (small fixed gap); the ~26u pair is
+  // centered in the row slot so the slack pools between groups and each
+  // label reads as tied to its own bar, not the row above.
+  const groupH = 26 * u;
   rows.forEach((s, i) => {
     const p = Math.max(0, stagger(t, i + 4, 0.06));
     const y = top + rowH * i + Math.max(0, (rowH - groupH) / 2);
     ctx.globalAlpha = p;
     ctx.fillStyle = INK_SECONDARY;
     ctx.font = `500 ${16 * u}px ${FONT}`;
-    ctx.fillText(s.name, pad, y + 15 * u);
+    ctx.fillText(s.name, pad, y + 13 * u);
     ctx.fillStyle = INK;
     ctx.font = `600 ${16 * u}px ${FONT}`;
     ctx.textAlign = 'right';
-    ctx.fillText(rowFmt(s.v * p), w - pad, y + 15 * u);
+    ctx.fillText(rowFmt(s.v * p), w - pad, y + 13 * u);
     ctx.textAlign = 'left';
     ctx.fillStyle = GRID;
-    roundRect(ctx, pad, y + 24 * u, w - 2 * pad, 7 * u, 3.5 * u);
+    roundRect(ctx, pad, y + 19 * u, w - 2 * pad, 7 * u, 3.5 * u);
     ctx.fill();
     ctx.fillStyle = grad;
-    roundRect(ctx, pad, y + 24 * u, Math.max((w - 2 * pad) * (s.v / barMax) * p, 7 * u), 7 * u, 3.5 * u);
+    roundRect(ctx, pad, y + 19 * u, Math.max((w - 2 * pad) * (s.v / barMax) * p, 7 * u), 7 * u, 3.5 * u);
     ctx.fill();
     ctx.globalAlpha = 1;
   });

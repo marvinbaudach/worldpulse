@@ -103,10 +103,11 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
   const max = Math.max(...cfg.rows.map((d) => d.v));
   const grad = barGradient(ctx, pad, w - pad, cfg.color);
 
-  // Label + bar form one group ~34u tall; center it in the row slot so the
-  // extra slack of tall rows splits evenly above and below, keeping the
-  // label tied to its own bar instead of drifting toward the row above.
-  const groupH = 34 * u;
+  // Label sits right above its bar (small fixed gap); the pair forms one
+  // ~30u group centered in the row slot, so all the slack of tall rows
+  // pools between the groups — the label reads as tied to its own bar, not
+  // drifting toward the row above.
+  const groupH = 30 * u;
   cfg.rows.forEach((d, i) => {
     const p = stagger(t, i, 0.08);
     const y = top + 10 * u + rowH * i + Math.max(0, (rowH - groupH) / 2);
@@ -121,10 +122,10 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
 
     const bw = (w - 2 * pad) * (d.v / max) * p;
     ctx.fillStyle = GRID;
-    roundRect(ctx, pad, y + 24 * u, w - 2 * pad, 10 * u, 5 * u);
+    roundRect(ctx, pad, y + 20 * u, w - 2 * pad, 10 * u, 5 * u);
     ctx.fill();
     ctx.fillStyle = grad;
-    roundRect(ctx, pad, y + 24 * u, Math.max(bw, 10 * u), 10 * u, 5 * u);
+    roundRect(ctx, pad, y + 20 * u, Math.max(bw, 10 * u), 10 * u, 5 * u);
     ctx.fill();
   });
 }
