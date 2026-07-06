@@ -11,6 +11,7 @@ const Stack = styled.div`
   position: relative;
   flex: 1;
   overflow: hidden;
+  perspective: 1400px; /* gives the throw a real sense of depth */
 `;
 
 // Fill the available area rather than locking the panel's 4:5 shape: on a tall
@@ -27,14 +28,18 @@ const Card = styled.div`
   touch-action: none;
   will-change: transform, opacity;
   transform: translate(-50%, -50%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
 `;
 
 const CENTER = 'translate(-50%, -50%)';
-// Cards underneath sit at the same full size (just hidden by z-index / opacity)
-// so a card that rises to the top appears already settled — no grow-in.
-const BEHIND = CENTER;
-const THROW_MS = 300;
-const SPRING = 'transform 220ms ease, opacity 220ms ease';
+// Underneath cards sit slightly shrunk so the deck reads as a stack; the one
+// the swipe heads toward scales up to full as the top card flies off.
+const REST_SCALE = 0.92;
+const BEHIND = `translate(-50%, -50%) scale(${REST_SCALE})`;
+const THROW_MS = 360;
+const SPRING = 'transform 240ms ease, opacity 240ms ease';
+// The incoming card rises with a soft overshoot for the extra bit of life.
+const RISE = 'transform 360ms cubic-bezier(0.22, 1.2, 0.36, 1), opacity 240ms ease';
 
 interface SwipeDeckProps {
   dashboards: Dashboard[];
@@ -93,10 +98,19 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     const d = drag.current;
     if (!d.active) return;
     d.dx = e.clientX - d.startX;
-    // Reveal the neighbour the swipe is heading toward, hide the other.
-    if (nextRef.current) nextRef.current.style.opacity = d.dx < 0 ? '1' : '0';
-    if (prevRef.current) prevRef.current.style.opacity = d.dx > 0 ? '1' : '0';
-    setCur(`${CENTER} translateX(${d.dx}px) rotate(${d.dx * 0.04}deg)`, 'none');
+    // The neighbour the swipe heads toward rises (scales up) as you drag, so it
+    // is already at full size the moment the top card clears it.
+    const prog = Math.min(1, Math.abs(d.dx) / (d.w * 0.5));
+    const rising = `translate(-50%, -50%) scale(${REST_SCALE + (1 - REST_SCALE) * prog})`;
+    const toward = d.dx < 0 ? nextRef.current : d.dx > 0 ? prevRef.current : null;
+    for (const r of [nextRef.current, prevRef.current]) {
+      if (!r) continue;
+      r.style.transition = 'none';
+      r.style.opacity = r === toward ? '1' : '0';
+      r.style.transform = r === toward ? rising : BEHIND;
+    }
+    // Follow the finger, tilt in Z and lean away in 3D for depth.
+    setCur(`${CENTER} translateX(${d.dx}px) rotate(${d.dx * 0.05}deg) rotateY(${d.dx * 0.05}deg)`, 'none');
   };
 
   const onUp = () => {
@@ -114,18 +128,35 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     if (goNext || goPrev) {
       animating.current = true;
       const off = goNext ? -1 : 1;
+      // Hurl the card off: it slides out, arcs up, spins in Z and Y and shrinks
+      // as it fades — an accelerating ease-in so it really flies.
       setCur(
-        `${CENTER} translateX(${off * 140}%) rotate(${off * 18}deg)`,
-        `transform ${THROW_MS}ms ease, opacity ${THROW_MS}ms ease`,
+        `${CENTER} translateX(${off * 165}%) translateY(-9%) rotate(${off * 20}deg) rotateY(${off * 38}deg) scale(0.85)`,
+        `transform ${THROW_MS}ms cubic-bezier(0.5, 0, 0.9, 0.4), opacity ${THROW_MS}ms ease-in`,
         '0',
       );
+      // The revealed neighbour rises to the front with a soft overshoot.
+      const rise = goNext ? nextRef.current : prevRef.current;
+      if (rise) {
+        rise.style.transition = RISE;
+        rise.style.transform = CENTER;
+        rise.style.opacity = '1';
+      }
       window.setTimeout(() => {
         animating.current = false;
         setIndex((i) => i + (goNext ? 1 : -1));
       }, THROW_MS);
     } else {
-      // Not far enough: spring back to center.
+      // Not far enough: everything springs back to rest.
       setCur(CENTER, SPRING);
+      for (const r of [nextRef.current, prevRef.current]) {
+        if (r) {
+          r.style.transition = SPRING;
+          r.style.transform = BEHIND;
+        }
+      }
+      if (nextRef.current) nextRef.current.style.opacity = '1';
+      if (prevRef.current) prevRef.current.style.opacity = '0';
     }
   };
 
