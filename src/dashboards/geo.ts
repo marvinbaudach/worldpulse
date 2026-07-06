@@ -71,6 +71,22 @@ export const WHO_PANDEMIC_ABSTAIN: Record<string, number> = {
   PRY: 1, JAM: 1,
 };
 
+// US military presence abroad: active-duty personnel by host country (rough
+// DoD Defense Manpower Data Center figures, revised quarterly). The map shades
+// every host country by troop count; smaller base hosts get a token value so
+// they still light up, matching the SIPER "≥ 42 foreign countries" picture.
+// USA itself is left out — this is the footprint on *foreign* soil.
+// Source: DoD DMDC / Base Structure Report, via SIPER.
+export const US_TROOPS_ABROAD: Record<string, number> = {
+  JPN: 53700, DEU: 35000, KOR: 24000, KWT: 13500, ITA: 12500,
+  POL: 10000, GBR: 9800, QAT: 8000, BHR: 7000, DJI: 4000,
+  ARE: 3500, ESP: 3200, JOR: 3000, SAU: 2700, IRQ: 2500,
+  AUS: 1700, TUR: 1700, ROU: 1500, NLD: 1500, BEL: 1000,
+  CUB: 900, NOR: 700, OMN: 500, PRT: 500, GRC: 500,
+  HND: 500, PHL: 500, THA: 300, BGR: 300, SGP: 200,
+  CAN: 150, DNK: 150, HUN: 100, ISL: 100, NER: 100,
+};
+
 // EU gross government debt as a share of GDP, % (Eurostat 2024). The ratio,
 // not the absolute pile: small, heavily-indebted states (Greece, Italy) burn
 // darker than large economies with more moderate ratios (Germany).

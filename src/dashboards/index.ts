@@ -10,7 +10,7 @@ import {
   wealthSplit,
 } from './charts';
 import { SERIES } from './theme';
-import { CPI_INVERTED, EU_DEBT_GDP, NUKE_STATES, NUKE_TOTAL } from './geo';
+import { CPI_INVERTED, EU_DEBT_GDP, NUKE_STATES, NUKE_TOTAL, US_TROOPS_ABROAD } from './geo';
 import type { Dashboard } from './types';
 import { live, type TrendSeries } from '../data/store';
 import {
@@ -75,6 +75,7 @@ function trendCard(
   color: string,
   fmt: (v: number) => string,
   seed: number,
+  markers?: { at: number; label: string }[],
 ): Dashboard {
   return {
     id,
@@ -90,6 +91,7 @@ function trendCard(
         data: panel.series,
         ticks: panel.ticks,
         xLabels: panel.xLabels,
+        markers,
       }),
   };
 }
@@ -109,19 +111,23 @@ const POOL: Dashboard[] = [
     title: 'Militärausgaben · Top 10',
     dynamic: true,
     draw: (f) => {
+      // Live World Bank feed (current USD, latest year per country). The
+      // fallback below carries the SIPRI 2025 order until the fetch lands.
       const m = live.military;
       hBarChart(f, {
-        label: `Militärausgaben · ${m?.year ?? '2024'}`,
-        value: m?.total ?? 1.6e12,
+        label: `Militärausgaben · ${m?.year ?? '2025'}`,
+        value: m?.total ?? 1.871e12,
         delta: null,
         color: orange,
         unit: '$',
         rows: m?.rows ?? [
-          { name: 'USA', v: 9.97e11 },
-          { name: 'China', v: 3.14e11 },
-          { name: 'Russland', v: 1.49e11 },
-          { name: 'Deutschland', v: 8.8e10 },
-          { name: 'Indien', v: 8.6e10 },
+          { name: 'USA', v: 954e9 },
+          { name: 'China', v: 336e9 },
+          { name: 'Russland', v: 190e9 },
+          { name: 'Deutschland', v: 114e9 },
+          { name: 'Indien', v: 92e9 },
+          { name: 'Großbritannien', v: 89e9 },
+          { name: 'Saudi-Arabien', v: 83e9 },
         ],
       });
     },
@@ -281,6 +287,14 @@ const POOL: Dashboard[] = [
         data: CONFLICT_PANEL.series,
         ticks: CONFLICT_PANEL.ticks,
         xLabels: CONFLICT_PANEL.xLabels,
+        // Dominant spikes labelled directly; `at` is the fraction along the
+        // 1900–2024 range, i.e. (year - 1900) / 124.
+        markers: [
+          { at: 0.13, label: '⚔️ 1. Weltkrieg' },
+          { at: 0.36, label: '⚔️ 2. Weltkrieg' },
+          { at: 0.76, label: '🇷🇼 Ruanda' },
+          { at: 0.98, label: '🇺🇦 Ukraine' },
+        ],
       }),
   },
   {
@@ -297,6 +311,15 @@ const POOL: Dashboard[] = [
         data: REFUGEE_PANEL.series,
         ticks: REFUGEE_PANEL.ticks,
         xLabels: REFUGEE_PANEL.xLabels,
+        // War-start markers on the 1990–2024 axis: the Syrian war (2011) and
+        // Ukraine (2014, Euromaidan/Crimea). The big refugee jumps come a few
+        // years after each start — the 2013–15 surge for Syria, the 2022 spike
+        // for Ukraine's full-scale invasion — so the lines mark the cause, the
+        // curve to their right shows the effect.
+        markers: [
+          { at: (2011 - 1990) / (2024 - 1990), label: '🏴 Syrien 2011' },
+          { at: (2014 - 1990) / (2024 - 1990), label: '🇺🇦 Ukraine 2014' },
+        ],
       }),
   },
   {
@@ -417,7 +440,12 @@ const POOL: Dashboard[] = [
         ],
       }),
   },
-  trendCard('life-exp', 'Globale Lebenserwartung', 'Lebenserwartung · seit 1900', LIFE_PANEL, green, (v) => `${v.toFixed(1)}y`, 89),
+  trendCard('life-exp', 'Globale Lebenserwartung', 'Lebenserwartung · seit 1770', LIFE_PANEL, green, (v) => `${v.toFixed(1)}y`, 89, [
+    // The two visible notches and the mid-century surge on the 1770–2024 axis.
+    { at: (1918 - 1770) / (2024 - 1770), label: '🦠 Grippe 1918' },
+    { at: (1945 - 1770) / (2024 - 1770), label: '💊 Antibiotika' },
+    { at: (2021 - 1770) / (2024 - 1770), label: '🦠 COVID 2020' },
+  ]),
   {
     id: 'm2',
     title: 'Geldmenge · USA vs. Schweiz',
@@ -439,7 +467,13 @@ const POOL: Dashboard[] = [
         xLabels: ['1995', '2005', '2014', 'heute'],
       }),
   },
-  trendCard('m2-history', 'US-Geldmenge seit 1900', 'US-Geldmenge M2 · seit 1900', M2_PANEL, yellow, (v) => `$${(v / 1e12).toFixed(1)}T`, 97),
+  trendCard('m2-history', 'US-Geldmenge seit 1900', 'US-Geldmenge M2 · seit 1900', M2_PANEL, yellow, (v) => `$${(v / 1e12).toFixed(1)}T`, 97, [
+    // The turns behind the money-supply explosion on the 1900–2024 axis:
+    // the end of gold convertibility and the two big money-printing waves.
+    { at: (1971 - 1900) / (2024 - 1900), label: '⛓️‍💥 Gold-Ende 1971' },
+    { at: (2008 - 1900) / (2024 - 1900), label: '🏦 QE 2008' },
+    { at: (2020 - 1900) / (2024 - 1900), label: '💸 Corona 2020' },
+  ]),
   {
     id: 'ai-jobs',
     title: 'KI und Berufseinstieg · USA',
@@ -600,7 +634,11 @@ const POOL: Dashboard[] = [
       }),
   },
   trendCard('internet', 'Menschen online weltweit', 'Internetnutzer · ITU', INTERNET_PANEL, blue, (v) => `${(v / 1e9).toFixed(1)}B`, 103),
-  trendCard('nuke-tests', 'Atomtests pro Jahr', 'Atomtests · seit 1945', NUKE_TESTS_PANEL, red, (v) => `${Math.round(v)}`, 107),
+  trendCard('nuke-tests', 'Atomtests pro Jahr', 'Atomtests · seit 1945', NUKE_TESTS_PANEL, red, (v) => `${Math.round(v)}`, 107, [
+    { at: 0.23, label: '☢️ Teststopp 1963' },
+    { at: 0.65, label: '✍️ CTBT 1996' },
+    { at: 0.91, label: '🇰🇵 Nordkorea' },
+  ]),
   {
     id: 'fertility',
     title: 'Geburtenrate der Kontinente',
@@ -623,7 +661,12 @@ const POOL: Dashboard[] = [
         xLabels: ['1900', '1941', '1983', 'heute'],
       }),
   },
-  trendCard('dollar', 'Kaufkraft des Dollars seit 1913', '1913er-Dollar · Restwert', DOLLAR_PANEL, yellow, (v) => `${(v * 100).toFixed(0)}¢`, 127),
+  trendCard('dollar', 'Kaufkraft des Dollars seit 1913', '1913er-Dollar · Restwert', DOLLAR_PANEL, yellow, (v) => `${(v * 100).toFixed(0)}¢`, 127, [
+    // Fed founding at the very start, and the 1971 end of the gold peg after
+    // which the decline steepens, on the 1913–2024 axis.
+    { at: (1913 - 1913) / (2024 - 1913), label: '🏦 Fed 1913' },
+    { at: (1971 - 1913) / (2024 - 1913), label: '⛓️‍💥 Gold-Ende 1971' },
+  ]),
   {
     id: 'armies',
     title: 'Größte Armeen · aktive Soldaten',
@@ -842,6 +885,30 @@ const POOL: Dashboard[] = [
       }),
   },
   {
+    id: 'us-bases',
+    title: 'US-Militärstützpunkte weltweit',
+    draw: (f) =>
+      choroplethMap(f, {
+        // US troops on foreign soil by host country (DoD DMDC, via SIPER).
+        // The USA officially runs ~587 bases in at least 42 foreign countries;
+        // the map shades each host by troop count, darkest where most sit.
+        label: 'US-Truppen im Ausland · ≥ 42 Länder',
+        value: 42,
+        fmt: (v) => `${v} Länder`,
+        valueByIso: US_TROOPS_ABROAD,
+        world: live.worldMap,
+        rows: [
+          { name: 'Japan', v: 53700 },
+          { name: 'Deutschland', v: 35000 },
+          { name: 'Südkorea', v: 24000 },
+          { name: 'Kuwait', v: 13500 },
+          { name: 'Italien', v: 12500 },
+        ],
+        rowFmt: (v) => `${Math.round(v / 1000)}k Soldaten`,
+        source: 'DoD DMDC / Base Structure Report · via SIPER',
+      }),
+  },
+  {
     id: 'us-wars',
     title: 'Kriege der USA · seit 1945',
     draw: (f) =>
@@ -960,7 +1027,12 @@ const POOL: Dashboard[] = [
         ],
       }),
   },
-  trendCard('teen-antidepressants', 'Antidepressiva bei US-Jugendlichen', 'Antidepressiva-Rezepte · 🇺🇸 · 12–17 J. · Anteil', TEEN_RX_PANEL, aqua, (v) => `${v.toFixed(1)}%`, 199),
+  trendCard('teen-antidepressants', 'Antidepressiva bei US-Jugendlichen', 'Antidepressiva-Rezepte · 🇺🇸 · 12–17 J. · Anteil', TEEN_RX_PANEL, aqua, (v) => `${v.toFixed(1)}%`, 199, [
+    // The climb opens with the SSRI era and steepens in the smartphone years,
+    // on the 1970–2022 axis. The 2012 line is the correlation, not proof.
+    { at: (1988 - 1970) / (2022 - 1970), label: '💊 Prozac 1988' },
+    { at: (2012 - 1970) / (2022 - 1970), label: '📱 Soziale Medien' },
+  ]),
   {
     id: 'us-energy-mix',
     title: 'US-Strommix · Kohle, Kernkraft, Erneuerbare',
@@ -1544,6 +1616,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'power-prices': ['geld', 'deutschland', 'schweiz'],
   incarceration: ['soziales', 'schweiz'],
   corruption: ['soziales', 'welt', 'schweiz'],
+  'us-bases': ['krieg', 'welt'],
   'us-wars': ['krieg'],
   'recent-wars': ['krieg'],
   'teen-mde': ['gesundheit', 'soziales'],
@@ -1581,7 +1654,7 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
  * front on load; the rest of the pool follows behind them.
  */
 const FEATURED = new Set([
-  'us-wars', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
+  'us-wars', 'us-bases', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
   'us-debt', 'us-interest', 'm2', 'dollar', 'wealth', 'homicide-map',
   'world-pop', 'oil-consumption', 'climate', 'de-insolvenz-jobs', 'conflict-deaths', 'refugees',
   'military', 'gdp-growth', 'de-industry', 'recent-wars',
