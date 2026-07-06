@@ -22,7 +22,9 @@ const Card = styled.div`
   top: 50%;
   left: 50%;
   width: min(94vw, 560px, 72vh);
-  height: 85vh;
+  /* Cap by the actual stack area (not just the viewport) so the card never
+     overruns the header and gets clipped; the subtracted margin is the gap. */
+  height: min(85vh, calc(100% - 32px));
   border-radius: 18px;
   overflow: hidden;
   touch-action: none;
@@ -134,15 +136,22 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
       intro.current = false; // no chart replay on the card we land on
       navigator.vibrate?.(12); // short haptic tick (Android; iOS has no API)
       const off = goNext ? -1 : 1;
-      // Hurl the card off: it slides out, arcs up, spins in Z and Y and shrinks
-      // as it fades — an accelerating ease-in so it really flies.
-      setCur(
-        `${CENTER} translateX(${off * 165}%) translateY(-9%) rotate(${off * 20}deg) rotateY(${off * 38}deg) scale(0.85)`,
-        `transform ${THROW_MS}ms cubic-bezier(0.5, 0, 0.9, 0.4), opacity ${THROW_MS}ms ease-in`,
-        '0',
-      );
-      // The revealed neighbour rises to the front with a soft overshoot.
+      const el = curRef.current;
       const rise = goNext ? nextRef.current : prevRef.current;
+      // Pin the current (drag) state with no transition first — on a fast flick
+      // move/up can land in one frame with nothing painted between, and the
+      // browser then jumps straight to the end (the effect looks skipped).
+      if (el) {
+        el.style.transition = 'none';
+        el.style.transform = `${CENTER} translateX(${d.dx}px) rotate(${d.dx * 0.05}deg) rotateY(${d.dx * 0.05}deg)`;
+        void el.offsetWidth; // force a reflow so the throw actually animates
+        // Hurl it off: slides out, arcs up, spins in Z and Y and shrinks as it
+        // fades — an accelerating ease-in so it really flies.
+        el.style.transition = `transform ${THROW_MS}ms cubic-bezier(0.5, 0, 0.9, 0.4), opacity ${THROW_MS}ms ease-in`;
+        el.style.transform = `${CENTER} translateX(${off * 165}%) translateY(-9%) rotate(${off * 20}deg) rotateY(${off * 38}deg) scale(0.85)`;
+        el.style.opacity = '0';
+      }
+      // The revealed neighbour rises to the front with a soft overshoot.
       if (rise) {
         rise.style.transition = RISE;
         rise.style.transform = CENTER;
