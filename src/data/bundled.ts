@@ -523,6 +523,118 @@ export const CONTINENT_FERTILITY = compareSeries(
   { world: 2.2 },
 );
 
+// PISA mean scores for Germany, points (OECD PISA 2000–2022). All three
+// domains fell to record lows in 2022 — the steepest single-cycle drop since
+// PISA began, sharpened by the pandemic school closures. Every series spans
+// the full 2000–2022 window so the lines stay temporally aligned.
+export const PISA_DE = compareSeries(
+  [
+    { name: 'Mathematik', pts: [[2000, 490], [2003, 503], [2006, 504], [2009, 513], [2012, 514], [2015, 506], [2018, 500], [2022, 475]] },
+    { name: 'Lesen', pts: [[2000, 484], [2003, 491], [2006, 495], [2009, 497], [2012, 508], [2015, 509], [2018, 498], [2022, 480]] },
+    { name: 'Naturwiss.', pts: [[2000, 487], [2003, 502], [2006, 516], [2009, 520], [2012, 524], [2015, 509], [2018, 503], [2022, 492]] },
+  ],
+  (v) => `${v.toFixed(0)}`,
+  /** Latest maths score, for the headline. */
+  { deuLatest: 475 },
+);
+
+// US high-schoolers reporting persistent feelings of sadness or hopelessness,
+// % (CDC Youth Risk Behavior Survey). The gap opens after ~2012 as
+// smartphones and social media saturate teen life; girls climb far steeper.
+export const TEEN_SADNESS = compareSeries(
+  [
+    { name: 'Mädchen', pts: [[2011, 36], [2013, 36], [2015, 40], [2017, 41], [2019, 47], [2021, 57], [2023, 53]] },
+    { name: 'Jungen', pts: [[2011, 21], [2013, 21], [2015, 21], [2017, 21], [2019, 27], [2021, 29], [2023, 28]] },
+  ],
+  (v) => `${v.toFixed(0)}%`,
+  /** Latest girls' rate, for the headline. */
+  { girlsLatest: 53 },
+);
+
+// US adult obesity share, % (NHANES). The shaded band marks the fast-food
+// era: the 1970s drive-through boom and, from the 1980s, cheap high-fructose
+// corn syrup in soft drinks — the decades US obesity roughly tripled.
+const US_OBESITY_ANCHORS: [number, number][] = [
+  [1962, 13.0], [1971, 14.5], [1978, 15.0], [1988, 22.9], [1994, 23.2],
+  [2000, 30.5], [2004, 32.2], [2008, 33.7], [2012, 34.9], [2016, 39.6],
+  [2018, 42.4], [2022, 41.9],
+];
+
+function obesityFastfoodPanel() {
+  const [y0, y1] = [US_OBESITY_ANCHORS[0][0], US_OBESITY_ANCHORS[US_OBESITY_ANCHORS.length - 1][0]];
+  const n = 60;
+  const raw: number[] = [];
+  const years: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const y = y0 + ((y1 - y0) * i) / (n - 1);
+    years.push(y);
+    raw.push(interpAt(US_OBESITY_ANCHORS, y));
+  }
+  const s = niceScale(0, Math.max(...raw), (v) => `${v.toFixed(0)}%`);
+  return {
+    data: norm(raw, s.lo, s.hi),
+    ticks: s.ticks,
+    latest: US_OBESITY_ANCHORS[US_OBESITY_ANCHORS.length - 1][1],
+    // Fast food goes nationwide with the 1970s drive-through boom.
+    fastfoodMask: years.map((y) => y >= 1972),
+  };
+}
+
+export const US_OBESITY_FASTFOOD = obesityFastfoodPanel();
+
+// --- Surveillance & Agenda 2030 bundled panels ---
+
+// Installed surveillance cameras worldwide, count (IHS Markit / market
+// estimates). ~350M in 2016, roughly a billion by 2021 and still climbing —
+// China alone holds over half. Pre-2010 points are rough back-estimates.
+export const CAMERAS_PANEL: TrendSeries = trend(
+  [
+    [2000, 25e6], [2006, 60e6], [2012, 160e6], [2016, 350e6],
+    [2018, 570e6], [2021, 1e9], [2023, 1.1e9], [2025, 1.25e9],
+  ],
+  (v) => `${(v / 1e9).toFixed(2)} Mrd`,
+  ['2000', '2008', '2017', 'heute'],
+);
+
+// Government-ordered internet shutdowns per year (Access Now / #KeepItOn).
+// India leads the count year after year; 2023–24 are record highs, driven
+// by conflict shutdowns (Myanmar, Sudan, Ukraine-occupied regions).
+export const SHUTDOWN_PANEL: TrendSeries = trend(
+  [
+    [2016, 75], [2017, 108], [2018, 196], [2019, 213], [2020, 159],
+    [2021, 182], [2022, 187], [2023, 283], [2024, 296],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2016', '2019', '2021', 'heute'],
+);
+
+// Government requests for user data to Big Tech, count of requests per year
+// (Google & Meta transparency reports, rounded). Both climb steeply as
+// platforms become the default evidence trove for law enforcement.
+export const DATA_REQUESTS = compareSeries(
+  [
+    { name: 'Meta', pts: [[2013, 25_000], [2016, 59_000], [2019, 140_000], [2022, 237_000], [2024, 320_000]] },
+    { name: 'Google', pts: [[2013, 27_000], [2016, 45_000], [2019, 85_000], [2022, 130_000], [2024, 165_000]] },
+  ],
+  (v) => `${Math.round(v / 1000)}k`,
+  /** Latest Meta request count, for the headline. */
+  { metaLatest: 320_000 },
+);
+
+// Share of cash at the point of sale, % of transactions (Riksbank, Bundesbank,
+// ECB SPACE study; rounded, estimates). Sweden is nearly cashless; the euro
+// area and Germany still pay far more in cash but the slide is steady.
+export const CASHLESS_COMPARE = compareSeries(
+  [
+    { name: 'Eurozone', pts: [[2016, 79], [2019, 72], [2022, 59], [2024, 52]] },
+    { name: 'Deutschland', pts: [[2016, 80], [2019, 74], [2021, 58], [2023, 51], [2024, 50]] },
+    { name: 'Schweden', pts: [[2016, 20], [2019, 13], [2022, 9], [2024, 8]] },
+  ],
+  (v) => `${v.toFixed(0)}%`,
+  /** Latest Swedish cash share, for the headline. */
+  { sweLatest: 8 },
+);
+
 // Purchasing power of one 1913 US dollar (BLS CPI).
 export const DOLLAR_PANEL: TrendSeries = trend(
   [

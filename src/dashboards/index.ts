@@ -10,17 +10,21 @@ import {
   wealthSplit,
 } from './charts';
 import { SERIES } from './theme';
-import { CPI_INVERTED, EU_DEBT_ABS, NUKE_STATES, NUKE_TOTAL } from './geo';
+import { CHINA_SURVEILLANCE, CPI_INVERTED, EU_DEBT_ABS, NUKE_STATES, NUKE_TOTAL } from './geo';
 import type { Dashboard } from './types';
 import { live, type TrendSeries } from '../data/store';
 import {
   AI_JOBS_COMPARE,
+  CAMERAS_PANEL,
+  CASHLESS_COMPARE,
   CLIMATE_PANEL,
   CONFLICT_PANEL,
+  DATA_REQUESTS,
   DEBT_TREND_FALLBACK,
   DOLLAR_PANEL,
   CONTINENT_FERTILITY,
   INTERNET_PANEL,
+  SHUTDOWN_PANEL,
   LIFE_PANEL,
   DE_FOREIGN_SUSPECTS_PANEL,
   DE_INSOLVENCY_CLAIMS_PANEL,
@@ -33,10 +37,13 @@ import {
   NUKE_TESTS_PANEL,
   OBESITY_PANEL,
   OVERDOSE_PANEL,
+  PISA_DE,
   REFUGEE_PANEL,
   SWISS_POP_FALLBACK,
+  TEEN_SADNESS,
   US_HOMICIDE_PANEL,
   US_INTEREST_PANEL,
+  US_OBESITY_FASTFOOD,
   WORLD_POP_FALLBACK,
 } from '../data/bundled';
 
@@ -925,6 +932,295 @@ const POOL: Dashboard[] = [
       }),
   },
   {
+    id: 'pisa-de',
+    title: 'PISA-Absturz Deutschland',
+    draw: (f) =>
+      lineChart(f, {
+        // OECD PISA mean scores; the 2022 cycle is the steepest drop since
+        // PISA began, all three domains at record lows.
+        label: 'PISA · 🇩🇪 · Punkte',
+        value: PISA_DE.deuLatest,
+        unit: '',
+        fmt: (v) => `${v.toFixed(0)}`,
+        delta: null,
+        seed: 179,
+        series: [
+          { name: 'Mathematik', color: blue, data: PISA_DE.rows[0].data },
+          { name: 'Lesen', color: yellow, data: PISA_DE.rows[1].data },
+          { name: 'Naturwiss.', color: green, data: PISA_DE.rows[2].data },
+        ],
+        ticks: PISA_DE.ticks,
+        xLabels: ['2000', '2007', '2015', '2022'],
+      }),
+  },
+  {
+    id: 'teen-depression',
+    title: 'Depression bei US-Teenagern',
+    draw: (f) =>
+      lineChart(f, {
+        // CDC YRBS: persistent sadness/hopelessness. The gap opens after
+        // ~2012 as smartphones saturate teen life; girls climb far steeper.
+        label: 'Anhaltende Niedergeschlagenheit · 🇺🇸 · 14–18 J.',
+        value: TEEN_SADNESS.girlsLatest,
+        unit: '',
+        fmt: (v) => `${v.toFixed(0)}%`,
+        delta: null,
+        seed: 181,
+        series: [
+          { name: 'Mädchen', color: magenta, data: TEEN_SADNESS.rows[0].data },
+          { name: 'Jungen', color: blue, data: TEEN_SADNESS.rows[1].data },
+        ],
+        ticks: TEEN_SADNESS.ticks,
+        xLabels: ['2011', '2015', '2019', '2023'],
+      }),
+  },
+  {
+    id: 'obesity-fastfood',
+    title: 'Adipositas USA & die Fast-Food-Ära',
+    draw: (f) =>
+      lineChart(f, {
+        // NHANES adult obesity; the shaded band marks the fast-food era —
+        // 1970s drive-throughs and cheap corn syrup, the decades it tripled.
+        label: 'Adipositas · 🇺🇸 Erwachsene',
+        value: US_OBESITY_FASTFOOD.latest,
+        unit: '',
+        fmt: (v) => `${v.toFixed(0)}%`,
+        delta: null,
+        seed: 173,
+        series: [{ name: 'Adipositas-Quote', color: orange, data: US_OBESITY_FASTFOOD.data }],
+        ticks: US_OBESITY_FASTFOOD.ticks,
+        xLabels: ['1962', '1982', '2002', 'heute'],
+        shade: { mask: US_OBESITY_FASTFOOD.fastfoodMask, label: '🍔 Fast-Food-Ära' },
+      }),
+  },
+  {
+    id: 'surveillance',
+    title: 'Am meisten überwachte Städte',
+    draw: (f) =>
+      hBarChart(f, {
+        // Public CCTV cameras per city (Comparitech "Most surveilled cities",
+        // rounded). Chinese megacities dominate; Delhi and London are the
+        // non-Chinese outliers. Counts are estimates and vary by source.
+        label: 'CCTV-Kameras je Stadt · Comparitech · Schätzwerte',
+        value: 4.6e6,
+        fmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
+        rowFmt: (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(2)} Mio` : `${Math.round(v / 1000)}k`),
+        delta: null,
+        color: aqua,
+        unit: '',
+        rows: [
+          { name: 'Peking 🇨🇳', v: 1_150_000 },
+          { name: 'Shanghai 🇨🇳', v: 1_000_000 },
+          { name: 'Delhi 🇮🇳', v: 940_000 },
+          { name: 'London 🇬🇧', v: 690_000 },
+          { name: 'Chennai 🇮🇳', v: 280_000 },
+          { name: 'Moskau 🇷🇺', v: 210_000 },
+          { name: 'Singapur 🇸🇬', v: 90_000 },
+          { name: 'New York 🇺🇸', v: 74_000 },
+          { name: 'Berlin 🇩🇪', v: 40_000 },
+          { name: 'Zürich 🇨🇭', v: 15_000 },
+        ],
+      }),
+  },
+  trendCard('cameras-world', 'Überwachungskameras weltweit', 'Installierte CCTV-Kameras · IHS · Schätzung', CAMERAS_PANEL, aqua, (v) => `${(v / 1e9).toFixed(2)} Mrd`, 183),
+  {
+    id: 'internet-shutdowns',
+    title: 'Internet-Abschaltungen durch Regierungen',
+    draw: (f) =>
+      areaChart(f, {
+        // Access Now #KeepItOn: government-ordered shutdowns per year.
+        label: 'Internet-Shutdowns · pro Jahr · Access Now',
+        value: SHUTDOWN_PANEL.latest,
+        fmt: (v) => `${Math.round(v)}`,
+        delta: SHUTDOWN_PANEL.yoyPct,
+        seed: 185,
+        color: red,
+        data: SHUTDOWN_PANEL.series,
+        ticks: SHUTDOWN_PANEL.ticks,
+        xLabels: SHUTDOWN_PANEL.xLabels,
+      }),
+  },
+  {
+    id: 'gov-data-requests',
+    title: 'Behörden-Datenanfragen an Big Tech',
+    draw: (f) =>
+      lineChart(f, {
+        // Google & Meta transparency reports: law-enforcement requests for
+        // user data, both climbing steeply.
+        label: 'Behördenanfragen nach Nutzerdaten · pro Jahr',
+        value: DATA_REQUESTS.metaLatest,
+        unit: '',
+        fmt: (v) => `${Math.round(v / 1000)}k`,
+        delta: null,
+        seed: 187,
+        series: [
+          { name: 'Meta', color: blue, data: DATA_REQUESTS.rows[0].data },
+          { name: 'Google', color: yellow, data: DATA_REQUESTS.rows[1].data },
+        ],
+        ticks: DATA_REQUESTS.ticks,
+        xLabels: ['2013', '2017', '2021', 'heute'],
+      }),
+  },
+  {
+    id: 'sdg-progress',
+    title: 'Agenda 2030 · Stand der SDG-Ziele',
+    draw: (f) =>
+      treemap(f, {
+        // UN Sustainable Development Goals Report 2024: of the assessable
+        // targets, only ~17% are on track, a third stagnate or reverse.
+        label: 'SDG-Ziele · Stand 2024 · UN',
+        value: 100,
+        fmt: (v) => `${Math.round(v)}%`,
+        rows: [
+          { name: 'stagniert / rückläufig', v: 35, short: '⛔' },
+          { name: 'zu langsam', v: 48, short: '🐢' },
+          { name: 'auf Kurs', v: 17, short: '✅' },
+        ],
+      }),
+  },
+  {
+    id: 'cbdc',
+    title: 'Digitales Zentralbankgeld weltweit',
+    draw: (f) =>
+      treemap(f, {
+        // Atlantic Council CBDC Tracker 2024: 130+ countries exploring a
+        // central bank digital currency; only a handful have launched.
+        label: 'CBDC-Projekte · Länder · Atlantic Council',
+        value: 134,
+        fmt: (v) => `${Math.round(v)} Länder`,
+        rows: [
+          { name: 'Forschung', v: 39, short: '🔬' },
+          { name: 'Pilot', v: 44, short: '🧪' },
+          { name: 'Entwicklung', v: 20, short: '⚙️' },
+          { name: 'gestartet', v: 3, short: '🚀' },
+          { name: 'inaktiv', v: 28, short: '💤', muted: true },
+        ],
+      }),
+  },
+  {
+    id: 'cashless',
+    title: 'Weg vom Bargeld',
+    draw: (f) =>
+      lineChart(f, {
+        // Cash share at the point of sale, % of transactions (Riksbank,
+        // Bundesbank, ECB SPACE; estimates). Sweden is nearly cashless.
+        label: 'Barzahlungen am Ladentisch · Anteil · Schätzwerte',
+        value: CASHLESS_COMPARE.sweLatest,
+        unit: '',
+        fmt: (v) => `${v.toFixed(0)}%`,
+        delta: null,
+        seed: 189,
+        series: [
+          { name: 'Eurozone', color: violet, data: CASHLESS_COMPARE.rows[0].data },
+          { name: 'Deutschland', color: yellow, data: CASHLESS_COMPARE.rows[1].data },
+          { name: 'Schweden', color: aqua, data: CASHLESS_COMPARE.rows[2].data },
+        ],
+        ticks: CASHLESS_COMPARE.ticks,
+        xLabels: ['2016', '2019', '2022', 'heute'],
+      }),
+  },
+  {
+    id: 'china-surveillance',
+    title: 'Chinas Überwachungstechnik weltweit',
+    draw: (f) =>
+      choroplethMap(f, {
+        // Carnegie AIGS Index + IPVM/press on Huawei/Hikvision/Dahua exports.
+        // Darker = state "safe city" system; light = Chinese cameras common.
+        label: 'Chinesische Überwachungstechnik · dunkler = Staatssystem',
+        value: 80,
+        fmt: (v) => `${Math.round(v)} Länder`,
+        valueByIso: CHINA_SURVEILLANCE,
+        world: live.worldMap,
+        rows: [
+          { name: 'China · Hersteller', v: 3 },
+          { name: 'Ecuador · ECU-911', v: 2 },
+          { name: 'Serbien · Belgrad', v: 2 },
+          { name: 'Paraguay · Asunción', v: 2 },
+          { name: 'Deutschland · Hikvision', v: 1 },
+          { name: 'Schweiz · Hikvision', v: 1 },
+        ],
+        rowFmt: (v) => (v >= 3 ? 'Hersteller' : v >= 2 ? 'Safe-City' : 'Kameras'),
+        source: 'Carnegie AIGS-Index / IPVM · dokumentiert, nicht abschließend',
+      }),
+  },
+  {
+    id: '5g-stations',
+    title: '5G-Ausbau · führende Länder',
+    draw: (f) =>
+      hBarChart(f, {
+        // Installed 5G base stations per country (operator/regulator figures,
+        // rounded estimates). China counts base stations in the millions and
+        // dwarfs everyone — well over half the world's total.
+        label: '5G-Basisstationen · Schätzwerte',
+        value: 5.1e6,
+        fmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
+        rowFmt: (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(2)} Mio` : `${Math.round(v / 1000)}k`),
+        delta: null,
+        color: violet,
+        unit: '',
+        rows: [
+          { name: 'China 🇨🇳', v: 3_770_000 },
+          { name: 'Indien 🇮🇳', v: 450_000 },
+          { name: 'Südkorea 🇰🇷', v: 350_000 },
+          { name: 'Japan 🇯🇵', v: 230_000 },
+          { name: 'USA 🇺🇸', v: 200_000 },
+          { name: 'Deutschland 🇩🇪', v: 90_000 },
+          { name: 'Großbritannien 🇬🇧', v: 45_000 },
+          { name: 'Schweiz 🇨🇭', v: 15_000 },
+        ],
+      }),
+  },
+  {
+    id: 'un-resolutions',
+    title: 'UN-Resolutionen gegen einzelne Länder',
+    draw: (f) =>
+      hBarChart(f, {
+        // UN General Assembly country-specific resolutions, 2022 session
+        // (UN Watch tally). Israel alone draws more than all others combined;
+        // the USA appears only via the annual Cuba-embargo resolution.
+        label: 'UN-Vollversammlung · Resolutionen gegen Länder · 2022',
+        value: 26,
+        fmt: (v) => `${Math.round(v)}`,
+        rowFmt: (v) => `${Math.round(v)}`,
+        delta: null,
+        color: red,
+        unit: '',
+        rows: [
+          { name: 'Israel 🇮🇱', v: 15 },
+          { name: 'Russland 🇷🇺', v: 6 },
+          { name: 'USA (Kuba-Embargo) 🇺🇸', v: 1 },
+          { name: 'Iran 🇮🇷', v: 1 },
+          { name: 'Nordkorea 🇰🇵', v: 1 },
+          { name: 'Syrien 🇸🇾', v: 1 },
+          { name: 'Myanmar 🇲🇲', v: 1 },
+        ],
+      }),
+  },
+  {
+    id: 'un-vetoes',
+    title: 'Vetos im UN-Sicherheitsrat',
+    draw: (f) =>
+      hBarChart(f, {
+        // Security Council vetoes 1946–2024 (UN Dag Hammarskjöld Library,
+        // rounded). Russia/USSR lead all-time; the USA is second overall and
+        // first in recent decades, most often shielding Israel.
+        label: 'Vetos im UN-Sicherheitsrat · seit 1946 · gerundet',
+        value: 282,
+        fmt: (v) => `${Math.round(v)}`,
+        rowFmt: (v) => `${Math.round(v)}`,
+        delta: null,
+        color: orange,
+        unit: '',
+        rows: [
+          { name: 'Russland / UdSSR 🇷🇺', v: 128 },
+          { name: 'USA 🇺🇸', v: 87 },
+          { name: 'Großbritannien 🇬🇧', v: 29 },
+          { name: 'China 🇨🇳', v: 21 },
+          { name: 'Frankreich 🇫🇷', v: 16 },
+        ],
+      }),
+  },
+  {
     id: 'swiss-trends',
     title: 'Schweizer Trends · Wikipedia',
     dynamic: true,
@@ -1006,6 +1302,20 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'us-wars': ['krieg'],
   'us-homicide': ['soziales'],
   'recent-wars': ['krieg'],
+  'pisa-de': ['deutschland', 'soziales'],
+  'teen-depression': ['gesundheit', 'soziales'],
+  'obesity-fastfood': ['gesundheit'],
+  surveillance: ['welt', 'soziales', 'schweiz'],
+  'cameras-world': ['welt', 'soziales'],
+  'internet-shutdowns': ['welt', 'soziales'],
+  'gov-data-requests': ['welt', 'soziales'],
+  'sdg-progress': ['welt'],
+  cbdc: ['geld', 'welt'],
+  cashless: ['geld', 'welt', 'deutschland'],
+  '5g-stations': ['welt', 'deutschland', 'schweiz'],
+  'china-surveillance': ['welt', 'soziales', 'deutschland', 'schweiz'],
+  'un-resolutions': ['welt', 'krieg'],
+  'un-vetoes': ['welt', 'krieg'],
   'swiss-trends': ['schweiz'],
 };
 for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
@@ -1020,6 +1330,10 @@ const FEATURED = new Set([
   'world-pop', 'climate', 'de-insolvenzen', 'conflict-deaths', 'refugees',
   'military', 'gdp-growth', 'de-industry', 'recent-wars',
   'youth-unemployment', 'unemployment', 'poverty',
+  'pisa-de', 'teen-depression', 'obesity-fastfood', 'surveillance',
+  'cameras-world', 'internet-shutdowns', 'gov-data-requests',
+  'sdg-progress', 'cbdc', 'cashless', '5g-stations', 'china-surveillance',
+  'un-resolutions', 'un-vetoes',
 ]);
 
 /**
