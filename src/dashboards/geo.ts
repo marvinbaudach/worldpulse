@@ -60,3 +60,13 @@ export const EU_DEBT_ABS: Record<string, number> = {
   LTU: 30 * BN, BGR: 25 * BN, CYP: 24 * BN, LUX: 22 * BN,
   LVA: 20 * BN, MLT: 11 * BN, EST: 9 * BN,
 };
+
+// EU gross government debt as a share of GDP, % (Eurostat 2024). The ratio,
+// not the absolute pile: small, heavily-indebted states (Greece, Italy) burn
+// darker than large economies with more moderate ratios (Germany).
+export const EU_DEBT_GDP: Record<string, number> = {
+  GRC: 154, ITA: 135, FRA: 112, BEL: 105, ESP: 102, PRT: 95, FIN: 82,
+  AUT: 78, HUN: 74, CYP: 71, SVN: 67, HRV: 61, DEU: 63, SVK: 59,
+  POL: 55, ROU: 52, MLT: 47, CZE: 45, LVA: 45, NLD: 44, IRL: 42,
+  LTU: 38, SWE: 33, DNK: 30, LUX: 27, BGR: 24, EST: 24,
+};

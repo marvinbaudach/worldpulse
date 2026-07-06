@@ -387,16 +387,19 @@ export const GDP_COMPARE = compareSeries(
   { deuLatest: 1.08 },
 );
 
-// German corporate insolvencies per year (Destatis). Fell steadily from
-// the 2003 peak to the 2021 low, then three consecutive surges — the
-// steepest rises since the early-2000s crisis.
-export const DE_INSOLVENCY_PANEL: TrendSeries = trend(
+// Jobs hit by German corporate insolvencies per year (Creditreform
+// "betroffene Arbeitsplätze", approximate). Unlike a raw case count this
+// weights by firm size — a single large collapse (Schlecker, Galeria, big
+// carmakers' suppliers) moves it far more than thousands of tiny ones, which
+// is why the 2024–25 surge is so steep even though case counts are below the
+// 2003 peak. Rough estimates, not an exact series.
+export const DE_INSOLVENCY_JOBS_PANEL: TrendSeries = trend(
   [
-    [2000, 28_235], [2003, 39_320], [2006, 34_137], [2009, 32_687],
-    [2012, 28_297], [2015, 23_101], [2019, 18_749], [2021, 13_993],
-    [2022, 14_590], [2023, 17_814], [2024, 21_812], [2025, 24_064],
+    [2000, 480_000], [2003, 613_000], [2006, 433_000], [2009, 582_000],
+    [2012, 330_000], [2015, 232_000], [2019, 218_000], [2021, 155_000],
+    [2022, 175_000], [2023, 205_000], [2024, 320_000], [2025, 350_000],
   ],
-  (v) => `${(v / 1000).toFixed(0)}k`,
+  (v) => `${Math.round(v / 1000)}k`,
   ['2000', '2008', '2017', 'heute'],
 );
 
@@ -500,12 +503,12 @@ export const NUKE_TESTS_PANEL: TrendSeries = trend(
 // that far back, only sparse national data suggesting a low, slow rise.
 export const OBESITY_PANEL: TrendSeries = trend(
   [
-    [1950, 2.5], [1960, 3.1], [1970, 4.1],
+    [1900, 1.5], [1925, 1.9], [1950, 2.5], [1960, 3.1], [1970, 4.1],
     [1975, 4.7], [1985, 6.4], [1995, 8.5], [2005, 10.3],
     [2010, 11.7], [2016, 13.1], [2022, 16],
   ],
   (v) => `${v.toFixed(0)}%`,
-  ['1950', '1975', '2000', 'heute'],
+  ['1900', '1940', '1980', 'heute'],
 );
 
 // Births per woman by continent — UN WPP 2024 from 1950 on, pre-1950 from
@@ -687,23 +690,45 @@ export const DE_TOTAL_CAP_PANEL: TrendSeries = trend(
 // minutes (SAIDI) stayed among the world's lowest.
 export const DE_GRID_INTERVENTIONS_PANEL: TrendSeries = trend(
   [
-    [2010, 0.3], [2012, 2.6], [2014, 5.2], [2015, 16.0], [2017, 20.4],
-    [2019, 13.7], [2021, 12.2], [2023, 14.8],
+    [2000, 0.02], [2005, 0.05], [2009, 0.2], [2010, 0.3], [2012, 2.6],
+    [2014, 5.2], [2015, 16.0], [2017, 20.4], [2019, 13.7], [2021, 12.2],
+    [2023, 14.8],
   ],
   (v) => `${v.toFixed(1)} TWh`,
-  ['2010', '2014', '2019', '2023'],
+  ['2000', '2008', '2016', '2023'],
 );
 
-// Installed coal generating capacity in the USA, GW (EIA). Peaks around 2011,
-// then retiring steadily as cheap gas and renewables displace it — roughly a
-// third of the fleet gone in a decade.
-export const US_COAL_PANEL: TrendSeries = trend(
+// US installed generating capacity by source, GW (EIA). Coal peaks ~2011
+// then retires; nuclear stays roughly flat; wind+solar climb from almost
+// nothing to the largest of the three. All three span 2000–2023 so the lines
+// stay aligned. Wind and solar are weather-dependent, so their nameplate GW
+// overstates firm, on-demand power — the grid-strain that intermittency adds
+// shows up in the redispatch panel, not here.
+export const US_ENERGY_MIX = compareSeries(
   [
-    [2000, 305], [2005, 313], [2011, 318], [2014, 300], [2016, 275],
-    [2019, 229], [2021, 212], [2023, 190],
+    { name: 'Kohle', pts: [[2000, 305], [2011, 318], [2016, 275], [2019, 229], [2023, 190]] },
+    { name: 'Kernkraft', pts: [[2000, 98], [2010, 101], [2016, 99], [2023, 95]] },
+    { name: 'Wind + Solar', pts: [[2000, 3], [2010, 40], [2015, 95], [2019, 160], [2023, 290]] },
   ],
   (v) => `${Math.round(v)} GW`,
-  ['2000', '2008', '2016', '2023'],
+  /** Latest wind+solar capacity, for the headline. */
+  { renewLatest: 290 },
+);
+
+// German installed generating capacity by source over 30 years, GW (BNetzA /
+// Fraunhofer ISE). The Energiewende in one chart: nuclear collapses to zero
+// (2023), coal is drawn down, and wind+solar surge from a rounding error to
+// by far the largest block. All three span 1995–2024 so the lines align.
+// Nameplate GW — wind/solar's firm, on-demand output is a fraction of it.
+export const DE_ENERGY_MIX = compareSeries(
+  [
+    { name: 'Kohle', pts: [[1995, 52], [2005, 50], [2015, 50], [2020, 44], [2024, 35]] },
+    { name: 'Kernkraft', pts: [[1995, 22.7], [2000, 22.4], [2010, 20.5], [2011, 12.7], [2015, 12.1], [2019, 9.5], [2022, 4.3], [2023, 0], [2024, 0]] },
+    { name: 'Wind + Solar', pts: [[1995, 2], [2000, 6], [2010, 45], [2015, 85], [2020, 115], [2024, 172]] },
+  ],
+  (v) => `${Math.round(v)} GW`,
+  /** Latest wind+solar capacity, for the headline. */
+  { renewLatest: 172 },
 );
 
 // US adult obesity share, % (NHANES). The shaded band marks the fast-food

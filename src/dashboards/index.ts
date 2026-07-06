@@ -10,13 +10,12 @@ import {
   wealthSplit,
 } from './charts';
 import { SERIES } from './theme';
-import { CPI_INVERTED, EU_DEBT_ABS, NUKE_STATES, NUKE_TOTAL } from './geo';
+import { CPI_INVERTED, EU_DEBT_GDP, NUKE_STATES, NUKE_TOTAL } from './geo';
 import type { Dashboard } from './types';
 import { live, type TrendSeries } from '../data/store';
 import {
   AI_JOBS_COMPARE,
   CAMERAS_PANEL,
-  CASHLESS_COMPARE,
   CLIMATE_PANEL,
   CONFLICT_PANEL,
   DATA_REQUESTS,
@@ -29,8 +28,7 @@ import {
   SHUTDOWN_PANEL,
   LIFE_PANEL,
   DE_FOREIGN_SUSPECTS_PANEL,
-  DE_INSOLVENCY_CLAIMS_PANEL,
-  DE_INSOLVENCY_PANEL,
+  DE_INSOLVENCY_JOBS_PANEL,
   DE_MIGRATION_PANEL,
   INDUSTRY_COMPARE,
   GDP_COMPARE,
@@ -39,13 +37,10 @@ import {
   NUKE_TESTS_PANEL,
   OBESITY_PANEL,
   OVERDOSE_PANEL,
-  PISA_DE,
   REFUGEE_PANEL,
   SWISS_POP_FALLBACK,
-  DE_GRID_INTERVENTIONS_PANEL,
-  DE_NUCLEAR_PANEL,
-  DE_TOTAL_CAP_PANEL,
-  US_COAL_PANEL,
+  DE_ENERGY_MIX,
+  US_ENERGY_MIX,
   TEEN_MDE,
   TEEN_RX_PANEL,
   TEEN_SADNESS,
@@ -53,7 +48,6 @@ import {
   TEEN_SUICIDE,
   YOUTH_SUICIDE,
   US_ALCOHOL_DEATHS_PANEL,
-  US_HOMICIDE_PANEL,
   US_INTEREST_PANEL,
   US_OBESITY_FASTFOOD,
   WORLD_POP_FALLBACK,
@@ -192,32 +186,6 @@ const POOL: Dashboard[] = [
     },
   },
   {
-    id: 'homicide-trend',
-    title: 'Mordraten · 6 Länder',
-    dynamic: true,
-    draw: (f) => {
-      const hm = live.homicide;
-      lineChart(f, {
-        label: 'Morde /100k · seit 1990',
-        value: hm?.cheLatest ?? 0.5,
-        unit: '',
-        fmt: (v) => v.toFixed(2),
-        delta: null,
-        seed: 41,
-        series: [
-          { name: '🇧🇷', color: green, data: hm?.bra },
-          { name: '🇷🇺', color: red, data: hm?.rus },
-          { name: '🇺🇸', color: blue, data: hm?.usa },
-          { name: '🇩🇪', color: yellow, data: hm?.deu },
-          { name: '🇨🇭', color: violet, data: hm?.che },
-          { name: '🇯🇵', color: magenta, data: hm?.jpn },
-        ],
-        ticks: hm?.ticks ?? ['0', '5', '10'],
-        xLabels: ['1990', '2002', '2013', 'heute'],
-      });
-    },
-  },
-  {
     id: 'climate',
     title: 'Globale Temperatur · 800.000 Jahre',
     draw: (f) => {
@@ -326,7 +294,6 @@ const POOL: Dashboard[] = [
         xLabels: US_INTEREST_PANEL.xLabels,
       }),
   },
-  trendCard('us-homicide', 'Mordrate USA · seit 1900', 'Mordrate · 🇺🇸 · pro 100k', US_HOMICIDE_PANEL, red, (v) => v.toFixed(1), 163),
   {
     id: 'overdose',
     title: 'US-Drogentote (Überdosis)',
@@ -373,27 +340,27 @@ const POOL: Dashboard[] = [
   },
   {
     id: 'eu-debt-map',
-    title: 'Größte Schuldenberge der EU',
+    title: 'EU-Schuldenquote · % des BIP',
     draw: (f) =>
       choroplethMap(f, {
-        // Europe window of the world map, shaded by ABSOLUTE debt so it reads
-        // as systemic threat: the big economies carrying trillions (France,
-        // Italy, Germany) burn darkest, not tiny highly-indebted Greece.
-        label: 'Staatsschulden · EU · absolut',
-        value: 14.6e12,
-        fmt: (v) => `${(v / 1e12).toFixed(1)} Bio €`,
-        valueByIso: EU_DEBT_ABS,
+        // Europe window shaded by the debt-to-GDP RATIO, not the absolute pile:
+        // Greece and Italy burn darkest despite far smaller economies than
+        // Germany, which sits mid-pack on the ratio.
+        label: 'Staatsschulden / BIP · EU',
+        value: 82,
+        fmt: (v) => `⌀ ${Math.round(v)}%`,
+        valueByIso: EU_DEBT_GDP,
         world: live.worldMap,
         bounds: { lonMin: -12, lonMax: 35, latMin: 34, latMax: 71 },
         rows: [
-          { name: 'Frankreich', v: 3305e9 },
-          { name: 'Italien', v: 2970e9 },
-          { name: 'Deutschland', v: 2690e9 },
-          { name: 'Spanien', v: 1620e9 },
-          { name: 'Belgien', v: 635e9 },
+          { name: 'Griechenland', v: 154 },
+          { name: 'Italien', v: 135 },
+          { name: 'Frankreich', v: 112 },
+          { name: 'Belgien', v: 105 },
+          { name: 'Spanien', v: 102 },
         ],
-        rowFmt: (v) => `${(v / 1e12).toFixed(2)} Bio €`,
-        source: 'Eurostat 2024 · Bruttostaatsschulden absolut',
+        rowFmt: (v) => `${Math.round(v)}%`,
+        source: 'Eurostat 2024 · Schuldenquote (% BIP)',
       }),
   },
   {
@@ -553,8 +520,7 @@ const POOL: Dashboard[] = [
         ],
       }),
   },
-  trendCard('de-insolvenzen', 'Firmeninsolvenzen Deutschland', 'Firmeninsolvenzen · 🇩🇪 · Destatis', DE_INSOLVENCY_PANEL, red, (v) => `${(v / 1000).toFixed(1)}k`, 137),
-  trendCard('de-insolvenz-schaden', 'Insolvenz-Schäden Deutschland', 'Gläubigerforderungen · 🇩🇪 · Mrd €', DE_INSOLVENCY_CLAIMS_PANEL, orange, (v) => `${Math.round(v)} Mrd €`, 167),
+  trendCard('de-insolvenz-jobs', 'Insolvenzen · betroffene Arbeitsplätze', 'Betroffene Beschäftigte · 🇩🇪 · Creditreform', DE_INSOLVENCY_JOBS_PANEL, red, (v) => `${Math.round(v / 1000)}k`, 137),
   {
     id: 'de-industry',
     title: 'Industrieproduktion · DEU vs. USA vs. China',
@@ -651,48 +617,6 @@ const POOL: Dashboard[] = [
           { name: 'Südkorea', v: 500_000 },
           { name: 'Vietnam', v: 482_000 },
           { name: 'Ägypten', v: 440_000 },
-        ],
-      }),
-  },
-  {
-    id: 'reserve-fx',
-    title: 'Weltreservewährungen',
-    draw: (f) =>
-      treemap(f, {
-        // IMF COFER, allocated FX reserves Q3 2024 (shares in %).
-        label: 'Reservewährungen · IWF',
-        value: 12.3e12,
-        fmt: (v) => `$${(v / 1e12).toFixed(1)}T`,
-        rows: [
-          { name: 'US-Dollar', v: 57.8 },
-          { name: 'Euro', v: 20.0 },
-          { name: 'Yen', v: 5.7 },
-          { name: 'Pfund', v: 4.9 },
-          { name: 'Kanad. Dollar', v: 2.8 },
-          { name: 'Renminbi', v: 2.2 },
-          { name: 'Austral. Dollar', v: 2.2 },
-          { name: 'Andere', v: 4.4, muted: true },
-        ],
-      }),
-  },
-  {
-    id: 'energy-mix',
-    title: 'Globaler Energiemix',
-    draw: (f) =>
-      treemap(f, {
-        // Share of primary energy 2023 (Energy Institute Statistical Review).
-        label: 'Primärenergie · 2023',
-        value: 620,
-        fmt: (v) => `${Math.round(v)} EJ`,
-        rows: [
-          { name: 'Öl', v: 31.7 },
-          { name: 'Kohle', v: 26.5 },
-          { name: 'Gas', v: 23.3 },
-          { name: 'Wasserkraft', v: 6.4 },
-          { name: 'Kernkraft', v: 4.0 },
-          { name: 'Wind', v: 3.5 },
-          { name: 'Solar', v: 2.1 },
-          { name: 'Andere', v: 2.5, muted: true },
         ],
       }),
   },
@@ -944,28 +868,6 @@ const POOL: Dashboard[] = [
       }),
   },
   {
-    id: 'pisa-de',
-    title: 'PISA-Absturz Deutschland',
-    draw: (f) =>
-      lineChart(f, {
-        // OECD PISA mean scores; the 2022 cycle is the steepest drop since
-        // PISA began, all three domains at record lows.
-        label: 'PISA · 🇩🇪 · Punkte',
-        value: PISA_DE.deuLatest,
-        unit: '',
-        fmt: (v) => `${v.toFixed(0)}`,
-        delta: null,
-        seed: 179,
-        series: [
-          { name: 'Mathematik', color: blue, data: PISA_DE.rows[0].data },
-          { name: 'Lesen', color: yellow, data: PISA_DE.rows[1].data },
-          { name: 'Naturwiss.', color: green, data: PISA_DE.rows[2].data },
-        ],
-        ticks: PISA_DE.ticks,
-        xLabels: ['2000', '2007', '2015', '2022'],
-      }),
-  },
-  {
     id: 'teen-depression',
     title: 'Niedergeschlagenheit der Jugend seit 1999',
     draw: (f) =>
@@ -984,7 +886,7 @@ const POOL: Dashboard[] = [
         ],
         ticks: TEEN_SADNESS.ticks,
         xLabels: ['1999', '2007', '2015', '2023'],
-        shade: { mask: TEEN_SADNESS.socialMask, label: '📱 Smartphone-Ära' },
+        shade: { mask: TEEN_SADNESS.socialMask, label: '📱 Soziale Medien' },
       }),
   },
   {
@@ -1003,7 +905,7 @@ const POOL: Dashboard[] = [
         series: [{ name: 'Betroffene', color: magenta, data: TEEN_MDE.data }],
         ticks: TEEN_MDE.ticks,
         xLabels: ['2004', '2010', '2016', '2022'],
-        shade: { mask: TEEN_MDE.mask, label: '📱 Smartphone-Ära' },
+        shade: { mask: TEEN_MDE.mask, label: '📱 Soziale Medien' },
       }),
   },
   {
@@ -1022,7 +924,7 @@ const POOL: Dashboard[] = [
         series: [{ name: 'Suizidrate', color: red, data: YOUTH_SUICIDE.data }],
         ticks: YOUTH_SUICIDE.ticks,
         xLabels: ['1999', '2007', '2015', '2021'],
-        shade: { mask: YOUTH_SUICIDE.mask, label: '📱 Smartphone-Ära' },
+        shade: { mask: YOUTH_SUICIDE.mask, label: '📱 Soziale Medien' },
       }),
   },
   {
@@ -1041,15 +943,57 @@ const POOL: Dashboard[] = [
         series: [{ name: 'Suizidrate', color: red, data: TEEN_SUICIDE.data }],
         ticks: TEEN_SUICIDE.ticks,
         xLabels: ['1999', '2007', '2015', '2021'],
-        shade: { mask: TEEN_SUICIDE.mask, label: '📱 Smartphone-Ära' },
+        shade: { mask: TEEN_SUICIDE.mask, label: '📱 Soziale Medien' },
       }),
   },
   trendCard('teen-screen', 'Bildschirmzeit US-Teenager', 'Unterhaltungsmedien · 🇺🇸 · 13–18 J. · Std./Tag', TEEN_SCREEN_PANEL, violet, (v) => `${v.toFixed(1)} h`, 193),
   trendCard('teen-antidepressants', 'Antidepressiva bei US-Jugendlichen', 'Verordnungen · 🇺🇸 · 12–17 J. · Index 2016 = 100', TEEN_RX_PANEL, aqua, (v) => `${Math.round(v)}`, 199),
-  trendCard('de-nuclear', 'Kernkraft-Ausstieg Deutschland', 'Kernkraft · 🇩🇪 · installierte Leistung', DE_NUCLEAR_PANEL, red, (v) => `${v.toFixed(1)} GW`, 211),
-  trendCard('de-total-capacity', 'Kraftwerksleistung Deutschland gesamt', 'Installierte Netto-Leistung · 🇩🇪 · alle Quellen', DE_TOTAL_CAP_PANEL, green, (v) => `${Math.round(v)} GW`, 223),
-  trendCard('de-grid-interventions', 'Netzeingriffe Stromnetz Deutschland', 'Redispatch-Volumen · 🇩🇪 · zur Netzstabilisierung', DE_GRID_INTERVENTIONS_PANEL, yellow, (v) => `${v.toFixed(1)} TWh`, 229),
-  trendCard('us-coal', 'Kohlekraft-Rückbau USA', 'Kohlekraft · 🇺🇸 · installierte Leistung', US_COAL_PANEL, orange, (v) => `${Math.round(v)} GW`, 217),
+  {
+    id: 'us-energy-mix',
+    title: 'US-Strommix · Kohle, Kernkraft, Erneuerbare',
+    draw: (f) =>
+      lineChart(f, {
+        // EIA installed capacity by source: coal retires, nuclear holds flat,
+        // wind+solar overtake both. Nameplate GW — the intermittent sources'
+        // firm, on-demand output is a fraction of it.
+        label: 'Installierte Leistung · 🇺🇸 · GW',
+        value: US_ENERGY_MIX.renewLatest,
+        unit: '',
+        fmt: (v) => `${Math.round(v)} GW`,
+        delta: null,
+        seed: 217,
+        series: [
+          { name: 'Kohle', color: orange, data: US_ENERGY_MIX.rows[0].data },
+          { name: 'Kernkraft', color: yellow, data: US_ENERGY_MIX.rows[1].data },
+          { name: 'Wind + Solar', color: green, data: US_ENERGY_MIX.rows[2].data },
+        ],
+        ticks: US_ENERGY_MIX.ticks,
+        xLabels: ['2000', '2008', '2016', '2023'],
+      }),
+  },
+  {
+    id: 'de-energy-mix',
+    title: 'Deutscher Strommix · Kohle, Kernkraft, Erneuerbare',
+    draw: (f) =>
+      lineChart(f, {
+        // BNetzA/Fraunhofer installed capacity: nuclear to zero (2023), coal
+        // drawn down, wind+solar surge past both. Nameplate GW — the
+        // intermittent sources' firm output is a fraction of it.
+        label: 'Installierte Leistung · 🇩🇪 · GW',
+        value: DE_ENERGY_MIX.renewLatest,
+        unit: '',
+        fmt: (v) => `${Math.round(v)} GW`,
+        delta: null,
+        seed: 233,
+        series: [
+          { name: 'Kohle', color: orange, data: DE_ENERGY_MIX.rows[0].data },
+          { name: 'Kernkraft', color: red, data: DE_ENERGY_MIX.rows[1].data },
+          { name: 'Wind + Solar', color: green, data: DE_ENERGY_MIX.rows[2].data },
+        ],
+        ticks: DE_ENERGY_MIX.ticks,
+        xLabels: ['1995', '2005', '2015', '2024'],
+      }),
+  },
   {
     id: 'obesity-fastfood',
     title: 'Adipositas USA & die Fast-Food-Ära',
@@ -1140,61 +1084,51 @@ const POOL: Dashboard[] = [
       }),
   },
   {
-    id: 'sdg-progress',
-    title: 'Agenda 2030 · Stand der SDG-Ziele',
+    id: 'gov-requests-country',
+    title: 'Behördenanfragen an Big Tech · Top-Länder',
     draw: (f) =>
-      treemap(f, {
-        // UN Sustainable Development Goals Report 2024: of the assessable
-        // targets, only ~17% are on track, a third stagnate or reverse.
-        label: 'SDG-Ziele · Stand 2024 · UN',
-        value: 100,
-        fmt: (v) => `${Math.round(v)}%`,
-        rows: [
-          { name: 'stagniert / rückläufig', v: 35, short: '⛔' },
-          { name: 'zu langsam', v: 48, short: '🐢' },
-          { name: 'auf Kurs', v: 17, short: '✅' },
-        ],
-      }),
-  },
-  {
-    id: 'cbdc',
-    title: 'Digitales Zentralbankgeld weltweit',
-    draw: (f) =>
-      treemap(f, {
-        // Atlantic Council CBDC Tracker 2024: 130+ countries exploring a
-        // central bank digital currency; only a handful have launched.
-        label: 'CBDC-Projekte · Länder · Atlantic Council',
-        value: 134,
-        fmt: (v) => `${Math.round(v)} Länder`,
-        rows: [
-          { name: 'Forschung', v: 39, short: '🔬' },
-          { name: 'Pilot', v: 44, short: '🧪' },
-          { name: 'Entwicklung', v: 20, short: '⚙️' },
-          { name: 'gestartet', v: 3, short: '🚀' },
-          { name: 'inaktiv', v: 28, short: '💤', muted: true },
-        ],
-      }),
-  },
-  {
-    id: 'cashless',
-    title: 'Weg vom Bargeld',
-    draw: (f) =>
-      lineChart(f, {
-        // Cash share at the point of sale, % of transactions (Riksbank,
-        // Bundesbank, ECB SPACE; estimates). Sweden is nearly cashless.
-        label: 'Barzahlungen am Ladentisch · Anteil · Schätzwerte',
-        value: CASHLESS_COMPARE.sweLatest,
-        unit: '',
-        fmt: (v) => `${v.toFixed(0)}%`,
+      hBarChart(f, {
+        // Government requests for user data, per year (Meta + Google/Apple
+        // transparency reports, approximate, latest reporting period).
+        label: 'Behördenanfragen nach Nutzerdaten · pro Jahr · Transparenzberichte',
+        value: 410_000,
         delta: null,
-        seed: 189,
-        series: [
-          { name: 'Eurozone', color: violet, data: CASHLESS_COMPARE.rows[0].data },
-          { name: 'Deutschland', color: yellow, data: CASHLESS_COMPARE.rows[1].data },
-          { name: 'Schweden', color: aqua, data: CASHLESS_COMPARE.rows[2].data },
+        color: blue,
+        unit: '',
+        fmt: (v) => `${Math.round(v / 1000)}k`,
+        rowFmt: (v) => `${Math.round(v / 1000)}k`,
+        rows: [
+          { name: 'USA', v: 410_000 },
+          { name: 'Indien', v: 100_000 },
+          { name: 'Brasilien', v: 78_000 },
+          { name: 'Großbritannien', v: 65_000 },
+          { name: 'Frankreich', v: 62_000 },
+          { name: 'Deutschland', v: 45_000 },
         ],
-        ticks: CASHLESS_COMPARE.ticks,
-        xLabels: ['2016', '2019', '2022', 'heute'],
+      }),
+  },
+  {
+    id: 'youtube-removals',
+    title: 'Regierungs-Löschanfragen an Google/YouTube',
+    draw: (f) =>
+      hBarChart(f, {
+        // Government requests to remove content, per year (Google Transparency
+        // Report, approximate). Russia dominates by a wide margin.
+        label: 'Behörden-Löschanfragen · Google/YouTube · Transparenzbericht',
+        value: 32_000,
+        delta: null,
+        color: red,
+        unit: '',
+        fmt: (v) => `${Math.round(v / 1000)}k`,
+        rowFmt: (v) => `${(v / 1000).toFixed(1)}k`,
+        rows: [
+          { name: 'Russland', v: 32_000 },
+          { name: 'Südkorea', v: 10_500 },
+          { name: 'Indien', v: 7_000 },
+          { name: 'Türkei', v: 6_200 },
+          { name: 'Pakistan', v: 4_100 },
+          { name: 'Brasilien', v: 3_000 },
+        ],
       }),
   },
   {
@@ -1433,42 +1367,66 @@ const POOL: Dashboard[] = [
       }),
   },
   {
-    id: 'c40-reach',
-    title: 'Reichweite von C40',
+    id: 'covid-stringency',
+    title: 'Corona-Maßnahmen · Härte im Schnitt',
     draw: (f) =>
-      treemap(f, {
-        // C40's ~100 member cities house ~700M people and produce roughly a
-        // quarter of global GDP (C40 / Bloomberg figures).
-        label: 'C40 · ~100 Städte · 700 Mio Menschen',
-        value: 110e12,
-        fmt: (v) => `$${(v / 1e12).toFixed(0)}T`,
+      hBarChart(f, {
+        // Oxford COVID-19 Government Response Tracker (OxCGRT) stringency
+        // index, 0–100, averaged over the pandemic (2020–2022) via OWID.
+        // Measures how restrictive a government's response was overall
+        // (lockdowns, closures, travel bans), NOT how well it worked.
+        // China's zero-COVID keeps it hardest for longest; Sweden anchors
+        // the low end. Approximate averages — treat as magnitudes.
+        label: 'Corona-Stringency-Index · Ø 2020–22 · OxCGRT',
+        value: 62,
+        fmt: (v) => `Ø ${Math.round(v)}/100`,
+        rowFmt: (v) => `${Math.round(v)}`,
+        delta: null,
+        color: red,
+        unit: '',
         rows: [
-          { name: 'C40-Städte', v: 25, short: '🌆' },
-          { name: 'übrige Welt', v: 75, muted: true },
+          { name: 'China 🇨🇳', v: 78 },
+          { name: 'Honduras 🇭🇳', v: 74 },
+          { name: 'Chile 🇨🇱', v: 71 },
+          { name: 'Argentinien 🇦🇷', v: 69 },
+          { name: 'Australien 🇦🇺', v: 62 },
+          { name: 'Deutschland 🇩🇪', v: 60 },
+          { name: 'USA 🇺🇸', v: 58 },
+          { name: 'Neuseeland 🇳🇿', v: 55 },
+          { name: 'Schweiz 🇨🇭', v: 48 },
+          { name: 'Schweden 🇸🇪', v: 45 },
         ],
       }),
   },
   {
-    id: 'swiss-trends',
-    title: 'Schweizer Trends · Wikipedia',
-    dynamic: true,
-    draw: (f) => {
-      const s = live.swiss;
+    id: 'covid-lockdowns',
+    title: 'Längste Corona-Lockdowns · Städte',
+    draw: (f) =>
       hBarChart(f, {
-        label: 'Schweizer Trends · Wikipedia',
-        value: s?.topViews ?? 4_100,
+        // Cumulative days under hard stay-at-home lockdown by city, as widely
+        // reported in the press (2020–2021). Melbourne's 262 days is the
+        // world record for a single city; Buenos Aires and Manila follow.
+        // Rounded estimates — definitions of "lockdown" vary by source.
+        label: 'Tage im Lockdown · Städte · 2020–21 · Schätzwerte',
+        value: 262,
+        fmt: (v) => `${Math.round(v)} Tage`,
+        rowFmt: (v) => `${Math.round(v)} T.`,
         delta: null,
-        color: magenta,
+        color: orange,
         unit: '',
-        rows: s?.rows ?? [
-          { name: 'Fussball-WM 2026', v: 3_800 },
-          { name: 'Lamine Yamal', v: 3_500 },
-          { name: 'Vladimir Petković', v: 3_200 },
-          { name: 'Roger Federer', v: 2_400 },
-          { name: 'Schweiz', v: 1_900 },
+        rows: [
+          { name: 'Melbourne 🇦🇺', v: 262 },
+          { name: 'Buenos Aires 🇦🇷', v: 234 },
+          { name: 'Manila 🇵🇭', v: 210 },
+          { name: 'Shanghai 🇨🇳', v: 130 },
+          { name: 'Auckland 🇳🇿', v: 120 },
+          { name: 'London 🇬🇧', v: 115 },
+          { name: 'Paris 🇫🇷', v: 110 },
+          { name: 'Rom 🇮🇹', v: 105 },
+          { name: 'Berlin 🇩🇪', v: 75 },
+          { name: 'Stockholm 🇸🇪', v: 0 },
         ],
-      });
-    },
+      }),
   },
 ];
 
@@ -1488,7 +1446,6 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'us-debt': ['geld'],
   nukes: ['krieg'],
   'homicide-map': ['soziales', 'welt'],
-  'homicide-trend': ['soziales', 'schweiz'],
   climate: ['welt'],
   'swiss-pop': ['schweiz', 'soziales'],
   'world-pop': ['welt', 'soziales'],
@@ -1507,8 +1464,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'youth-unemployment': ['soziales', 'geld', 'schweiz', 'deutschland'],
   unemployment: ['soziales', 'geld', 'schweiz', 'deutschland'],
   poverty: ['soziales', 'geld', 'schweiz', 'deutschland'],
-  'de-insolvenzen': ['deutschland', 'geld'],
-  'de-insolvenz-schaden': ['deutschland', 'geld'],
+  'de-insolvenz-jobs': ['deutschland', 'geld'],
   'de-industry': ['deutschland', 'geld'],
   'de-migration': ['deutschland', 'soziales'],
   'de-crime-foreign': ['deutschland', 'soziales'],
@@ -1520,34 +1476,28 @@ const TAGS_BY_ID: Record<string, string[]> = {
   fertility: ['welt', 'soziales'],
   dollar: ['geld'],
   armies: ['krieg'],
-  'reserve-fx': ['geld'],
-  'energy-mix': ['welt'],
   wealth: ['geld', 'soziales'],
   'tax-burden': ['geld', 'deutschland', 'schweiz'],
   'power-prices': ['geld', 'deutschland', 'schweiz'],
   incarceration: ['soziales', 'schweiz'],
   corruption: ['soziales', 'welt', 'schweiz'],
   'us-wars': ['krieg'],
-  'us-homicide': ['soziales'],
   'recent-wars': ['krieg'],
-  'pisa-de': ['deutschland', 'soziales'],
   'teen-depression': ['gesundheit', 'soziales'],
   'teen-mde': ['gesundheit', 'soziales'],
   'youth-suicide': ['gesundheit', 'soziales'],
   'teen-suicide': ['gesundheit', 'soziales'],
   'teen-screen': ['gesundheit', 'soziales'],
   'teen-antidepressants': ['gesundheit', 'soziales'],
-  'de-nuclear': ['deutschland', 'welt'],
-  'de-total-capacity': ['deutschland', 'welt'],
-  'de-grid-interventions': ['deutschland', 'welt'],
-  'us-coal': ['welt'],
+  'us-energy-mix': ['welt'],
+  'de-energy-mix': ['deutschland', 'welt'],
   'obesity-fastfood': ['gesundheit'],
   surveillance: ['welt', 'soziales', 'schweiz'],
   'cameras-world': ['welt', 'soziales'],
   'internet-shutdowns': ['welt', 'soziales'],
   'gov-data-requests': ['welt', 'soziales'],
-  'sdg-progress': ['welt'],
-  cbdc: ['geld', 'welt'],
+  'gov-requests-country': ['welt', 'soziales'],
+  'youtube-removals': ['welt', 'soziales'],
   cashless: ['geld', 'welt', 'deutschland'],
   '5g-stations': ['welt', 'deutschland', 'schweiz'],
   inflation: ['geld', 'welt', 'deutschland', 'schweiz'],
@@ -1555,12 +1505,12 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'alcohol-nations': ['gesundheit', 'welt', 'deutschland', 'schweiz'],
   'alcohol-deaths': ['gesundheit'],
   'c40-cities': ['welt'],
-  'c40-reach': ['welt', 'geld'],
   'un-resolutions': ['welt', 'krieg'],
   'un-vetoes': ['welt', 'krieg'],
   'de-family': ['deutschland', 'soziales'],
   'single-households': ['deutschland', 'soziales'],
-  'swiss-trends': ['schweiz'],
+  'covid-stringency': ['gesundheit', 'welt', 'soziales'],
+  'covid-lockdowns': ['gesundheit', 'welt', 'soziales'],
 };
 for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 
@@ -1571,15 +1521,16 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 const FEATURED = new Set([
   'us-wars', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
   'us-debt', 'us-interest', 'm2', 'dollar', 'wealth', 'homicide-map',
-  'world-pop', 'climate', 'de-insolvenzen', 'conflict-deaths', 'refugees',
+  'world-pop', 'climate', 'de-insolvenz-jobs', 'conflict-deaths', 'refugees',
   'military', 'gdp-growth', 'de-industry', 'recent-wars',
   'youth-unemployment', 'unemployment', 'poverty',
-  'pisa-de', 'teen-depression', 'teen-mde', 'youth-suicide', 'teen-suicide',
+  'teen-depression', 'teen-mde', 'youth-suicide', 'teen-suicide',
   'teen-screen', 'teen-antidepressants', 'obesity-fastfood', 'surveillance',
   'cameras-world', 'internet-shutdowns', 'gov-data-requests',
-  'sdg-progress', 'cbdc', 'cashless', '5g-stations',
+  'gov-requests-country', 'youtube-removals', '5g-stations',
   'un-resolutions', 'un-vetoes', 'de-family', 'single-households', 'inflation',
-  'digital-id', 'alcohol-nations', 'alcohol-deaths', 'c40-cities', 'c40-reach',
+  'digital-id', 'alcohol-nations', 'alcohol-deaths', 'c40-cities',
+  'covid-stringency', 'covid-lockdowns',
 ]);
 
 /**
