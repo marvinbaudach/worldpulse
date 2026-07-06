@@ -104,6 +104,21 @@ export const WORLD_POP_FALLBACK: TrendSeries = trend(
   ['Jahr 0', '675', '1350', 'heute'],
 );
 
+// World population from 1770 on (UN WPP / Our World in Data). Starting at the
+// eve of the Industrial Revolution keeps the hockey-stick but spreads the era
+// markers across the plot instead of cramming them into the last 10 % of a
+// two-millennia axis.
+export const WORLD_POP_SINCE_1770: TrendSeries = trend(
+  [
+    [1770, 0.90e9], [1800, 0.99e9], [1850, 1.26e9], [1900, 1.65e9],
+    [1927, 2.0e9], [1950, 2.49e9], [1960, 3.03e9], [1970, 3.70e9],
+    [1980, 4.46e9], [1990, 5.33e9], [2000, 6.15e9], [2010, 6.96e9],
+    [2020, 7.84e9], [2025, 8.22e9],
+  ],
+  (v) => `${(v / 1e9).toFixed(2)}B`,
+  ['1770', '1855', '1940', 'heute'],
+);
+
 // ---------------------------------------------------------------------------
 // Paleoclimate: Antarctic temperature anomaly over 800,000 years from the
 // EPICA Dome C / Vostok ice cores. The record's sawtooth is eight glacial
@@ -645,19 +660,20 @@ export const TEEN_MDE = maskedTrend(
   2012,
 );
 
-// Daily entertainment screen media among US teens (13–18), hours, from the
-// arrival of colour TV (~1965). Pre-2015 points come from TV-era time-use
-// studies (Nielsen / Kaiser Family Foundation) and are TV-dominated — a rough,
-// definition-shifting splice onto the smartphone-era Common Sense Media
-// Census, but the shape is the story: ~2.5h of colour TV in the 1960s to ~8h
-// across all screens today. Excludes school and homework screen time.
+// Daily entertainment screen media among US teens (13–18), hours, starting a
+// decade before colour TV (~1965) so the black-and-white-TV baseline is
+// visible. Pre-2015 points come from TV-era time-use studies (Nielsen / Kaiser
+// Family Foundation) and are TV-dominated — a rough, definition-shifting splice
+// onto the smartphone-era Common Sense Media Census, but the shape is the
+// story: ~2h of TV in the 1950s to ~8h across all screens today. Excludes
+// school and homework screen time.
 export const TEEN_SCREEN_PANEL: TrendSeries = trend(
   [
-    [1965, 2.5], [1980, 3.0], [1999, 3.9], [2004, 4.4], [2009, 5.6],
-    [2015, 6.7], [2019, 7.4], [2021, 8.6], [2023, 8.4],
+    [1955, 2.3], [1965, 2.5], [1980, 3.0], [1999, 3.9], [2004, 4.4],
+    [2009, 5.6], [2015, 6.7], [2019, 7.4], [2021, 8.6], [2023, 8.4],
   ],
   (v) => `${v.toFixed(1)} h`,
-  ['1965', '1985', '2005', 'heute'],
+  ['1955', '1978', '2000', 'heute'],
 );
 
 // Share of US adolescents (12–17) dispensed an antidepressant in the year, %,
@@ -860,6 +876,19 @@ export const DE_SINGLE_HH_PANEL: TrendSeries = trend(
   ],
   (v) => `${v.toFixed(0)}%`,
   ['1900', '1940', '1980', 'heute'],
+);
+
+// Female labour-force participation rate, Germany, % of women ~15–64
+// (census/Destatis). Definitions shifted over the century and pre-1990 figures
+// are West Germany only (the GDR ran far higher, ~80%), so the early points are
+// rough and comparability is limited — but the long climb is real.
+export const DE_FEMALE_LFP_PANEL: TrendSeries = trend(
+  [
+    [1907, 30], [1925, 35], [1950, 44], [1961, 47], [1970, 46],
+    [1980, 50], [1991, 57], [2000, 63], [2010, 70], [2016, 74], [2023, 76],
+  ],
+  (v) => `${v.toFixed(0)}%`,
+  ['1907', '1945', '1985', 'heute'],
 );
 
 // US alcohol-induced deaths per year (CDC WONDER, alcohol-induced causes:

@@ -28,6 +28,7 @@ import {
   SERIES,
 } from '../theme';
 import { drawSource, plotRect, xAxisLabels } from './shared';
+import { drawEraMarkers } from './line';
 
 export interface WealthSplitCfg {
   label: string;
@@ -230,6 +231,8 @@ export interface DebtClockCfg {
   ticks: string[];
   color: string;
   isLive: boolean;
+  /** Vertical era markers along the x-range (0..1), e.g. crises. */
+  markers?: { at: number; label: string }[];
 }
 
 /**
@@ -314,6 +317,7 @@ export function debtClock(f: Frame, cfg: DebtClockCfg): void {
   ctx.beginPath();
   ctx.arc(end.x, end.y, 4.5 * u, 0, Math.PI * 2);
   ctx.fill();
+  drawEraMarkers(f, r, cfg.markers ?? []);
   drawGridLabels(f, r.y0, r.y1, cfg.ticks);
   xAxisLabels(f, ['1900', '1940', '1980', 'heute'], r.x0, r.x1, r.y1);
 }

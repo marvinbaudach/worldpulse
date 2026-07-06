@@ -129,8 +129,10 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     const flick = speed > 0.4 && Math.abs(d.dx) > 12;
     const left = d.dx < 0 && (-d.dx > dist || flick);
     const right = d.dx > 0 && (d.dx > dist || flick);
-    const goNext = left && index < dashboards.length - 1;
-    const goPrev = right && index > 0;
+    const n = dashboards.length;
+    const wrap = n >= 3;
+    const goNext = left && (wrap || index < n - 1);
+    const goPrev = right && (wrap || index > 0);
     if (goNext || goPrev) {
       animating.current = true;
       intro.current = false; // no chart replay on the card we land on
@@ -159,7 +161,7 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
       }
       window.setTimeout(() => {
         animating.current = false;
-        setIndex((i) => i + (goNext ? 1 : -1));
+        setIndex((i) => (i + (goNext ? 1 : -1) + n) % n);
       }, THROW_MS);
     } else {
       // Not far enough: everything springs back to rest.
@@ -175,9 +177,15 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     }
   };
 
-  const prev = index > 0 ? dashboards[index - 1] : null;
+  // Endless deck: with 3+ cards the neighbours wrap around, so swiping past the
+  // last card lands on the first and vice versa. Needs 3+ so prev/cur/next stay
+  // three distinct cards (their ids are the React keys that carry the painted
+  // canvas across the role handoff); with 2 or fewer it falls back to clamped.
+  const n = dashboards.length;
+  const wrap = n >= 3;
   const cur = dashboards[index];
-  const next = index < dashboards.length - 1 ? dashboards[index + 1] : null;
+  const prev = wrap ? dashboards[(index - 1 + n) % n] : index > 0 ? dashboards[index - 1] : null;
+  const next = wrap ? dashboards[(index + 1) % n] : index < n - 1 ? dashboards[index + 1] : null;
   if (!cur) return <Stack />;
 
   return (

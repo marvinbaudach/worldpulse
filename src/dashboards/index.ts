@@ -18,7 +18,6 @@ import {
   CAMERAS_PANEL,
   CLIMATE_PANEL,
   CONFLICT_PANEL,
-  DATA_REQUESTS,
   DEBT_TREND_FALLBACK,
   DE_FAMILY,
   DE_SINGLE_HH_PANEL,
@@ -40,14 +39,14 @@ import {
   SWISS_POP_FALLBACK,
   DE_ENERGY_MIX,
   US_ENERGY_MIX,
-  SUICIDE_BY_AGE,
+  DE_FEMALE_LFP_PANEL,
   TEEN_MDE,
   TEEN_RX_PANEL,
   TEEN_SCREEN_PANEL,
   US_ALCOHOL_DEATHS_PANEL,
   US_INTEREST_PANEL,
   US_OBESITY_FASTFOOD,
-  WORLD_POP_FALLBACK,
+  WORLD_POP_SINCE_1770,
 } from '../data/bundled';
 
 export { type Dashboard, SETTLED_T } from './types';
@@ -149,6 +148,13 @@ const POOL: Dashboard[] = [
         ticks: d?.ticks ?? DEBT_TREND_FALLBACK.ticks,
         color: yellow,
         isLive: !!d,
+        // The turns behind the runaway climb on the 1900–2026 axis: the end of
+        // the gold standard, then the two crisis borrowing waves.
+        markers: [
+          { at: (1971 - 1900) / (2026 - 1900), label: '⛓️‍💥 Gold-Ende 1971' },
+          { at: (2008 - 1900) / (2026 - 1900), label: '🏦 Finanzkrise 2008' },
+          { at: (2020 - 1900) / (2026 - 1900), label: '💸 Corona 2020' },
+        ],
       });
     },
   },
@@ -223,30 +229,44 @@ const POOL: Dashboard[] = [
         data: p.series,
         ticks: p.ticks,
         xLabels: p.xLabels,
+        // The two real inflections on an otherwise smooth curve: the 1848
+        // federal state / industrial take-off (growth steepens), and the
+        // post-1950 immigration wave (~26% of residents are foreign-born
+        // today). at = (year - 1500) / 525.
+        markers: [
+          { at: 0.66, label: '🏭 Industrialisierung' },
+          { at: 0.88, label: '🌍 Zuwanderung' },
+        ],
       });
     },
   },
   {
     id: 'world-pop',
-    title: 'Weltbevölkerung · 2000 Jahre',
-    dynamic: true,
+    title: 'Weltbevölkerung · seit 1770',
     draw: (f) => {
-      const p = live.worldPop ?? WORLD_POP_FALLBACK;
+      const p = WORLD_POP_SINCE_1770;
       areaChart(f, {
-        label: 'Weltbevölkerung · 2000 Jahre',
+        label: 'Weltbevölkerung · seit 1770',
         value: p.latest,
         fmt: (v) => `${(v / 1e9).toFixed(2)}B`,
-        // No delta chip: a YoY figure under a 2000-year curve reads as if
-        // it were the growth over the whole span.
+        // No delta chip: a YoY figure under a 250-year curve reads as if it
+        // were the growth over the whole span.
         delta: null,
         seed: 29,
         color: blue,
         data: p.series,
         ticks: p.ticks,
         xLabels: p.xLabels,
-        // Carl Benz's first automobile (1886) on the 0–2025 axis: the dawn of
-        // the fossil-fuel era, right where the population curve goes vertical.
-        marker: { at: 1886 / 2025, label: '⛽ Benzin ~1886' },
+        // The four industrial revolutions on the 1770–2025 axis, plus Benz's
+        // 1886 automobile (the start of the fossil-fuel era). The first
+        // revolution is what tips the curve into its vertical climb.
+        markers: [
+          { at: (1780 - 1770) / (2025 - 1770), label: '⚙️ 1. Ind. Rev.' },
+          { at: (1870 - 1770) / (2025 - 1770), label: '🏭 2. Ind. Rev.' },
+          { at: (1886 - 1770) / (2025 - 1770), label: '⛽ Benzin' },
+          { at: (1970 - 1770) / (2025 - 1770), label: '💻 3. Ind. Rev.' },
+          { at: (2010 - 1770) / (2025 - 1770), label: '🤖 4. Ind. Rev.' },
+        ],
       });
     },
   },
@@ -319,6 +339,7 @@ const POOL: Dashboard[] = [
         markers: [
           { at: (2011 - 1990) / (2024 - 1990), label: '🏴 Syrien 2011' },
           { at: (2014 - 1990) / (2024 - 1990), label: '🇺🇦 Ukraine 2014' },
+          { at: (2023 - 1990) / (2024 - 1990), label: '🇸🇩 Sudan 2023' },
         ],
       }),
   },
@@ -336,6 +357,9 @@ const POOL: Dashboard[] = [
         data: US_INTEREST_PANEL.series,
         ticks: US_INTEREST_PANEL.ticks,
         xLabels: US_INTEREST_PANEL.xLabels,
+        // The vertical part on the 1990–2025 axis: the Fed's 2022 rate hikes
+        // (fastest in 40 years) repriced the debt and the interest bill soared.
+        marker: { at: (2022 - 1990) / (2025 - 1990), label: '📈 Fed-Zinswende 2022' },
       }),
   },
   {
@@ -605,9 +629,22 @@ const POOL: Dashboard[] = [
         ],
         ticks: INDUSTRY_COMPARE.ticks,
         xLabels: ['1950', '1975', '2000', 'heute'],
+        // What tipped China's line vertical on the 1950–2024 axis: Deng's 1978
+        // reforms open the economy, WTO entry in 2001 is where it goes steep.
+        markers: [
+          { at: (1978 - 1950) / (2024 - 1950), label: '⚙️ Reform 1978' },
+          { at: (2001 - 1950) / (2024 - 1950), label: '🌐 WTO 2001' },
+        ],
       }),
   },
-  trendCard('de-migration', 'Migrationsanteil Deutschland', 'Migrationshintergrund · 🇩🇪', DE_MIGRATION_PANEL, aqua, (v) => `${v.toFixed(1)}%`, 149),
+  trendCard('de-migration', 'Migrationsanteil Deutschland', 'Migrationshintergrund · 🇩🇪', DE_MIGRATION_PANEL, aqua, (v) => `${v.toFixed(1)}%`, 149, [
+    // The four big waves on the 1950–2024 axis: guest-worker recruitment, the
+    // post-1990 Aussiedler/Balkan influx, the 2015 asylum wave, and Ukraine.
+    { at: (1960 - 1950) / (2024 - 1950), label: '🛠️ Gastarbeiter' },
+    { at: (1990 - 1950) / (2024 - 1950), label: '🧱 Aussiedler 1990' },
+    { at: (2015 - 1950) / (2024 - 1950), label: '🏴 Asyl 2015' },
+    { at: (2014 - 1950) / (2024 - 1950), label: '🇺🇦 Ukraine 2014' },
+  ]),
   trendCard('de-crime-foreign', 'Nichtdeutsche Tatverdächtige · Anteil laut PKS', 'Nichtdeutsche Tatverdächtige · 🇩🇪', DE_FOREIGN_SUSPECTS_PANEL, magenta, (v) => `${v.toFixed(1)}%`, 151),
   {
     id: 'gdp-growth',
@@ -916,8 +953,11 @@ const POOL: Dashboard[] = [
         // US wars and interventions as catalogued by Daniele Ganser
         // ("Imperium USA" / "Illegale Kriege"). Death tolls are midpoints
         // of common estimates and heavily contested — treat as magnitudes.
+        // Only wars with more than 10k deaths — covert coups (Iran 1953,
+        // Guatemala 1954, Bay of Pigs) and sub-10k interventions (Serbia) are
+        // left out so the timeline stays a war chart, not a regime-change list.
         label: 'US-Kriege · Tote seit 1945',
-        value: 6.86e6,
+        value: 7.156e6,
         fmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
         color: red,
         yearStart: 1946,
@@ -925,13 +965,14 @@ const POOL: Dashboard[] = [
         source: 'nach Daniele Ganser · Schätzwerte, teils umstritten',
         events: [
           { name: 'Korea', from: 1950, to: 1953, deaths: 3_000_000 },
-          { name: 'Iran · Putsch', from: 1953, deaths: 300 },
-          { name: 'Guatemala · Putsch', from: 1954, deaths: 200 },
-          { name: 'Kuba · Schweinebucht', from: 1961, deaths: 300 },
           { name: 'Vietnam', from: 1964, to: 1975, deaths: 3_000_000 },
+          // Laos & Kambodscha: the covert bombing campaigns alongside Vietnam;
+          // direct US military action, so they belong on a war timeline. Death
+          // tolls are wide ranges — conservative midpoints here.
+          { name: 'Laos', from: 1964, to: 1973, deaths: 50_000 },
+          { name: 'Kambodscha', from: 1969, to: 1973, deaths: 100_000 },
           { name: 'Nicaragua · Contras', from: 1981, to: 1990, deaths: 30_000 },
           { name: 'Golfkrieg', from: 1990, to: 1991, deaths: 100_000 },
-          { name: 'Serbien', from: 1999, deaths: 3_500 },
           { name: 'Afghanistan', from: 2001, to: 2021, deaths: 176_000 },
           { name: 'Irak', from: 2003, to: 2011, deaths: 500_000 },
           { name: 'Libyen', from: 2011, deaths: 30_000 },
@@ -982,29 +1023,12 @@ const POOL: Dashboard[] = [
         shade: { mask: TEEN_MDE.mask, label: '📱 Soziale Medien' },
       }),
   },
-  {
-    id: 'suicide-by-age',
-    title: 'Suizidrate USA nach Altersgruppe · seit 1980',
-    draw: (f) =>
-      lineChart(f, {
-        // CDC WONDER: suicide rate per 100k by age band. Older bands are far
-        // higher; the youngest rose fastest relatively. Already high in the
-        // 1980s — not a clean single-cause story.
-        label: 'Suizidrate · 🇺🇸 · je 100.000',
-        value: SUICIDE_BY_AGE.oldestLatest,
-        unit: '',
-        fmt: (v) => v.toFixed(1),
-        delta: null,
-        seed: 191,
-        series: [
-          { name: '10–14 J.', color: yellow, data: SUICIDE_BY_AGE.rows[0].data },
-          { name: '15–19 J.', color: orange, data: SUICIDE_BY_AGE.rows[1].data },
-          { name: '20–24 J.', color: red, data: SUICIDE_BY_AGE.rows[2].data },
-        ],
-        ticks: SUICIDE_BY_AGE.ticks,
-        xLabels: ['1980', '1994', '2007', '2021'],
-      }),
-  },
+  trendCard('female-lfp', 'Frauenerwerbsquote · Deutschland', 'Frauenerwerbsquote · 🇩🇪 · seit 1907', DE_FEMALE_LFP_PANEL, aqua, (v) => `${v.toFixed(0)}%`, 211, [
+    // One belegbarer milestone: from 1958 married women no longer needed the
+    // husband's consent to take a job (Gleichberechtigungsgesetz).
+    // at = (year - 1907) / 116.
+    { at: 0.44, label: '⚖️ Gleichberechtigung 1958' },
+  ]),
   {
     id: 'teen-screen',
     title: 'Bildschirmzeit US-Teenager',
@@ -1018,12 +1042,12 @@ const POOL: Dashboard[] = [
         color: violet,
         data: TEEN_SCREEN_PANEL.series,
         ticks: TEEN_SCREEN_PANEL.ticks,
-        xLabels: ['1965', '1985', '2005', 'heute'],
-        // Era markers across the 1965–2023 span (fraction of the x-range).
+        xLabels: ['1955', '1978', '2000', 'heute'],
+        // Era markers across the 1955–2023 span (fraction of the x-range).
         markers: [
-          { at: 0.01, label: '📺 Farb-TV' },
-          { at: 0.52, label: '🎮 PlayStation' },
-          { at: 0.78, label: '📱 Soziale Medien' },
+          { at: 0.15, label: '📺 Farb-TV' },
+          { at: 0.59, label: '🎮 PlayStation' },
+          { at: 0.81, label: '📱 Soziale Medien' },
         ],
       }),
   },
@@ -1131,27 +1155,6 @@ const POOL: Dashboard[] = [
   },
   trendCard('cameras-world', 'Überwachungskameras weltweit', 'Installierte CCTV-Kameras · IHS · Schätzung', CAMERAS_PANEL, aqua, (v) => `${(v / 1e9).toFixed(2)} Mrd`, 183),
   {
-    id: 'gov-data-requests',
-    title: 'Behörden-Datenanfragen an Big Tech',
-    draw: (f) =>
-      lineChart(f, {
-        // Google & Meta transparency reports: law-enforcement requests for
-        // user data, both climbing steeply.
-        label: 'Behördenanfragen nach Nutzerdaten · pro Jahr',
-        value: DATA_REQUESTS.metaLatest,
-        unit: '',
-        fmt: (v) => `${Math.round(v / 1000)}k`,
-        delta: null,
-        seed: 187,
-        series: [
-          { name: 'Meta', color: blue, data: DATA_REQUESTS.rows[0].data },
-          { name: 'Google', color: yellow, data: DATA_REQUESTS.rows[1].data },
-        ],
-        ticks: DATA_REQUESTS.ticks,
-        xLabels: ['2013', '2017', '2021', 'heute'],
-      }),
-  },
-  {
     id: 'gov-requests-country',
     title: 'Behördenanfragen an Big Tech · Top-Länder',
     draw: (f) =>
@@ -1199,32 +1202,6 @@ const POOL: Dashboard[] = [
           { name: 'Türkei', v: 6_200 },
           { name: 'Pakistan', v: 4_100 },
           { name: 'Brasilien', v: 3_000 },
-        ],
-      }),
-  },
-  {
-    id: 'who-pandemic',
-    title: 'WHO-Pandemieabkommen · Enthaltungen',
-    draw: (f) =>
-      treemap(f, {
-        // WHA 20 May 2025: adopted by consensus (124 for, 0 against, 11
-        // abstentions). All 11 abstainers shown as equal blocks — abstaining
-        // is not "refused to sign"; ratification is a separate later step.
-        label: 'WHO-Pandemievertrag · 124 dafür · 0 dagegen · Mai 2025',
-        value: 11,
-        fmt: (v) => `${Math.round(v)} Enthaltungen`,
-        rows: [
-          { name: 'Russland 🇷🇺', v: 1, short: '🇷🇺' },
-          { name: 'Iran 🇮🇷', v: 1, short: '🇮🇷' },
-          { name: 'Israel 🇮🇱', v: 1, short: '🇮🇱' },
-          { name: 'Italien 🇮🇹', v: 1, short: '🇮🇹' },
-          { name: 'Polen 🇵🇱', v: 1, short: '🇵🇱' },
-          { name: 'Niederlande 🇳🇱', v: 1, short: '🇳🇱' },
-          { name: 'Slowakei 🇸🇰', v: 1, short: '🇸🇰' },
-          { name: 'Bulgarien 🇧🇬', v: 1, short: '🇧🇬' },
-          { name: 'Ägypten 🇪🇬', v: 1, short: '🇪🇬' },
-          { name: 'Paraguay 🇵🇾', v: 1, short: '🇵🇾' },
-          { name: 'Jamaika 🇯🇲', v: 1, short: '🇯🇲' },
         ],
       }),
   },
@@ -1333,7 +1310,14 @@ const POOL: Dashboard[] = [
         xLabels: ['1900', '1940', '1980', 'heute'],
       }),
   },
-  trendCard('single-households', 'Einpersonenhaushalte · Deutschland', 'Einpersonenhaushalte · 🇩🇪 · Anteil · seit 1900', DE_SINGLE_HH_PANEL, violet, (v) => `${v.toFixed(0)}%`, 193),
+  trendCard('single-households', 'Einpersonenhaushalte · Deutschland', 'Einpersonenhaushalte · 🇩🇪 · Anteil · seit 1900', DE_SINGLE_HH_PANEL, violet, (v) => `${v.toFixed(0)}%`, 193, [
+    // Neutral legal/demographic milestones that bracket the steep 1961–1980
+    // rise. Deliberately not a single "feminism" cause — the trend is driven
+    // by the pill, no-fault divorce, urbanisation and an ageing (widowed)
+    // population together. at = (year - 1900) / 122.
+    { at: 0.5, label: '💊 Pille' },
+    { at: 0.63, label: '⚖️ Scheidungsreform' },
+  ]),
   {
     id: 'digital-id',
     title: 'Digitale ID · Bevölkerungsabdeckung',
@@ -1450,7 +1434,7 @@ const POOL: Dashboard[] = [
         // (lockdowns, closures, travel bans), NOT how well it worked.
         // China's zero-COVID keeps it hardest for longest; Sweden anchors
         // the low end. Approximate averages — treat as magnitudes.
-        label: 'Corona-Stringency-Index · Ø 2020–22 · OxCGRT',
+        label: 'Härte der Corona-Maßnahmen · Ø 2020–22 · OxCGRT',
         value: 62,
         fmt: (v) => `Ø ${Math.round(v)}/100`,
         rowFmt: (v) => `${Math.round(v)}`,
@@ -1498,6 +1482,9 @@ const POOL: Dashboard[] = [
           { name: 'Paris 🇫🇷', v: 110 },
           { name: 'Rom 🇮🇹', v: 105 },
           { name: 'Berlin 🇩🇪', v: 75 },
+          // Switzerland never ordered stay-at-home; only the first-wave
+          // shutdown (16 Mar – 11 May 2020, ~56 days) closed public life.
+          { name: 'Zürich 🇨🇭', v: 56 },
           { name: 'Stockholm 🇸🇪', v: 0 },
         ],
       }),
@@ -1620,7 +1607,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'us-wars': ['krieg'],
   'recent-wars': ['krieg'],
   'teen-mde': ['gesundheit', 'soziales'],
-  'suicide-by-age': ['gesundheit', 'soziales'],
+  'female-lfp': ['deutschland', 'soziales'],
   'teen-screen': ['gesundheit', 'soziales'],
   'teen-antidepressants': ['gesundheit', 'soziales'],
   'us-energy-mix': ['welt'],
@@ -1628,10 +1615,8 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'obesity-fastfood': ['gesundheit'],
   surveillance: ['welt', 'soziales', 'schweiz'],
   'cameras-world': ['welt', 'soziales'],
-  'gov-data-requests': ['welt', 'soziales'],
   'gov-requests-country': ['welt', 'soziales'],
   'youtube-removals': ['welt', 'soziales'],
-  'who-pandemic': ['welt'],
   cashless: ['geld', 'welt', 'deutschland'],
   '5g-stations': ['welt', 'deutschland', 'schweiz'],
   inflation: ['geld', 'welt', 'deutschland', 'schweiz'],
@@ -1659,10 +1644,10 @@ const FEATURED = new Set([
   'world-pop', 'oil-consumption', 'climate', 'de-insolvenz-jobs', 'conflict-deaths', 'refugees',
   'military', 'gdp-growth', 'de-industry', 'recent-wars',
   'youth-unemployment', 'unemployment', 'poverty',
-  'teen-mde', 'suicide-by-age',
+  'teen-mde', 'female-lfp',
   'teen-screen', 'teen-antidepressants', 'obesity-fastfood', 'surveillance',
-  'cameras-world', 'gov-data-requests',
-  'gov-requests-country', 'youtube-removals', 'who-pandemic', '5g-stations',
+  'cameras-world',
+  'gov-requests-country', 'youtube-removals', '5g-stations',
   'un-resolutions', 'de-family', 'single-households', 'inflation',
   'digital-id', 'alcohol-nations', 'alcohol-deaths', 'c40-cities',
   'covid-stringency', 'covid-lockdowns', 'covid-vaccinations', 'covid-vax-percapita',

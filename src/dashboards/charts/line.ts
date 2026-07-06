@@ -16,6 +16,47 @@ import {
 import { FONT } from '../theme';
 import { plotRect, xAxisLabels } from './shared';
 
+/**
+ * Vertical era markers (dashed line + label) shared by the area and line
+ * charts. Labels stack into as many rows as needed: each drops to the first row
+ * whose already-placed labels it does not horizontally overlap, so a right-edge
+ * label that flips left never collides with a left one on the same row.
+ */
+export function drawEraMarkers(
+  f: Frame,
+  r: { x0: number; x1: number; y0: number; y1: number },
+  marks: { at: number; label: string }[],
+): void {
+  if (!marks.length) return;
+  const { ctx, u } = f;
+  ctx.font = `500 ${13 * u}px ${FONT}`;
+  const rowSpans: { x0: number; x1: number }[][] = [];
+  const gap = 6 * u;
+  for (const m of marks) {
+    const mx = r.x0 + (r.x1 - r.x0) * Math.min(1, Math.max(0, m.at));
+    ctx.save();
+    ctx.strokeStyle = 'rgba(224,156,96,0.8)';
+    ctx.lineWidth = 1.5 * u;
+    ctx.setLineDash([5 * u, 4 * u]);
+    ctx.beginPath();
+    ctx.moveTo(mx, r.y0);
+    ctx.lineTo(mx, r.y1);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = 'rgba(236,182,132,0.9)';
+    const labelW = ctx.measureText(m.label).width;
+    const rightFits = mx + gap + labelW <= r.x1;
+    const lx = mx + (rightFits ? gap : -gap);
+    const x0 = rightFits ? lx : lx - labelW;
+    const x1 = rightFits ? lx + labelW : lx;
+    let row = 0;
+    while (rowSpans[row]?.some((s) => x0 < s.x1 + gap && x1 + gap > s.x0)) row++;
+    (rowSpans[row] ??= []).push({ x0, x1 });
+    ctx.textAlign = rightFits ? 'left' : 'right';
+    ctx.fillText(m.label, lx, r.y0 + (16 + row * 18) * u);
+  }
+}
+
 export interface LineCfg {
   label: string;
   value: number;
@@ -29,6 +70,8 @@ export interface LineCfg {
   xLabels?: string[];
   /** Cool vertical bands over samples where mask[i] is true (e.g. ice ages). */
   shade?: { mask: boolean[]; label: string };
+  /** Vertical era markers along the x-range (0..1), e.g. reforms/treaties. */
+  markers?: { at: number; label: string }[];
 }
 
 /** Two-series line chart with draw-in, endpoint pulse and direct labels. */
@@ -101,6 +144,7 @@ export function lineChart(f: Frame, cfg: LineCfg): void {
       ctx.globalAlpha = 1;
     }
   });
+  drawEraMarkers(f, r, cfg.markers ?? []);
   drawGridLabels(f, r.y0, r.y1, cfg.ticks);
   xAxisLabels(f, cfg.xLabels ?? ['Q1', 'Q2', 'Q3', 'Q4'], r.x0, r.x1, r.y1);
 }
@@ -156,28 +200,7 @@ export function areaChart(f: Frame, cfg: AreaCfg): void {
   ctx.fill();
 
   // Vertical era markers (dashed line + label), drawn on top of the curve.
-  // Labels alternate between two rows so markers close together stay legible.
-  const marks = [...(cfg.marker ? [cfg.marker] : []), ...(cfg.markers ?? [])];
-  marks.forEach((m, i) => {
-    const mx = r.x0 + (r.x1 - r.x0) * Math.min(1, Math.max(0, m.at));
-    ctx.save();
-    ctx.strokeStyle = 'rgba(224,156,96,0.8)';
-    ctx.lineWidth = 1.5 * u;
-    ctx.setLineDash([5 * u, 4 * u]);
-    ctx.beginPath();
-    ctx.moveTo(mx, r.y0);
-    ctx.lineTo(mx, r.y1);
-    ctx.stroke();
-    ctx.restore();
-    // Label kept inside the plot: right of the line normally, flipped left
-    // when the marker sits near the right edge.
-    ctx.fillStyle = 'rgba(236,182,132,0.9)';
-    ctx.font = `500 ${13 * u}px ${FONT}`;
-    const labelW = ctx.measureText(m.label).width;
-    const rightFits = mx + 6 * u + labelW <= r.x1;
-    ctx.textAlign = rightFits ? 'left' : 'right';
-    ctx.fillText(m.label, mx + (rightFits ? 6 : -6) * u, r.y0 + (i % 2 ? 34 : 16) * u);
-  });
+  drawEraMarkers(f, r, [...(cfg.marker ? [cfg.marker] : []), ...(cfg.markers ?? [])]);
 
   drawGridLabels(f, r.y0, r.y1, cfg.ticks);
   xAxisLabels(f, cfg.xLabels ?? ['Mon', 'Wed', 'Fri', 'Sun'], r.x0, r.x1, r.y1);
