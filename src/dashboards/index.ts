@@ -16,7 +16,6 @@ import { live, type TrendSeries } from '../data/store';
 import {
   AI_JOBS_COMPARE,
   CAMERAS_PANEL,
-  CLIMATE_PANEL,
   CONFLICT_PANEL,
   DEBT_TREND_FALLBACK,
   DE_FAMILY,
@@ -95,6 +94,18 @@ function trendCard(
   };
 }
 
+/**
+ * Build era markers from [year, label] pairs on a [start, end] year axis, so
+ * cards declare the years directly instead of hand-computing the 0..1 fraction
+ * `(year - start) / (end - start)` on every line.
+ */
+function eraMarkers(
+  start: number,
+  end: number,
+  entries: [number, string][],
+): { at: number; label: string }[] {
+  return entries.map(([year, label]) => ({ at: (year - start) / (end - start), label }));
+}
 
 /**
  * The panel pool — live public data (US Treasury, World Bank, Open-Meteo,
@@ -150,11 +161,11 @@ const POOL: Dashboard[] = [
         isLive: !!d,
         // The turns behind the runaway climb on the 1900–2026 axis: the end of
         // the gold standard, then the two crisis borrowing waves.
-        markers: [
-          { at: (1971 - 1900) / (2026 - 1900), label: '⛓️‍💥 Gold-Ende 1971' },
-          { at: (2008 - 1900) / (2026 - 1900), label: '🏦 Finanzkrise 2008' },
-          { at: (2020 - 1900) / (2026 - 1900), label: '💸 Corona 2020' },
-        ],
+        markers: eraMarkers(1900, 2026, [
+          [1971, '⛓️‍💥 Gold-Ende 1971'],
+          [2008, '🏦 Finanzkrise 2008'],
+          [2020, '💸 Corona 2020'],
+        ]),
       });
     },
   },
@@ -195,25 +206,6 @@ const POOL: Dashboard[] = [
     },
   },
   {
-    id: 'climate',
-    title: 'Globale Temperatur · 800.000 Jahre',
-    draw: (f) => {
-      const c = live.climate ?? CLIMATE_PANEL;
-      lineChart(f, {
-        label: 'Temperatur · 800k Jahre',
-        value: c.latestTemp,
-        unit: '',
-        fmt: (v) => `${v > 0 ? '+' : ''}${v.toFixed(1)}°C`,
-        delta: null,
-        seed: 53,
-        series: [{ name: 'Temperatur-Anomalie °C', color: orange, data: c.temp }],
-        ticks: c.ticks,
-        xLabels: ['vor 800k', 'vor 530k', 'vor 270k', 'heute'],
-        shade: { mask: c.iceMask, label: '❄ Eiszeiten' },
-      });
-    },
-  },
-  {
     id: 'swiss-pop',
     title: 'Schweizer Bevölkerung · 500 Jahre',
     dynamic: true,
@@ -232,11 +224,11 @@ const POOL: Dashboard[] = [
         // The two real inflections on an otherwise smooth curve: the 1848
         // federal state / industrial take-off (growth steepens), and the
         // post-1950 immigration wave (~26% of residents are foreign-born
-        // today). at = (year - 1500) / 525.
-        markers: [
-          { at: 0.66, label: '🏭 Industrialisierung' },
-          { at: 0.88, label: '🌍 Zuwanderung' },
-        ],
+        // today).
+        markers: eraMarkers(1500, 2025, [
+          [1848, '🏭 Industrialisierung'],
+          [1960, '🌍 Zuwanderung'],
+        ]),
       });
     },
   },
@@ -260,13 +252,13 @@ const POOL: Dashboard[] = [
         // The four industrial revolutions on the 1770–2025 axis, plus Benz's
         // 1886 automobile (the start of the fossil-fuel era). The first
         // revolution is what tips the curve into its vertical climb.
-        markers: [
-          { at: (1780 - 1770) / (2025 - 1770), label: '⚙️ 1. Ind. Rev.' },
-          { at: (1870 - 1770) / (2025 - 1770), label: '🏭 2. Ind. Rev.' },
-          { at: (1886 - 1770) / (2025 - 1770), label: '⛽ Benzin' },
-          { at: (1970 - 1770) / (2025 - 1770), label: '💻 3. Ind. Rev.' },
-          { at: (2010 - 1770) / (2025 - 1770), label: '🤖 4. Ind. Rev.' },
-        ],
+        markers: eraMarkers(1770, 2025, [
+          [1780, '⚙️ 1. Ind. Rev.'],
+          [1870, '🏭 2. Ind. Rev.'],
+          [1886, '⛽ Benzin'],
+          [1970, '💻 3. Ind. Rev.'],
+          [2010, '🤖 4. Ind. Rev.'],
+        ]),
       });
     },
   },
@@ -288,7 +280,7 @@ const POOL: Dashboard[] = [
         xLabels: OIL_CONSUMPTION_PANEL.xLabels,
         // The 1973 OPEC embargo on the 1900–2023 axis: the first time global
         // oil demand ever fell — the dip right after this line.
-        marker: { at: (1973 - 1900) / (2023 - 1900), label: '⛽ Ölkrise 1973' },
+        markers: eraMarkers(1900, 2023, [[1973, '⛽ Ölkrise 1973']]),
       }),
   },
   {
@@ -307,14 +299,13 @@ const POOL: Dashboard[] = [
         data: CONFLICT_PANEL.series,
         ticks: CONFLICT_PANEL.ticks,
         xLabels: CONFLICT_PANEL.xLabels,
-        // Dominant spikes labelled directly; `at` is the fraction along the
-        // 1900–2024 range, i.e. (year - 1900) / 124.
-        markers: [
-          { at: 0.13, label: '⚔️ 1. Weltkrieg' },
-          { at: 0.36, label: '⚔️ 2. Weltkrieg' },
-          { at: 0.76, label: '🇷🇼 Ruanda' },
-          { at: 0.98, label: '🇺🇦 Ukraine' },
-        ],
+        // Dominant spikes labelled directly on the 1900–2024 range.
+        markers: eraMarkers(1900, 2024, [
+          [1916, '⚔️ 1. Weltkrieg'],
+          [1945, '⚔️ 2. Weltkrieg'],
+          [1994, '🇷🇼 Ruanda'],
+          [2022, '🇺🇦 Ukraine'],
+        ]),
       }),
   },
   {
@@ -336,11 +327,11 @@ const POOL: Dashboard[] = [
         // years after each start — the 2013–15 surge for Syria, the 2022 spike
         // for Ukraine's full-scale invasion — so the lines mark the cause, the
         // curve to their right shows the effect.
-        markers: [
-          { at: (2011 - 1990) / (2024 - 1990), label: '🏴 Syrien 2011' },
-          { at: (2014 - 1990) / (2024 - 1990), label: '🇺🇦 Ukraine 2014' },
-          { at: (2023 - 1990) / (2024 - 1990), label: '🇸🇩 Sudan 2023' },
-        ],
+        markers: eraMarkers(1990, 2024, [
+          [2011, '🏴 Syrien 2011'],
+          [2014, '🇺🇦 Ukraine 2014'],
+          [2023, '🇸🇩 Sudan 2023'],
+        ]),
       }),
   },
   {
@@ -359,7 +350,7 @@ const POOL: Dashboard[] = [
         xLabels: US_INTEREST_PANEL.xLabels,
         // The vertical part on the 1990–2025 axis: the Fed's 2022 rate hikes
         // (fastest in 40 years) repriced the debt and the interest bill soared.
-        marker: { at: (2022 - 1990) / (2025 - 1990), label: '📈 Fed-Zinswende 2022' },
+        markers: eraMarkers(1990, 2025, [[2022, '📈 Fed-Zinswende 2022']]),
       }),
   },
   {
@@ -379,12 +370,12 @@ const POOL: Dashboard[] = [
         // The drug behind each era of the curve, on the 1950–2024 axis: the
         // first heroin wave, the 1980s crack epidemic, the OxyContin/Rx-opioid
         // surge from ~1999, and the fentanyl explosion driving the recent peak.
-        markers: [
-          { at: (1970 - 1950) / 74, label: 'Heroin' },
-          { at: (1986 - 1950) / 74, label: 'Crack' },
-          { at: (1999 - 1950) / 74, label: 'OxyContin' },
-          { at: (2015 - 1950) / 74, label: 'Fentanyl' },
-        ],
+        markers: eraMarkers(1950, 2024, [
+          [1970, 'Heroin'],
+          [1986, 'Crack'],
+          [1999, 'OxyContin'],
+          [2015, 'Fentanyl'],
+        ]),
       }),
   },
   {
@@ -464,12 +455,12 @@ const POOL: Dashboard[] = [
         ],
       }),
   },
-  trendCard('life-exp', 'Globale Lebenserwartung', 'Lebenserwartung · seit 1770', LIFE_PANEL, green, (v) => `${v.toFixed(1)}y`, 89, [
+  trendCard('life-exp', 'Globale Lebenserwartung', 'Lebenserwartung · seit 1770', LIFE_PANEL, green, (v) => `${v.toFixed(1)}y`, 89, eraMarkers(1770, 2024, [
     // The two visible notches and the mid-century surge on the 1770–2024 axis.
-    { at: (1918 - 1770) / (2024 - 1770), label: '🦠 Grippe 1918' },
-    { at: (1945 - 1770) / (2024 - 1770), label: '💊 Antibiotika' },
-    { at: (2021 - 1770) / (2024 - 1770), label: '🦠 COVID 2020' },
-  ]),
+    [1918, '🦠 Grippe 1918'],
+    [1945, '💊 Antibiotika'],
+    [2021, '🦠 COVID 2020'],
+  ])),
   {
     id: 'm2',
     title: 'Geldmenge · USA vs. Schweiz',
@@ -491,13 +482,13 @@ const POOL: Dashboard[] = [
         xLabels: ['1995', '2005', '2014', 'heute'],
       }),
   },
-  trendCard('m2-history', 'US-Geldmenge seit 1900', 'US-Geldmenge M2 · seit 1900', M2_PANEL, yellow, (v) => `$${(v / 1e12).toFixed(1)}T`, 97, [
+  trendCard('m2-history', 'US-Geldmenge seit 1900', 'US-Geldmenge M2 · seit 1900', M2_PANEL, yellow, (v) => `$${(v / 1e12).toFixed(1)}T`, 97, eraMarkers(1900, 2024, [
     // The turns behind the money-supply explosion on the 1900–2024 axis:
     // the end of gold convertibility and the two big money-printing waves.
-    { at: (1971 - 1900) / (2024 - 1900), label: '⛓️‍💥 Gold-Ende 1971' },
-    { at: (2008 - 1900) / (2024 - 1900), label: '🏦 QE 2008' },
-    { at: (2020 - 1900) / (2024 - 1900), label: '💸 Corona 2020' },
-  ]),
+    [1971, '⛓️‍💥 Gold-Ende 1971'],
+    [2008, '🏦 QE 2008'],
+    [2020, '💸 Corona 2020'],
+  ])),
   {
     id: 'ai-jobs',
     title: 'KI und Berufseinstieg · USA',
@@ -631,20 +622,20 @@ const POOL: Dashboard[] = [
         xLabels: ['1950', '1975', '2000', 'heute'],
         // What tipped China's line vertical on the 1950–2024 axis: Deng's 1978
         // reforms open the economy, WTO entry in 2001 is where it goes steep.
-        markers: [
-          { at: (1978 - 1950) / (2024 - 1950), label: '⚙️ Reform 1978' },
-          { at: (2001 - 1950) / (2024 - 1950), label: '🌐 WTO 2001' },
-        ],
+        markers: eraMarkers(1950, 2024, [
+          [1978, '⚙️ Reform 1978'],
+          [2001, '🌐 WTO 2001'],
+        ]),
       }),
   },
-  trendCard('de-migration', 'Migrationsanteil Deutschland', 'Migrationshintergrund · 🇩🇪', DE_MIGRATION_PANEL, aqua, (v) => `${v.toFixed(1)}%`, 149, [
+  trendCard('de-migration', 'Migrationsanteil Deutschland', 'Migrationshintergrund · 🇩🇪', DE_MIGRATION_PANEL, aqua, (v) => `${v.toFixed(1)}%`, 149, eraMarkers(1950, 2024, [
     // The four big waves on the 1950–2024 axis: guest-worker recruitment, the
     // post-1990 Aussiedler/Balkan influx, the 2015 asylum wave, and Ukraine.
-    { at: (1960 - 1950) / (2024 - 1950), label: '🛠️ Gastarbeiter' },
-    { at: (1990 - 1950) / (2024 - 1950), label: '🧱 Aussiedler 1990' },
-    { at: (2015 - 1950) / (2024 - 1950), label: '🏴 Asyl 2015' },
-    { at: (2014 - 1950) / (2024 - 1950), label: '🇺🇦 Ukraine 2014' },
-  ]),
+    [1960, '🛠️ Gastarbeiter'],
+    [1990, '🧱 Aussiedler 1990'],
+    [2015, '🏴 Asyl 2015'],
+    [2014, '🇺🇦 Ukraine 2014'],
+  ])),
   trendCard('de-crime-foreign', 'Nichtdeutsche Tatverdächtige · Anteil laut PKS', 'Nichtdeutsche Tatverdächtige · 🇩🇪', DE_FOREIGN_SUSPECTS_PANEL, magenta, (v) => `${v.toFixed(1)}%`, 151),
   {
     id: 'gdp-growth',
@@ -667,15 +658,20 @@ const POOL: Dashboard[] = [
           { name: '🇯🇵 JPN', color: violet, data: GDP_COMPARE.rows[4].data },
         ],
         ticks: GDP_COMPARE.ticks,
-        xLabels: ['2010', '2015', '2020', 'heute'],
+        xLabels: ['1970', '1988', '2006', 'heute'],
       }),
   },
-  trendCard('internet', 'Menschen online weltweit', 'Internetnutzer · ITU', INTERNET_PANEL, blue, (v) => `${(v / 1e9).toFixed(1)}B`, 103),
-  trendCard('nuke-tests', 'Atomtests pro Jahr', 'Atomtests · seit 1945', NUKE_TESTS_PANEL, red, (v) => `${Math.round(v)}`, 107, [
-    { at: 0.23, label: '☢️ Teststopp 1963' },
-    { at: 0.65, label: '✍️ CTBT 1996' },
-    { at: 0.91, label: '🇰🇵 Nordkorea' },
+  trendCard('internet', 'Menschen online weltweit', 'Internetnutzer · ITU', INTERNET_PANEL, blue, (v) => `${(v / 1e9).toFixed(1)}B`, 103, [
+    // Significant inflection points on the 1990–2024 span. at = (year-1990)/34.
+    { at: 0.03, label: '🌐 WWW frei' },
+    { at: 0.5, label: '📱 Smartphone' },
+    { at: 0.82, label: '🌍 Halbe Menschheit' },
   ]),
+  trendCard('nuke-tests', 'Atomtests pro Jahr', 'Atomtests · seit 1945', NUKE_TESTS_PANEL, red, (v) => `${Math.round(v)}`, 107, eraMarkers(1945, 2024, [
+    [1963, '☢️ Teststopp 1963'],
+    [1996, '✍️ CTBT 1996'],
+    [2017, '🇰🇵 Nordkorea'],
+  ])),
   {
     id: 'fertility',
     title: 'Geburtenrate der Kontinente',
@@ -698,12 +694,12 @@ const POOL: Dashboard[] = [
         xLabels: ['1900', '1941', '1983', 'heute'],
       }),
   },
-  trendCard('dollar', 'Kaufkraft des Dollars seit 1913', '1913er-Dollar · Restwert', DOLLAR_PANEL, yellow, (v) => `${(v * 100).toFixed(0)}¢`, 127, [
+  trendCard('dollar', 'Kaufkraft des Dollars seit 1913', '1913er-Dollar · Restwert', DOLLAR_PANEL, yellow, (v) => `${(v * 100).toFixed(0)}¢`, 127, eraMarkers(1913, 2024, [
     // Fed founding at the very start, and the 1971 end of the gold peg after
     // which the decline steepens, on the 1913–2024 axis.
-    { at: (1913 - 1913) / (2024 - 1913), label: '🏦 Fed 1913' },
-    { at: (1971 - 1913) / (2024 - 1913), label: '⛓️‍💥 Gold-Ende 1971' },
-  ]),
+    [1913, '🏦 Fed 1913'],
+    [1971, '⛓️‍💥 Gold-Ende 1971'],
+  ])),
   {
     id: 'armies',
     title: 'Größte Armeen · aktive Soldaten',
@@ -1023,12 +1019,11 @@ const POOL: Dashboard[] = [
         shade: { mask: TEEN_MDE.mask, label: '📱 Soziale Medien' },
       }),
   },
-  trendCard('female-lfp', 'Frauenerwerbsquote · Deutschland', 'Frauenerwerbsquote · 🇩🇪 · seit 1907', DE_FEMALE_LFP_PANEL, aqua, (v) => `${v.toFixed(0)}%`, 211, [
+  trendCard('female-lfp', 'Frauenerwerbsquote · Deutschland', 'Frauenerwerbsquote · 🇩🇪 · seit 1907', DE_FEMALE_LFP_PANEL, aqua, (v) => `${v.toFixed(0)}%`, 211, eraMarkers(1907, 2023, [
     // One belegbarer milestone: from 1958 married women no longer needed the
     // husband's consent to take a job (Gleichberechtigungsgesetz).
-    // at = (year - 1907) / 116.
-    { at: 0.44, label: '⚖️ Gleichberechtigung 1958' },
-  ]),
+    [1958, '⚖️ Gleichberechtigung 1958'],
+  ])),
   {
     id: 'teen-screen',
     title: 'Bildschirmzeit US-Teenager',
@@ -1043,20 +1038,20 @@ const POOL: Dashboard[] = [
         data: TEEN_SCREEN_PANEL.series,
         ticks: TEEN_SCREEN_PANEL.ticks,
         xLabels: ['1955', '1978', '2000', 'heute'],
-        // Era markers across the 1955–2023 span (fraction of the x-range).
-        markers: [
-          { at: 0.15, label: '📺 Farb-TV' },
-          { at: 0.59, label: '🎮 PlayStation' },
-          { at: 0.81, label: '📱 Soziale Medien' },
-        ],
+        // Era markers across the 1955–2023 span.
+        markers: eraMarkers(1955, 2023, [
+          [1965, '📺 Farb-TV'],
+          [1995, '🎮 PlayStation'],
+          [2010, '📱 Soziale Medien'],
+        ]),
       }),
   },
-  trendCard('teen-antidepressants', 'Antidepressiva bei US-Jugendlichen', 'Antidepressiva-Rezepte · 🇺🇸 · 12–17 J. · Anteil', TEEN_RX_PANEL, aqua, (v) => `${v.toFixed(1)}%`, 199, [
+  trendCard('teen-antidepressants', 'Antidepressiva bei US-Jugendlichen', 'Antidepressiva-Rezepte · 🇺🇸 · 12–17 J. · Anteil', TEEN_RX_PANEL, aqua, (v) => `${v.toFixed(1)}%`, 199, eraMarkers(1970, 2022, [
     // The climb opens with the SSRI era and steepens in the smartphone years,
     // on the 1970–2022 axis. The 2012 line is the correlation, not proof.
-    { at: (1988 - 1970) / (2022 - 1970), label: '💊 Prozac 1988' },
-    { at: (2012 - 1970) / (2022 - 1970), label: '📱 Soziale Medien' },
-  ]),
+    [1988, '💊 Prozac 1988'],
+    [2012, '📱 Soziale Medien'],
+  ])),
   {
     id: 'us-energy-mix',
     title: 'US-Strommix · Kohle, Kernkraft, Erneuerbare',
@@ -1096,7 +1091,7 @@ const POOL: Dashboard[] = [
         seed: 233,
         series: [
           { name: 'Kohle', color: orange, data: DE_ENERGY_MIX.rows[0].data },
-          { name: 'Kernkraft', color: red, data: DE_ENERGY_MIX.rows[1].data },
+          { name: 'Kernkraft', color: violet, data: DE_ENERGY_MIX.rows[1].data },
           { name: 'Wind + Solar', color: green, data: DE_ENERGY_MIX.rows[2].data },
         ],
         ticks: DE_ENERGY_MIX.ticks,
@@ -1310,14 +1305,14 @@ const POOL: Dashboard[] = [
         xLabels: ['1900', '1940', '1980', 'heute'],
       }),
   },
-  trendCard('single-households', 'Einpersonenhaushalte · Deutschland', 'Einpersonenhaushalte · 🇩🇪 · Anteil · seit 1900', DE_SINGLE_HH_PANEL, violet, (v) => `${v.toFixed(0)}%`, 193, [
+  trendCard('single-households', 'Einpersonenhaushalte · Deutschland', 'Einpersonenhaushalte · 🇩🇪 · Anteil · seit 1900', DE_SINGLE_HH_PANEL, violet, (v) => `${v.toFixed(0)}%`, 193, eraMarkers(1900, 2022, [
     // Neutral legal/demographic milestones that bracket the steep 1961–1980
     // rise. Deliberately not a single "feminism" cause — the trend is driven
     // by the pill, no-fault divorce, urbanisation and an ageing (widowed)
-    // population together. at = (year - 1900) / 122.
-    { at: 0.5, label: '💊 Pille' },
-    { at: 0.63, label: '⚖️ Scheidungsreform' },
-  ]),
+    // population together.
+    [1961, '💊 Pille'],
+    [1977, '⚖️ Scheidungsreform'],
+  ])),
   {
     id: 'digital-id',
     title: 'Digitale ID · Bevölkerungsabdeckung',
@@ -1490,36 +1485,6 @@ const POOL: Dashboard[] = [
       }),
   },
   {
-    id: 'covid-vaccinations',
-    title: 'Corona-Impfungen · verabreichte Dosen',
-    draw: (f) =>
-      hBarChart(f, {
-        // Cumulative COVID-19 vaccine doses administered (Our World in Data,
-        // final 2023 figures). Absolute counts, so the two population giants
-        // dominate: China and India alone gave out ~40% of the world's
-        // ~13.5 billion doses. Germany added as a European reference point.
-        label: 'Corona-Impfdosen · gesamt · 2020–23 · OWID',
-        value: 13.5e9,
-        fmt: (v) => `${(v / 1e9).toFixed(1)} Mrd`,
-        rowFmt: (v) => (v >= 1e9 ? `${(v / 1e9).toFixed(2)} Mrd` : `${Math.round(v / 1e6)} Mio`),
-        delta: null,
-        color: green,
-        unit: '',
-        rows: [
-          { name: 'China 🇨🇳', v: 3_491_000_000 },
-          { name: 'Indien 🇮🇳', v: 2_206_000_000 },
-          { name: 'USA 🇺🇸', v: 676_000_000 },
-          { name: 'Brasilien 🇧🇷', v: 519_000_000 },
-          { name: 'Indonesien 🇮🇩', v: 448_000_000 },
-          { name: 'Japan 🇯🇵', v: 436_000_000 },
-          { name: 'Bangladesch 🇧🇩', v: 363_000_000 },
-          { name: 'Pakistan 🇵🇰', v: 346_000_000 },
-          { name: 'Vietnam 🇻🇳', v: 266_000_000 },
-          { name: 'Deutschland 🇩🇪', v: 192_000_000 },
-        ],
-      }),
-  },
-  {
     id: 'covid-vax-percapita',
     title: 'Corona-Impfungen · Dosen pro Kopf',
     draw: (f) =>
@@ -1568,7 +1533,6 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'us-debt': ['geld'],
   nukes: ['krieg'],
   'homicide-map': ['soziales', 'welt'],
-  climate: ['welt'],
   'swiss-pop': ['schweiz', 'soziales'],
   'world-pop': ['welt', 'soziales'],
   'oil-consumption': ['welt', 'geld'],
@@ -1629,7 +1593,6 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'single-households': ['deutschland', 'soziales'],
   'covid-stringency': ['gesundheit', 'welt', 'soziales'],
   'covid-lockdowns': ['gesundheit', 'welt', 'soziales'],
-  'covid-vaccinations': ['gesundheit', 'welt'],
   'covid-vax-percapita': ['gesundheit', 'welt'],
 };
 for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
@@ -1641,7 +1604,7 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 const FEATURED = new Set([
   'us-wars', 'us-bases', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
   'us-debt', 'us-interest', 'm2', 'dollar', 'wealth', 'homicide-map',
-  'world-pop', 'oil-consumption', 'climate', 'de-insolvenz-jobs', 'conflict-deaths', 'refugees',
+  'world-pop', 'oil-consumption', 'de-insolvenz-jobs', 'conflict-deaths', 'refugees',
   'military', 'gdp-growth', 'de-industry', 'recent-wars',
   'youth-unemployment', 'unemployment', 'poverty',
   'teen-mde', 'female-lfp',
@@ -1650,7 +1613,7 @@ const FEATURED = new Set([
   'gov-requests-country', 'youtube-removals', '5g-stations',
   'un-resolutions', 'de-family', 'single-households', 'inflation',
   'digital-id', 'alcohol-nations', 'alcohol-deaths', 'c40-cities',
-  'covid-stringency', 'covid-lockdowns', 'covid-vaccinations', 'covid-vax-percapita',
+  'covid-stringency', 'covid-lockdowns', 'covid-vax-percapita',
 ]);
 
 /**
