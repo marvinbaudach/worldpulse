@@ -6,11 +6,7 @@ import { TAGS } from '../dashboards';
 interface LayoutControlsProps {
   layout: LayoutMode;
   onChange: (mode: LayoutMode) => void;
-  count: number;
-  minCount: number;
-  maxCount: number;
-  onCountChange: (count: number) => void;
-  /** Active theme filter (null = the featured/count slice). */
+  /** Active theme filter (null = the full pool). */
   tag: string | null;
   onTagChange: (tag: string | null) => void;
   /** True while a hero is open — the bar slips away so nothing competes
@@ -89,65 +85,17 @@ const Mode = styled.button<{ $active: boolean }>`
   }
 `;
 
-const Divider = styled.div`
-  width: 1px;
-  margin: 4px 3px;
-  background: rgba(255, 255, 255, 0.14);
-`;
-
-const Step = styled.button`
-  width: 28px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.55);
-  font: 600 13px/1 inherit;
-  font-family: inherit;
-  cursor: pointer;
-  transition: color 0.2s ease;
-
-  &:hover:enabled {
-    color: rgba(255, 255, 255, 0.9);
-  }
-  &:disabled {
-    color: rgba(255, 255, 255, 0.18);
-    cursor: default;
-  }
-`;
-
-const Count = styled.div`
-  min-width: 24px;
-  align-self: center;
-  text-align: center;
-  color: #cfe4ff;
-  font: 600 11px/1 inherit;
-  font-family: inherit;
-  letter-spacing: 0.08em;
-  font-variant-numeric: tabular-nums;
-`;
-
 /**
- * Formation switcher and panel-count stepper. Hotkeys for presenting: 1-4
- * pick the formation, +/- adjust how many panels are on stage.
+ * Formation switcher and theme-filter chips. Hotkeys for presenting: 1-4
+ * pick the formation.
  */
 export function LayoutControls({
   layout,
   onChange,
-  count,
-  minCount,
-  maxCount,
-  onCountChange,
   tag,
   onTagChange,
   hidden,
 }: LayoutControlsProps) {
-  // With a filter active the stage shows every match — the stepper rests.
-  const filtered = tag !== null;
-  const step = (delta: number) => {
-    if (filtered) return;
-    onCountChange(Math.min(maxCount, Math.max(minCount, count + delta)));
-  };
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // With the bar hidden behind a hero, the hotkeys would mutate the
@@ -156,8 +104,6 @@ export function LayoutControls({
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const i = Number(e.key) - 1;
       if (i >= 0 && i < LAYOUT_MODES.length) onChange(LAYOUT_MODES[i].id);
-      if (e.key === '+') step(1);
-      if (e.key === '-') step(-1);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -189,14 +135,6 @@ export function LayoutControls({
             {mode.label}
           </Mode>
         ))}
-        <Divider />
-        <Step onClick={() => step(-1)} disabled={filtered || count <= minCount}>
-          −
-        </Step>
-        <Count>{count}</Count>
-        <Step onClick={() => step(1)} disabled={filtered || count >= maxCount}>
-          +
-        </Step>
       </Bar>
     </Wrap>
   );

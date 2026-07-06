@@ -911,8 +911,8 @@ const TAGS_BY_ID: Record<string, string[]> = {
 for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 
 /**
- * Hand-picked headliners: the page always opens with these; the rest of the
- * pool only appears when the user raises the count past DEFAULT_COUNT.
+ * Hand-picked headliners: these lead the ring so the strongest panels sit up
+ * front on load; the rest of the pool follows behind them.
  */
 const FEATURED = new Set([
   'us-wars', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
@@ -923,15 +923,13 @@ const FEATURED = new Set([
 
 /**
  * Featured panels come first (shuffled among themselves each page load),
- * the remaining pool shuffled after them; the carousel shows the first
- * `count` entries, so raising the count only appends panels without
- * reshuffling the ones already on screen.
+ * the remaining pool shuffled after them. The whole pool is on stage; a
+ * theme filter narrows it to the tagged cards.
  */
 export const ALL_DASHBOARDS: Dashboard[] = [
   ...shuffled(POOL.filter((d) => FEATURED.has(d.id))),
   ...shuffled(POOL.filter((d) => !FEATURED.has(d.id))),
 ];
 
-/** Panels shown by default; the count control moves between the bounds. */
-export const DEFAULT_COUNT = 20;
+/** Floor for the ring radius, so a small filtered set still spaces out well. */
 export const MIN_COUNT = 5;

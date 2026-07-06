@@ -18,13 +18,12 @@ import { HeroCard, type HeroStart } from './HeroCard';
 import { HandGestures } from './HandGestures';
 import { HandControls } from './HandControls';
 import { LayoutControls } from './LayoutControls';
-import { layoutSlots, type LayoutMode } from '../layouts';
+import { LAYOUT_MODES, layoutSlots, type LayoutMode } from '../layouts';
 import { useCarouselRotation } from '../hooks/useCarouselRotation';
 import { useHandTracking, type HandState } from '../hooks/useHandTracking';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
   ALL_DASHBOARDS,
-  DEFAULT_COUNT,
   MIN_COUNT,
   type Dashboard,
 } from '../dashboards';
@@ -35,11 +34,15 @@ const PANEL_H = 3.0;
 // Radius chosen so the panels do not overlap on the ring; grows with the
 // panel count, and CameraRig dollies the camera along smoothly.
 const radiusFor = (count: number) => (PANEL_W * count) / (2 * Math.PI) + 0.6;
-const DEFAULT_RADIUS = radiusFor(DEFAULT_COUNT);
+const DEFAULT_RADIUS = radiusFor(ALL_DASHBOARDS.length);
 
-// localStorage keys for the persisted panel count and theme filter.
-const COUNT_KEY = 'worldpulse-panel-count';
+// localStorage keys for the persisted theme filter and formation.
 const TAG_KEY = 'worldpulse-tag';
+const LAYOUT_KEY = 'worldpulse-layout';
+// Theme filter a fresh visitor lands on; 'all' is the stored sentinel for the
+// unfiltered pool, so an explicit "ALLE" survives a reload instead of falling
+// back to this default.
+const DEFAULT_TAG = 'schweiz';
 
 interface RingProps {
   onSelect: (id: string, start: HeroStart) => void;
@@ -126,33 +129,29 @@ export function Carousel3D() {
     null,
   );
   // Demo formations: the panels morph between arrangements (see layouts.ts).
-  const [layout, setLayout] = useState<LayoutMode>('ring');
-  // User-adjustable panel count; radius, fog and hero depth follow it.
-  // Persisted so a presentation setup survives the page reload.
-  const [count, setCount] = useState(() => {
-    const stored = Number(localStorage.getItem(COUNT_KEY));
-    return Number.isFinite(stored) && stored >= MIN_COUNT
-      ? Math.min(stored, ALL_DASHBOARDS.length)
-      : DEFAULT_COUNT;
+  // Persisted so a chosen formation survives a reload.
+  const [layout, setLayout] = useState<LayoutMode>(() => {
+    const stored = localStorage.getItem(LAYOUT_KEY);
+    return LAYOUT_MODES.some((m) => m.id === stored) ? (stored as LayoutMode) : 'ring';
   });
   useEffect(() => {
-    localStorage.setItem(COUNT_KEY, String(count));
-  }, [count]);
-  // Theme filter: a chip narrows the stage to the tagged cards (all of
-  // them); without one, the count control slices the shuffled pool.
-  const [tag, setTag] = useState<string | null>(
-    () => localStorage.getItem(TAG_KEY) || null,
-  );
+    localStorage.setItem(LAYOUT_KEY, layout);
+  }, [layout]);
+  // Theme filter: a chip narrows the stage to the tagged cards; without one
+  // the full pool is on stage. Persisted (null stored as 'all') so both a
+  // filter and an explicit "ALLE" survive the reload; a fresh visitor lands
+  // on DEFAULT_TAG.
+  const [tag, setTag] = useState<string | null>(() => {
+    const stored = localStorage.getItem(TAG_KEY);
+    if (stored === null) return DEFAULT_TAG;
+    return stored === 'all' ? null : stored;
+  });
   useEffect(() => {
-    if (tag) localStorage.setItem(TAG_KEY, tag);
-    else localStorage.removeItem(TAG_KEY);
+    localStorage.setItem(TAG_KEY, tag ?? 'all');
   }, [tag]);
   const dashboards = useMemo(
-    () =>
-      tag
-        ? ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag))
-        : ALL_DASHBOARDS.slice(0, count),
-    [count, tag],
+    () => (tag ? ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag)) : ALL_DASHBOARDS),
+    [tag],
   );
   const radius = radiusFor(Math.max(dashboards.length, MIN_COUNT));
   const fogNear = radius + 2;
@@ -383,10 +382,6 @@ export function Carousel3D() {
       hidden={heroOpen}
       layout={layout}
       onChange={setLayout}
-      count={tag ? dashboards.length : count}
-      minCount={MIN_COUNT}
-      maxCount={ALL_DASHBOARDS.length}
-      onCountChange={setCount}
       tag={tag}
       onTagChange={setTag}
     />

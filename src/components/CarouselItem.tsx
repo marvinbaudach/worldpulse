@@ -282,8 +282,13 @@ export function CarouselItem({
     }
 
     // Front panels slightly larger -> "focus" feel (scales the whole group).
+    // Eased toward, not snapped: the entrance ends at scale 1, so setting the
+    // focus scale directly would pop a front panel to 1.08 in a single frame —
+    // the little jolt right as a panel finished settling (most visible after a
+    // filter, when every panel replays the entrance in a staggered ripple).
     const focus = 1 + eased * 0.08;
-    group.scale.set(focus, focus, 1);
+    const s = MathUtils.lerp(group.scale.x, focus, 0.15);
+    group.scale.set(s, s, 1);
   });
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
