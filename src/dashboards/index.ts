@@ -23,6 +23,7 @@ import {
   INTERNET_PANEL,
   LIFE_PANEL,
   DE_FOREIGN_SUSPECTS_PANEL,
+  DE_INSOLVENCY_CLAIMS_PANEL,
   DE_INSOLVENCY_PANEL,
   DE_MIGRATION_PANEL,
   INDUSTRY_COMPARE,
@@ -34,6 +35,7 @@ import {
   OVERDOSE_PANEL,
   REFUGEE_PANEL,
   SWISS_POP_FALLBACK,
+  US_HOMICIDE_PANEL,
   US_INTEREST_PANEL,
   WORLD_POP_FALLBACK,
 } from '../data/sources';
@@ -350,6 +352,7 @@ const POOL: Dashboard[] = [
         xLabels: US_INTEREST_PANEL.xLabels,
       }),
   },
+  trendCard('us-homicide', 'Mordrate USA · seit 1900', 'Mordrate · 🇺🇸 · pro 100k', US_HOMICIDE_PANEL, red, (v) => v.toFixed(1), 163),
   {
     id: 'overdose',
     title: 'US-Drogentote (Überdosis)',
@@ -487,6 +490,7 @@ const POOL: Dashboard[] = [
       }),
   },
   trendCard('de-insolvenzen', 'Firmeninsolvenzen Deutschland', 'Firmeninsolvenzen · 🇩🇪 · Destatis', DE_INSOLVENCY_PANEL, red, (v) => `${(v / 1000).toFixed(1)}k`, 137),
+  trendCard('de-insolvenz-schaden', 'Insolvenz-Schäden Deutschland', 'Gläubigerforderungen · 🇩🇪 · Mrd €', DE_INSOLVENCY_CLAIMS_PANEL, orange, (v) => `${Math.round(v)} Mrd €`, 167),
   {
     id: 'de-industry',
     title: 'Industrieproduktion · DEU vs. USA vs. China',

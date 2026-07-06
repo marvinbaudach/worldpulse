@@ -698,6 +698,20 @@ export const OVERDOSE_PANEL: TrendSeries = trend(
 
 // --- More bundled panels (yearly-revised sources, no keyless live APIs) ---
 
+// US homicide rate per 100k (CDC vital statistics / FBI UCR, rounded).
+// Two great waves: Prohibition peaking 1933 and the 1970s–90s crime wave,
+// then the long decline, the 2020–21 spike and the fall since.
+export const US_HOMICIDE_PANEL: TrendSeries = trend(
+  [
+    [1900, 1.2], [1910, 4.6], [1920, 6.8], [1933, 9.7], [1940, 6.3],
+    [1950, 4.6], [1960, 5.1], [1970, 7.9], [1980, 10.2], [1990, 9.4],
+    [2000, 5.5], [2010, 4.8], [2014, 4.4], [2020, 6.5], [2021, 6.8],
+    [2023, 5.7], [2024, 5.0],
+  ],
+  (v) => v.toFixed(1),
+  ['1900', '1941', '1983', 'heute'],
+);
+
 // Global life expectancy at birth, years (UN WPP / OWID).
 export const LIFE_PANEL: TrendSeries = trend(
   [
@@ -786,6 +800,20 @@ export const DE_INSOLVENCY_PANEL: TrendSeries = trend(
     [2022, 14_590], [2023, 17_814], [2024, 21_812], [2025, 24_064],
   ],
   (v) => `${(v / 1000).toFixed(0)}k`,
+  ['2000', '2008', '2017', 'heute'],
+);
+
+// Creditor claims from German corporate insolvencies, billion EUR
+// (Destatis, rounded). Single mega-cases dominate the spikes: 2009
+// financial-crisis wave (Arcandor, Qimonda), 2020 Wirecard, 2021
+// Greensill — and 2024's 58bn came from far fewer, much bigger cases.
+export const DE_INSOLVENCY_CLAIMS_PANEL: TrendSeries = trend(
+  [
+    [2000, 27], [2003, 40], [2006, 31], [2009, 85], [2012, 52],
+    [2015, 17], [2019, 27], [2020, 44], [2021, 48], [2022, 15],
+    [2023, 27], [2024, 58], [2025, 48],
+  ],
+  (v) => `${v.toFixed(0)}`,
   ['2000', '2008', '2017', 'heute'],
 );
 
