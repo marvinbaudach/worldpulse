@@ -46,11 +46,17 @@ export const CPI_INVERTED: Record<string, number> = Object.fromEntries(
   }).map(([iso, score]) => [iso, 90 - score]),
 );
 
-// General government gross debt in % of GDP, EU members only (IMF WEO
-// 2024/25, rounded) — non-EU countries stay neutral on the Europe map.
-export const EU_DEBT: Record<string, number> = {
-  GRC: 148, ITA: 137, FRA: 113, BEL: 105, ESP: 102, PRT: 94, AUT: 82,
-  FIN: 82, HUN: 73, CYP: 70, SVN: 67, DEU: 63, HRV: 60, SVK: 59,
-  POL: 55, ROU: 55, MLT: 47, LVA: 45, NLD: 45, CZE: 44, IRL: 41,
-  LTU: 38, SWE: 33, DNK: 29, LUX: 26, BGR: 24, EST: 23,
+// Absolute general government gross debt, EU members, in EUR (Eurostat 2024,
+// rounded to the billion) — non-EU countries stay neutral on the Europe map.
+// Absolute rather than debt-to-GDP so the map reads as systemic threat: a big
+// economy carrying trillions weighs heavier than a small, highly indebted one.
+const BN = 1e9;
+export const EU_DEBT_ABS: Record<string, number> = {
+  FRA: 3305 * BN, ITA: 2970 * BN, DEU: 2690 * BN, ESP: 1620 * BN,
+  BEL: 635 * BN, NLD: 480 * BN, POL: 470 * BN, AUT: 394 * BN,
+  GRC: 370 * BN, PRT: 282 * BN, IRL: 218 * BN, FIN: 217 * BN,
+  SWE: 190 * BN, ROU: 180 * BN, HUN: 145 * BN, CZE: 130 * BN,
+  DNK: 100 * BN, SVK: 78 * BN, HRV: 48 * BN, SVN: 46 * BN,
+  LTU: 30 * BN, BGR: 25 * BN, CYP: 24 * BN, LUX: 22 * BN,
+  LVA: 20 * BN, MLT: 11 * BN, EST: 9 * BN,
 };

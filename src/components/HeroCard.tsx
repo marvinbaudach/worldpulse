@@ -55,9 +55,15 @@ const OVERSHOOT = 0.06;
 const UP = new Vector3(0, 1, 0);
 const X_AXIS = new Vector3(1, 0, 0);
 
-// Hero canvas resolution (4:5) — double the ring panels, so it stays crisp.
-const TEX_W = 1024;
-const TEX_H = 1280;
+// Hero canvas resolution (4:5). Generous so the fullscreen card stays crisp on
+// hi-dpi displays; the per-frame redraw is gated to the intro (see useFrame),
+// so this size costs nothing once the card has settled.
+const TEX_W = 2048;
+const TEX_H = 2560;
+
+// Every panel intro has settled well before this; past it the hero stops
+// redrawing (unless it is a live panel) and just holds its last frame.
+const INTRO_SETTLE = 2.6;
 
 // Fraction of the visible frustum (at the hero's depth) the card may fill,
 // so all four edges sit comfortably inside the frame.
@@ -117,7 +123,11 @@ export function HeroCard({
     if (!pivot || !inner || !img) return;
 
     if (openedAt.current === null) openedAt.current = state.clock.elapsedTime;
-    dash.render(state.clock.elapsedTime - openedAt.current);
+    // Redraw only while the intro is still playing (or for the live panels
+    // that keep ticking); once settled the high-res canvas holds its last
+    // frame instead of re-rendering and re-uploading a big texture every frame.
+    const heroT = state.clock.elapsedTime - openedAt.current;
+    if (heroT < INTRO_SETTLE || dashboard.live) dash.render(heroT);
 
     const scrubT = scrub?.current ?? null;
     if (scrubT !== null) {

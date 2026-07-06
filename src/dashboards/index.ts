@@ -10,7 +10,7 @@ import {
   wealthSplit,
 } from './charts';
 import { SERIES } from './theme';
-import { CPI_INVERTED, EU_DEBT, NUKE_STATES, NUKE_TOTAL } from './geo';
+import { CPI_INVERTED, EU_DEBT_ABS, NUKE_STATES, NUKE_TOTAL } from './geo';
 import type { Dashboard } from './types';
 import { live, type TrendSeries } from '../data/store';
 import {
@@ -348,26 +348,27 @@ const POOL: Dashboard[] = [
   },
   {
     id: 'eu-debt-map',
-    title: 'Schuldenlast in der EU',
+    title: 'Größte Schuldenberge der EU',
     draw: (f) =>
       choroplethMap(f, {
-        // Europe window of the world map; the red ramp marks the most
-        // indebted EU members, the top-5 list calls them out below.
-        label: 'Staatsschulden / BIP · EU',
-        value: 82,
-        fmt: (v) => `Ø ${v.toFixed(0)}%`,
-        valueByIso: EU_DEBT,
+        // Europe window of the world map, shaded by ABSOLUTE debt so it reads
+        // as systemic threat: the big economies carrying trillions (France,
+        // Italy, Germany) burn darkest, not tiny highly-indebted Greece.
+        label: 'Staatsschulden · EU · absolut',
+        value: 14.6e12,
+        fmt: (v) => `${(v / 1e12).toFixed(1)} Bio €`,
+        valueByIso: EU_DEBT_ABS,
         world: live.worldMap,
         bounds: { lonMin: -12, lonMax: 35, latMin: 34, latMax: 71 },
         rows: [
-          { name: 'Griechenland', v: 148 },
-          { name: 'Italien', v: 137 },
-          { name: 'Frankreich', v: 113 },
-          { name: 'Belgien', v: 105 },
-          { name: 'Spanien', v: 102 },
+          { name: 'Frankreich', v: 3305e9 },
+          { name: 'Italien', v: 2970e9 },
+          { name: 'Deutschland', v: 2690e9 },
+          { name: 'Spanien', v: 1620e9 },
+          { name: 'Belgien', v: 635e9 },
         ],
-        rowFmt: (v) => `${v.toFixed(0)}%`,
-        source: 'IWF WEO 2024/25 · Bruttostaatsschulden',
+        rowFmt: (v) => `${(v / 1e12).toFixed(2)} Bio €`,
+        source: 'Eurostat 2024 · Bruttostaatsschulden absolut',
       }),
   },
   {
