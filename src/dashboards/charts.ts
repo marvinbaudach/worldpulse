@@ -19,6 +19,32 @@ import {
 } from './draw';
 import { BASELINE, CRITICAL, FONT, GOOD, GRID, INK, INK_SECONDARY, MUTED, SEQ, SERIES } from './theme';
 
+/** Hex color (#rrggbb) at the given opacity. */
+function withAlpha(hex: string, a: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${a.toFixed(3)})`;
+}
+
+/**
+ * Shared bar ramp: one gradient spans the full track, from a muted start
+ * to the full color at the right edge. Every bar starts on the same tone,
+ * and only the long ones reach the hot end — so the magnitude reads from
+ * the color as well as the length.
+ */
+function barGradient(
+  ctx: CanvasRenderingContext2D,
+  x0: number,
+  x1: number,
+  hex: string,
+): CanvasGradient {
+  const g = ctx.createLinearGradient(x0, 0, x1, 0);
+  g.addColorStop(0, withAlpha(hex, 0.3));
+  g.addColorStop(1, hex);
+  return g;
+}
+
 const MONTHS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
 function plotRect(f: Frame, top: number) {
@@ -190,11 +216,16 @@ export function barChart(f: Frame, cfg: BarCfg): void {
   const maxI = data.indexOf(Math.max(...data));
   const slot = (r.x1 - r.x0) / data.length;
   const bw = slot - 2 * u - 6 * u;
+  // Same ramp as the horizontal bars, running up from the baseline: only
+  // the tallest columns reach the fully saturated end.
+  const grad = ctx.createLinearGradient(0, r.y1, 0, r.y0 + 20 * u);
+  grad.addColorStop(0, withAlpha(cfg.color, 0.3));
+  grad.addColorStop(1, cfg.color);
   data.forEach((v, i) => {
     const p = stagger(t, i, 0.045);
     const bh = (r.y1 - r.y0 - 20 * u) * v * p;
     const x = r.x0 + slot * i + (slot - bw) / 2;
-    ctx.fillStyle = cfg.color;
+    ctx.fillStyle = grad;
     roundRect(ctx, x, r.y1 - bh, bw, bh, 4 * u);
     ctx.fill();
     if (i === maxI && p >= 1) {
@@ -242,6 +273,7 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
   const pad = 36 * u;
   const rowH = (f.h - 60 * u - (top + 10 * u)) / cfg.rows.length;
   const max = Math.max(...cfg.rows.map((d) => d.v));
+  const grad = barGradient(ctx, pad, w - pad, cfg.color);
 
   cfg.rows.forEach((d, i) => {
     const p = stagger(t, i, 0.08);
@@ -259,7 +291,7 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
     ctx.fillStyle = GRID;
     roundRect(ctx, pad, y + 34 * u, w - 2 * pad, 10 * u, 5 * u);
     ctx.fill();
-    ctx.fillStyle = cfg.color;
+    ctx.fillStyle = grad;
     roundRect(ctx, pad, y + 34 * u, Math.max(bw, 10 * u), 10 * u, 5 * u);
     ctx.fill();
   });
@@ -744,7 +776,7 @@ export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
     ctx.fillStyle = GRID;
     roundRect(ctx, pad, y + 24 * u, w - 2 * pad, 7 * u, 3.5 * u);
     ctx.fill();
-    ctx.fillStyle = CRITICAL;
+    ctx.fillStyle = barGradient(ctx, pad, w - pad, CRITICAL);
     roundRect(ctx, pad, y + 24 * u, Math.max((w - 2 * pad) * (s.count / barMax) * Math.max(0, p), 7 * u), 7 * u, 3.5 * u);
     ctx.fill();
     ctx.globalAlpha = 1;
@@ -826,7 +858,7 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
     ctx.fillStyle = GRID;
     roundRect(ctx, pad, y + 24 * u, w - 2 * pad, 7 * u, 3.5 * u);
     ctx.fill();
-    ctx.fillStyle = CRITICAL;
+    ctx.fillStyle = barGradient(ctx, pad, w - pad, CRITICAL);
     roundRect(ctx, pad, y + 24 * u, Math.max((w - 2 * pad) * (s.v / barMax) * Math.max(0, rp), 7 * u), 7 * u, 3.5 * u);
     ctx.fill();
     ctx.globalAlpha = 1;
