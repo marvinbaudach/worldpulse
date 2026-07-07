@@ -61,7 +61,7 @@ const ASSEMBLE_TURNS = Math.PI * 1.5;
 export function useCarouselRotation({
   autoSpin = 0.12,
   dragSensitivity = 0.005,
-  friction = 0.06,
+  friction = 0.045,
   wheelSensitivity = 0.004,
   paused,
   initialTilt = -0.32,
@@ -239,8 +239,14 @@ export function useCarouselRotation({
         flickReadyAt.current = state.clock.elapsedTime + FLICK_COOLDOWN;
       }
       rotation.current += velocity.current * dt;
-      // Ease velocity toward the auto-spin (inertia -> idle).
-      velocity.current += (autoSpin - velocity.current) * friction;
+      // Coast back to the idle spin. `friction` reads as a per-60fps-frame
+      // pull, but is applied dt-scaled so the feel is identical at any refresh
+      // rate (a 144Hz screen no longer snaps back faster). A spin flung against
+      // the idle direction then bleeds off, crosses zero and re-accelerates
+      // into the idle direction on one smooth exponential curve instead of
+      // yanking the instant the drag is released.
+      velocity.current +=
+        (autoSpin - velocity.current) * (1 - Math.pow(1 - friction, dt * 60));
     }
 
     // Eased swirl-in offset that unwinds to zero as the ring assembles.
