@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { CardCanvas } from './CardCanvas';
 import type { Dashboard } from '../dashboards';
@@ -87,6 +87,66 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     el.style.opacity = opacity;
   };
 
+  // Hurl the current card off and rise the neighbour, then advance the index
+  // after the throw. Shared by the swipe commit and the keyboard nav, so both
+  // animate identically. Callers bounds-check first; a caller may pin the card
+  // to a drag position beforehand — the reflow here makes that state animate.
+  const throwCard = (goNext: boolean) => {
+    animating.current = true;
+    intro.current = false; // no chart replay on the card we land on
+    const off = goNext ? -1 : 1;
+    const el = curRef.current;
+    const rise = goNext ? nextRef.current : prevRef.current;
+    if (el) {
+      void el.offsetWidth; // force a reflow so a just-pinned drag state animates
+      // Hurl it off: slides out, arcs up, spins in Z and Y and shrinks as it
+      // fades — an accelerating ease-in so it really flies.
+      el.style.transition = `transform ${THROW_MS}ms cubic-bezier(0.5, 0, 0.9, 0.4), opacity ${THROW_MS}ms ease-in`;
+      el.style.transform = `${CENTER} translateX(${off * 165}%) translateY(-9%) rotate(${off * 20}deg) rotateY(${off * 38}deg) scale(0.85)`;
+      el.style.opacity = '0';
+    }
+    // The revealed neighbour rises to the front with a soft overshoot.
+    if (rise) {
+      rise.style.transition = RISE;
+      rise.style.transform = CENTER;
+      rise.style.opacity = '1';
+    }
+    const n = dashboards.length;
+    window.setTimeout(() => {
+      animating.current = false;
+      setIndex((i) => (i + (goNext ? 1 : -1) + n) % n);
+    }, THROW_MS);
+  };
+
+  // Keyboard/programmatic step, with the same wrap/clamp rule as a swipe.
+  const go = (goNext: boolean) => {
+    if (animating.current) return;
+    const n = dashboards.length;
+    const wrap = n >= 3;
+    if (goNext ? !(wrap || index < n - 1) : !(wrap || index > 0)) return;
+    navigator.vibrate?.(8);
+    throwCard(goNext);
+  };
+
+  // Arrow keys page the deck too, so it is navigable without a touchscreen.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        go(true);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        go(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // Re-bind on index/length change so the handler sees the current bounds;
+    // `go`/`throwCard` are intentionally omitted (SwipeDeck remounts per filter,
+    // so `dashboards` identity is stable within a mount).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, dashboards.length]);
+
   const onDown = (e: React.PointerEvent) => {
     if (animating.current) return;
     drag.current = {
@@ -145,37 +205,19 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     const goNext = left && (wrap || index < n - 1);
     const goPrev = right && (wrap || index > 0);
     if (goNext || goPrev) {
-      animating.current = true;
-      intro.current = false; // no chart replay on the card we land on
       // A quick flick can commit without the drag ever reaching the detent
       // distance — give it the same soft tick so the throw still confirms.
       if (!d.detent) navigator.vibrate?.(8);
-      const off = goNext ? -1 : 1;
-      const el = curRef.current;
-      const rise = goNext ? nextRef.current : prevRef.current;
       // Pin the current (drag) state with no transition first — on a fast flick
       // move/up can land in one frame with nothing painted between, and the
       // browser then jumps straight to the end (the effect looks skipped).
+      // throwCard's reflow then makes this pinned state animate into the throw.
+      const el = curRef.current;
       if (el) {
         el.style.transition = 'none';
         el.style.transform = `${CENTER} translateX(${d.dx}px) rotate(${d.dx * 0.05}deg) rotateY(${d.dx * 0.05}deg)`;
-        void el.offsetWidth; // force a reflow so the throw actually animates
-        // Hurl it off: slides out, arcs up, spins in Z and Y and shrinks as it
-        // fades — an accelerating ease-in so it really flies.
-        el.style.transition = `transform ${THROW_MS}ms cubic-bezier(0.5, 0, 0.9, 0.4), opacity ${THROW_MS}ms ease-in`;
-        el.style.transform = `${CENTER} translateX(${off * 165}%) translateY(-9%) rotate(${off * 20}deg) rotateY(${off * 38}deg) scale(0.85)`;
-        el.style.opacity = '0';
       }
-      // The revealed neighbour rises to the front with a soft overshoot.
-      if (rise) {
-        rise.style.transition = RISE;
-        rise.style.transform = CENTER;
-        rise.style.opacity = '1';
-      }
-      window.setTimeout(() => {
-        animating.current = false;
-        setIndex((i) => (i + (goNext ? 1 : -1) + n) % n);
-      }, THROW_MS);
+      throwCard(goNext);
     } else {
       // Not far enough: everything springs back to rest.
       setCur(CENTER, SPRING);
