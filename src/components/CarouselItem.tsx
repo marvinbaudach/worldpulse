@@ -241,18 +241,32 @@ export function CarouselItem({
       (height / 2) * Math.abs(Math.sin(group.rotation.x - target.rotX)) +
       (width / 2) * Math.abs(Math.sin(group.rotation.y - target.rotY));
 
+    // Idle float: each panel drifts on its own slow, multi-frequency phase so
+    // the ring looks alive rather than frozen — and because this frame loop
+    // keeps running while a hero is held, the backdrop cards float there too.
+    // The offset is fed into the flight target below, so the damped chase
+    // softens it and no feedback accumulates; the per-index phase keeps
+    // neighbours out of sync so it reads as organic, not a single wobble.
+    const ph = index * 1.7;
+    const floatX = Math.sin(now * 0.45 + ph) * 0.035;
+    const floatY = Math.sin(now * 0.37 + ph * 1.4) * 0.04;
+    const floatZ = Math.cos(now * 0.41 + ph * 0.8) * 0.03;
+    // A hair of roll on its own phase adds the final touch of life.
+    group.rotation.z = Math.sin(now * 0.3 + ph * 1.1) * 0.012;
+
     // The slot's outward normal ('YXZ': yaw, then pitch) — the press sink
     // pushes the panel along it, away from the viewer side.
     const nx = Math.sin(target.rotY) * Math.cos(target.rotX);
     const ny = -Math.sin(target.rotX);
     const nz = Math.cos(target.rotY) * Math.cos(target.rotX);
 
-    // Damped flight toward the slot: fast enough to feel pinned when settled,
-    // slow enough that a formation switch reads as panels flying over.
+    // Damped flight toward the slot (plus the idle float): fast enough to feel
+    // pinned when settled, slow enough that a formation switch reads as panels
+    // flying over, and soft enough to smooth the drifting float target.
     const k = 0.085;
-    group.position.x += (target.x - nx * sink - group.position.x) * k;
-    group.position.y += (target.y - ny * sink - group.position.y) * k;
-    group.position.z += (target.z - nz * sink - group.position.z) * k;
+    group.position.x += (target.x + floatX - nx * sink - group.position.x) * k;
+    group.position.y += (target.y + floatY - ny * sink - group.position.y) * k;
+    group.position.z += (target.z + floatZ - nz * sink - group.position.z) * k;
 
     // Back panels: darker, desaturated and slightly zoomed out -> depth.
     // Minimum opacity kept higher so the back sides stay recognizable.
