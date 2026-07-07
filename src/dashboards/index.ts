@@ -166,13 +166,22 @@ const FEATURED = new Set([
 ]);
 
 /**
- * Featured panels come first (shuffled among themselves each page load),
- * the remaining pool shuffled after them. The whole pool is on stage; a
- * theme filter narrows it to the tagged cards.
+ * The ring is clustered by theme: cards are grouped by their primary tag (the
+ * first in TAGS_BY_ID) in the TAGS chip order, so related panels sit together
+ * as an arc rather than scattered. Within each cluster the featured panels lead
+ * and both halves are shuffled, so the strong cards front each theme while the
+ * order still varies per load. Untagged cards trail at the end.
  */
+function clustered(cards: Dashboard[]): Dashboard[] {
+  return [
+    ...shuffled(cards.filter((d) => FEATURED.has(d.id))),
+    ...shuffled(cards.filter((d) => !FEATURED.has(d.id))),
+  ];
+}
+
 export const ALL_DASHBOARDS: Dashboard[] = [
-  ...shuffled(POOL.filter((d) => FEATURED.has(d.id))),
-  ...shuffled(POOL.filter((d) => !FEATURED.has(d.id))),
+  ...TAGS.flatMap((t) => clustered(POOL.filter((d) => d.tags?.[0] === t.id))),
+  ...clustered(POOL.filter((d) => !d.tags?.length)),
 ];
 
 /** Floor for the ring radius, so a small filtered set still spaces out well. */
