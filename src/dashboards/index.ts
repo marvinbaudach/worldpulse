@@ -60,6 +60,8 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'de-tax-quota': ['deutschland', 'geld'],
   'de-power-prices': ['deutschland', 'geld', 'welt'],
   'de-state-quota': ['deutschland', 'geld'],
+  'de-old-age-ratio': ['deutschland', 'soziales', 'geld'],
+  'de-aging-nations': ['welt', 'soziales'],
   'internet-shutdowns': ['welt', 'soziales', 'freiheit'],
   'press-freedom-nations': ['welt', 'soziales', 'freiheit'],
   'jailed-journalists': ['welt', 'soziales', 'freiheit'],
@@ -114,6 +116,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'pension-level': ['geld', 'deutschland', 'soziales'],
   'rent-burden': ['geld', 'deutschland', 'soziales'],
   'de-underemployment': ['deutschland', 'soziales', 'geld'],
+  'de-exports': ['deutschland', 'geld', 'welt'],
 };
 for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 
@@ -125,7 +128,7 @@ const FEATURED = new Set([
   'us-wars', 'us-bases', 'modern-slavery', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
   'us-debt', 'us-interest', 'm2', 'dollar', 'wealth', 'homicide-map',
   'world-pop', 'oil-consumption', 'de-insolvenz-jobs', 'conflict-deaths', 'refugees',
-  'military', 'de-industry', 'recent-wars', 'de-state-quota', 'de-tax-quota', 'de-power-prices',
+  'military', 'de-industry', 'recent-wars', 'de-state-quota', 'de-tax-quota', 'de-power-prices', 'de-old-age-ratio', 'de-aging-nations',
   'youth-unemployment', 'unemployment', 'poverty',
   'teen-mde', 'female-lfp',
   'teen-screen', 'teen-antidepressants', 'obesity-fastfood', 'surveillance',

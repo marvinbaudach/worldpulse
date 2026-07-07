@@ -41,6 +41,7 @@ import {
   DE_MIGRATION_PANEL,
   DE_TAX_QUOTA_PANEL,
   DE_POWER_PRICE_PANEL,
+  DE_OLD_AGE_PANEL,
   DE_STATE_QUOTA_PANEL,
   DE_UNDEREMPLOYMENT_COMPARE,
   INDUSTRY_COMPARE,
@@ -56,6 +57,7 @@ import {
   REFUGEE_PANEL,
   SWISS_POP_FALLBACK,
   DE_ENERGY_MIX,
+  DE_EXPORT_COMPARE,
   DE_FEMALE_LFP_PANEL,
   TEEN_MDE,
   TEEN_RX_PANEL,
@@ -585,8 +587,8 @@ export const POOL: Dashboard[] = [
         seed: 269,
         series: [
           { name: 'Unterbeschäftigung', color: red, data: DE_UNDEREMPLOYMENT_COMPARE.rows[0].data },
-          { name: 'Arbeitslose (offiziell)', color: yellow, data: DE_UNDEREMPLOYMENT_COMPARE.rows[1].data },
-          { name: 'Langzeitarbeitslose', color: orange, data: DE_UNDEREMPLOYMENT_COMPARE.rows[2].data },
+          { name: 'Offiziell', color: yellow, data: DE_UNDEREMPLOYMENT_COMPARE.rows[1].data },
+          { name: 'Langzeit', color: aqua, data: DE_UNDEREMPLOYMENT_COMPARE.rows[2].data },
         ],
         ticks: DE_UNDEREMPLOYMENT_COMPARE.ticks,
         xLabels: ['2009', '2014', '2019', 'heute'],
@@ -621,6 +623,34 @@ export const POOL: Dashboard[] = [
         ]),
       }),
   },
+  {
+    id: 'de-exports',
+    title: 'Exportweltmeister · DEU vs. China vs. USA',
+    draw: (f) =>
+      lineChart(f, {
+        // Germany held the world's #1 goods-export crown 2003–2008, level with
+        // China in 2008 — then China overtook in 2009 and pulled far ahead
+        // while Germany's line flattened and rolled over in 2023–24.
+        label: 'Warenexporte · Bio. $ · WTO',
+        value: DE_EXPORT_COMPARE.deuLatest,
+        unit: '',
+        fmt: (v) => `$${v.toFixed(1)} Bio.`,
+        delta: null,
+        seed: 277,
+        series: [
+          { name: '🇩🇪 DEU', color: yellow, data: DE_EXPORT_COMPARE.rows[0].data },
+          { name: '🇨🇳 China', color: red, data: DE_EXPORT_COMPARE.rows[1].data },
+          { name: '🇺🇸 USA', color: blue, data: DE_EXPORT_COMPARE.rows[2].data },
+        ],
+        ticks: DE_EXPORT_COMPARE.ticks,
+        xLabels: ['1990', '2001', '2013', 'heute'],
+        // Germany takes the export crown in 2003, loses it to China in 2009.
+        markers: eraMarkers(1990, 2024, [
+          [2003, '🏆 Weltmeister'],
+          [2009, '🇨🇳 China überholt'],
+        ]),
+      }),
+  },
   trendCard('de-migration', 'Migrationsanteil Deutschland', 'Migrationshintergrund · 🇩🇪', DE_MIGRATION_PANEL, aqua, (v) => `${v.toFixed(1)}%`, 149, eraMarkers(1950, 2024, [
     // The four big waves on the 1950–2024 axis: guest-worker recruitment, the
     // post-1990 Aussiedler/Balkan influx, the 2015 asylum wave, and Ukraine.
@@ -633,7 +663,13 @@ export const POOL: Dashboard[] = [
   trendCard('de-tax-quota', 'Steuer- & Abgabenquote Deutschland', 'Steuer- & Abgabenquote · 🇩🇪 · % des BIP · OECD', DE_TAX_QUOTA_PANEL, yellow, (v) => `${v.toFixed(1)}%`, 259, eraMarkers(1965, 2023, [
     // Taxes plus social contributions as a share of GDP — the state's take hit
     // a historical high of ~39% in the early 2020s.
+    // Rise through the 1970s: expansion of the welfare state and social
+    // insurance contributions under Brandt/Schmidt.
+    [1970, '🏛️ Sozialstaatsausbau'],
     [1991, '🧱 Soli 1991'],
+    // Low point: final stage of the Schröder tax reform (top rate 53→42%,
+    // base rate to 15%) took effect Jan 2005, plus a weak economy.
+    [2005, '✂️ Steuerreform 2005'],
     [2021, '📈 Rekord ~39%'],
   ])),
   trendCard('de-power-prices', 'Strompreis Deutschland', 'Strompreis · 🇩🇪 · Haushalte · ct/kWh', DE_POWER_PRICE_PANEL, blue, (v) => `${v.toFixed(0)} ct`, 271, eraMarkers(1991, 2025, [
@@ -653,6 +689,62 @@ export const POOL: Dashboard[] = [
     [1990, '🧱 Wiedervereinigung'],
     [2020, '💸 Corona'],
   ])),
+  {
+    id: 'de-old-age-ratio',
+    title: 'Altenquotient Deutschland · die Rentnerlast',
+    draw: (f) =>
+      areaChart(f, {
+        // Old-age dependency ratio, 65+ per 100 of working age (20-64). The
+        // headline stays on today's ~40 rather than the panel's 2060 endpoint,
+        // so it reads as the current burden, with the projected climb behind it.
+        label: 'Altenquotient · 🇩🇪 · Rentner je 100 Erwerbstätige · Prognose bis 2060',
+        value: 40,
+        fmt: (v) => `${v.toFixed(0)}`,
+        delta: null,
+        seed: 281,
+        color: red,
+        data: DE_OLD_AGE_PANEL.series,
+        ticks: DE_OLD_AGE_PANEL.ticks,
+        xLabels: DE_OLD_AGE_PANEL.xLabels,
+        // The near-doubling on the 1950–2060 axis: the boomer cohorts start
+        // retiring in the 2020s, and everything right of "heute" is Destatis
+        // projection, not measured data.
+        markers: eraMarkers(1950, 2060, [
+          [2024, '📍 heute'],
+          [2035, '👴 Boomer in Rente'],
+        ]),
+      }),
+  },
+  {
+    id: 'de-aging-nations',
+    title: 'Alterung international · Rentnerlast',
+    draw: (f) =>
+      hBarChart(f, {
+        // Old-age dependency ratio, people 65+ per 100 of working age (20-64),
+        // UN World Population Prospects 2024, rounded. Japan leads the aged
+        // world; Germany and Italy sit near the top; Africa's young nations
+        // anchor the low end — the scale of the demographic divide.
+        label: 'Alterung · 65+ je 100 Erwerbstätige · UN 2024',
+        value: 30,
+        fmt: (v) => `Ø ${v.toFixed(0)}`,
+        rowFmt: (v) => `${v.toFixed(0)}`,
+        delta: null,
+        color: violet,
+        unit: '',
+        rows: [
+          { name: 'Japan 🇯🇵', v: 55 },
+          { name: 'Italien 🇮🇹', v: 41 },
+          { name: 'Deutschland 🇩🇪', v: 40 },
+          { name: 'Frankreich 🇫🇷', v: 38 },
+          { name: 'Spanien 🇪🇸', v: 34 },
+          { name: 'USA 🇺🇸', v: 30 },
+          { name: 'China 🇨🇳', v: 22 },
+          { name: 'Brasilien 🇧🇷', v: 16 },
+          { name: 'Indien 🇮🇳', v: 11 },
+          { name: 'Nigeria 🇳🇬', v: 6 },
+        ],
+      }),
+  },
   {
     id: 'internet-shutdowns',
     title: 'Internet-Shutdowns · Top-Länder',

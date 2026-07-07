@@ -515,6 +515,21 @@ export const DE_STATE_QUOTA_PANEL: TrendSeries = trend(
   ['1880', '1930', '1975', 'heute'],
 );
 
+// Germany's old-age dependency ratio: people 65+ per 100 of working age
+// (20-64), Destatis 15th coordinated population projection (moderate
+// variant) for the years past 2024, rounded. The "pensioner problem":
+// it roughly doubles from ~25 in the 1970s to ~55 by 2060 as the boomer
+// cohorts retire — ever fewer workers carry ever more retirees.
+export const DE_OLD_AGE_PANEL: TrendSeries = trend(
+  [
+    [1950, 16], [1960, 18], [1970, 25], [1980, 24], [1990, 24],
+    [2000, 26], [2010, 31], [2020, 37], [2024, 40], [2030, 46],
+    [2035, 49], [2040, 50], [2050, 53], [2060, 55],
+  ],
+  (v) => `${v.toFixed(0)}`,
+  ['1950', '1987', '2023', '2060'],
+);
+
 // Germany's official registered unemployment vs. the Bundesagentur für
 // Arbeit's own broader "Unterbeschäftigung" measure, with the long-term
 // unemployed as a subset — annual averages in millions (BA statistics;
@@ -534,6 +549,22 @@ export const DE_UNDEREMPLOYMENT_COMPARE = compareSeries(
   (v) => `${v.toFixed(1)} Mio`,
   /** Latest underemployment figure, for the headline. */
   { underLatest: 3.58 },
+);
+
+// Merchandise exports, USD trillions, Germany vs. China vs. USA (WTO / World
+// Bank, rounded). Germany was the world's #1 goods exporter from 2003 to 2008
+// ("Exportweltmeister"), neck-and-neck with China at ~$1.4T in 2008 — then
+// China overtook it in 2009 and rocketed to ~$3.5T while Germany's line
+// stagnated near $1.6T and rolled over in 2023–24. The crown, then the slide.
+export const DE_EXPORT_COMPARE = compareSeries(
+  [
+    { name: 'Deutschland', pts: [[1990, 0.41], [1995, 0.52], [2000, 0.55], [2005, 0.98], [2008, 1.45], [2009, 1.12], [2010, 1.26], [2015, 1.33], [2018, 1.56], [2020, 1.38], [2022, 1.66], [2023, 1.69], [2024, 1.66]] },
+    { name: 'China', pts: [[1990, 0.06], [1995, 0.15], [2000, 0.25], [2005, 0.76], [2008, 1.43], [2009, 1.20], [2010, 1.58], [2015, 2.27], [2018, 2.49], [2020, 2.59], [2022, 3.59], [2023, 3.38], [2024, 3.58]] },
+    { name: 'USA', pts: [[1990, 0.39], [1995, 0.58], [2000, 0.78], [2005, 0.90], [2008, 1.30], [2009, 1.06], [2010, 1.28], [2015, 1.50], [2018, 1.66], [2020, 1.43], [2022, 2.06], [2023, 2.02], [2024, 2.07]] },
+  ],
+  (v) => `$${v.toFixed(1)} Bio.`,
+  /** Latest German export figure, for the headline. */
+  { deuLatest: 1.66 },
 );
 
 // US unemployment: recent college graduates vs all workers, % (NY Fed /
