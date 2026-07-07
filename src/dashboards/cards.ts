@@ -464,10 +464,8 @@ export const POOL: Dashboard[] = [
       }),
   },
   trendCard('life-exp', 'Globale Lebenserwartung', 'Lebenserwartung · seit 1770', LIFE_PANEL, green, (v) => `${v.toFixed(1)}y`, 89, eraMarkers(1770, 2024, [
-    // The two visible notches and the mid-century surge on the 1770–2024 axis.
-    [1918, '🦠 Grippe 1918'],
+    // The mid-century surge on the 1770–2024 axis.
     [1945, '💊 Antibiotika'],
-    [2021, '🦠 COVID 2020'],
   ])),
   {
     id: 'm2',
