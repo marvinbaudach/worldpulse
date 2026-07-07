@@ -53,7 +53,7 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
   const curRef = useRef<HTMLDivElement>(null);
   const prevRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLDivElement>(null);
-  const drag = useRef({ active: false, startX: 0, dx: 0, w: 1, t0: 0 });
+  const drag = useRef({ active: false, startX: 0, dx: 0, w: 1, t0: 0, detent: false });
   const animating = useRef(false);
   // Only the first card plays the chart fly-in; once you swipe, the cards you
   // land on are already settled (they were drawn behind), so a replay would
@@ -95,6 +95,7 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
       dx: 0,
       w: e.currentTarget.clientWidth || 1,
       t0: performance.now(),
+      detent: false,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
     setCur(CENTER, 'none');
@@ -104,6 +105,16 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     const d = drag.current;
     if (!d.active) return;
     d.dx = e.clientX - d.startX;
+    // Detent: a soft tick the instant the drag passes the commit distance, so
+    // the card feels like it "catches" a notch under the thumb. Re-arms if you
+    // pull back below it, so the notch can be felt again on the next pass.
+    const committed = Math.abs(d.dx) > Math.min(60, d.w * 0.16);
+    if (committed && !d.detent) {
+      d.detent = true;
+      navigator.vibrate?.(8); // light notch (Android; iOS has no API)
+    } else if (!committed && d.detent) {
+      d.detent = false;
+    }
     // The neighbour the swipe heads toward rises (scales up) as you drag, so it
     // is already at full size the moment the top card clears it.
     const prog = Math.min(1, Math.abs(d.dx) / (d.w * 0.5));
@@ -136,7 +147,9 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     if (goNext || goPrev) {
       animating.current = true;
       intro.current = false; // no chart replay on the card we land on
-      navigator.vibrate?.(12); // short haptic tick (Android; iOS has no API)
+      // A quick flick can commit without the drag ever reaching the detent
+      // distance — give it the same soft tick so the throw still confirms.
+      if (!d.detent) navigator.vibrate?.(8);
       const off = goNext ? -1 : 1;
       const el = curRef.current;
       const rise = goNext ? nextRef.current : prevRef.current;
