@@ -42,6 +42,7 @@ import {
   DE_MIGRATION_PANEL,
   DE_TAX_QUOTA_PANEL,
   DE_POWER_PRICE_PANEL,
+  BERLIN_WARRANTS_PANEL,
   DE_OLD_AGE_PANEL,
   DE_STATE_QUOTA_PANEL,
   DE_UNDEREMPLOYMENT_COMPARE,
@@ -661,14 +662,12 @@ export const POOL: Dashboard[] = [
     [2014, '🇺🇦 Ukraine 2014'],
   ])),
   trendCard('de-crime-foreign', 'Nichtdeutsche Tatverdächtige · Anteil laut PKS', 'Nichtdeutsche Tatverdächtige · 🇩🇪', DE_FOREIGN_SUSPECTS_PANEL, magenta, (v) => `${v.toFixed(1)}%`, 151),
-  trendCard('de-knife-attacks', 'Messerangriffe · Deutschland', 'Messerangriffe · 🇩🇪 · BKA PKS · Fälle/Jahr', DE_KNIFE_ATTACKS_PANEL, red, (v) => `${Math.round(v)}`, 313, eraMarkers(2013, 2024, [
-    // The two big migration waves the knife-attack curve bends around, plus
-    // the Köln NYE assaults (reported Jan 2016) and the lockdown-era dip.
+  trendCard('de-knife-attacks', 'Messerangriffe · Deutschland', 'Messerangriffe · 🇩🇪 · BKA PKS · Fälle/Jahr', DE_KNIFE_ATTACKS_PANEL, red, (v) => `${Math.round(v)}`, 313, eraMarkers(2005, 2024, [
     [2015, '🚧 kein Grenzschutz'],
     [2016, '🥂 Köln Silvester'],
     [2020, '🦠 Corona-Lockdown'],
   ])),
-  trendCard('de-group-rape', 'Gruppenvergewaltigungen · Deutschland', 'Gruppenvergewaltigungen · 🇩🇪 · BKA PKS · ≥2 Täter', DE_GROUP_RAPE_PANEL, violet, (v) => `${Math.round(v)}`, 317, eraMarkers(2013, 2024, [
+  trendCard('de-group-rape', 'Gruppenvergewaltigungen · Deutschland', 'Gruppenvergewaltigungen · 🇩🇪 · BKA PKS · ≥2 Täter', DE_GROUP_RAPE_PANEL, violet, (v) => `${Math.round(v)}`, 317, eraMarkers(2005, 2024, [
     [2015, '🚧 kein Grenzschutz'],
     [2016, '🥂 Köln Silvester'],
     [2020, '🦠 Corona-Lockdown'],
@@ -693,6 +692,7 @@ export const POOL: Dashboard[] = [
     [2011, '☢️ Atomausstieg'],
     [2022, '⚡ Energiekrise'],
   ])),
+  trendCard('berlin-warrants', 'Offene Haftbefehle · Berlin', 'Offene Haftbefehle · Berlin · Senatsverwaltung', BERLIN_WARRANTS_PANEL, red, (v) => `${(v / 1000).toFixed(0)}k`, 283),
   trendCard('de-state-quota', 'Staatsquote Deutschland', 'Staatsquote · 🇩🇪 · Staatsausgaben % des BIP', DE_STATE_QUOTA_PANEL, orange, (v) => `${v.toFixed(1)}%`, 227, eraMarkers(1880, 2024, [
     // Government spending as a share of GDP on the 1880–2024 axis: the secular
     // rise from ~10% in the Kaiserreich, the 1929 Depression, the 1975 oil

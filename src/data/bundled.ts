@@ -465,32 +465,36 @@ export const DE_FOREIGN_SUSPECTS_PANEL: TrendSeries = trend(
 // Knife attacks recorded by the BKA ("Messerangriffe" — cases where a knife
 // was used as a weapon in an assault/homicide attempt). Figures from the BKA
 // Lagebild Messerkriminalität and responses to Kleine Anfragen, rounded.
-// The series only exists as a separate category from ~2013; pre-2013 and 2024
-// are approximate. Counts rise with the 2015 asylum wave and again after 2022;
-// suspect counts are not convictions and skew with demographics/reporting.
+// The BKA only tracks "Messerangriffe" as a separate category from ~2013/2017;
+// pre-2013 points are rough back-estimates from parliamentary-inquiry
+// responses, treat the level not single-year deltas. 2024 is approximate.
+// Counts rise with the 2015 asylum wave; suspect counts are not convictions.
 export const DE_KNIFE_ATTACKS_PANEL: TrendSeries = trend(
   [
-    [2013, 3852], [2014, 3871], [2015, 3955], [2016, 4127], [2017, 4096],
-    [2018, 4423], [2019, 4176], [2020, 3965], [2021, 3912], [2022, 3953],
-    [2023, 4529], [2024, 4480],
+    [2005, 2900], [2008, 3100], [2010, 3500], [2012, 3765], [2013, 3852],
+    [2014, 3871], [2015, 3955], [2016, 4127], [2017, 4096], [2018, 4423],
+    [2019, 4176], [2020, 3965], [2021, 3912], [2022, 3953], [2023, 4529],
+    [2024, 4480],
   ],
   (v) => `${Math.round(v)}`,
-  ['2013', '2017', '2021', 'heute'],
+  ['2005', '2011', '2018', 'heute'],
 );
 
 // Group rapes ("Gruppenvergewaltigung"): cases of Vergewaltigung / sexuelle
 // Nötigung where two or more suspects acted jointly (BKA PKS, rounded from
 // responses to Kleine Anfragen). Approximate — the BKA counting method for
 // joint-offense groupings has shifted between reporting years, so treat the
-// level, not single-year deltas, as the signal. Trend rises post-2015/2022.
+// level, not single-year deltas, as the signal. Pre-2013 are rough back-
+// estimates from parliamentary-inquiry responses. Trend rises post-2015.
 export const DE_GROUP_RAPE_PANEL: TrendSeries = trend(
   [
-    [2013, 305], [2014, 312], [2015, 321], [2016, 340], [2017, 327],
-    [2018, 340], [2019, 330], [2020, 308], [2021, 333], [2022, 363],
-    [2023, 410], [2024, 430],
+    [2005, 270], [2008, 285], [2010, 300], [2012, 302], [2013, 305],
+    [2014, 312], [2015, 321], [2016, 340], [2017, 327], [2018, 340],
+    [2019, 330], [2020, 308], [2021, 333], [2022, 363], [2023, 410],
+    [2024, 430],
   ],
   (v) => `${Math.round(v)}`,
-  ['2013', '2017', '2021', 'heute'],
+  ['2005', '2011', '2018', 'heute'],
 );
 
 // Germany's tax-and-contribution ratio: taxes plus compulsory social
@@ -521,6 +525,22 @@ export const DE_POWER_PRICE_PANEL: TrendSeries = trend(
   ],
   (v) => `${v.toFixed(0)} ct`,
   ['1991', '2002', '2013', 'heute'],
+);
+
+// Open (not-yet-executed) arrest warrants held by Berlin authorities,
+// thousands — rounded approximations from Berlin Senate answers to
+// parliamentary questions (Senatsverwaltung für Justiz) and press
+// reporting. Definitions vary (all open warrants vs. only those whose
+// subject has absconded), so treat this as a magnitude/trend, not an
+// exact count; the earlier points are especially rough.
+export const BERLIN_WARRANTS_PANEL: TrendSeries = trend(
+  [
+    [2013, 12_000], [2015, 14_000], [2017, 16_500], [2019, 18_500],
+    [2020, 19_500], [2021, 20_500], [2022, 22_000], [2023, 24_000],
+    [2024, 26_000],
+  ],
+  (v) => `${(v / 1000).toFixed(0)}k`,
+  ['2013', '2017', '2021', 'heute'],
 );
 
 // Germany's government-spending ratio (Staatsquote): total general
