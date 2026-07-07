@@ -4,7 +4,6 @@ import { ALL_DASHBOARDS, TAGS } from '../dashboards';
 import { CARD_SOURCES } from '../dashboards/cardSources';
 import { useTagFilter } from '../hooks/useTagFilter';
 import { SwipeDeck } from './SwipeDeck';
-import { SourcesOverlay } from './SourcesOverlay';
 import { glassSurface } from './glass';
 
 const Deck = styled.div`
@@ -41,29 +40,9 @@ const Counter = styled.div`
   letter-spacing: 0.14em;
 `;
 
-const Right = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
-
-const IconButton = styled.button`
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 11px 16px;
-  border: none;
-  border-radius: 999px;
-  color: #cfe4ff;
-  font: 600 12px/1 inherit;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  ${glassSurface}
-`;
-
-// Source of the card currently on top of the deck; tapping it opens the full
-// list. Pinned bottom-centre, above the swipe hint and the safe area.
-const SourceTag = styled.button`
+// Source of the card currently on top of the deck, linking to the source.
+// Pinned bottom-centre, above the swipe hint and the safe area.
+const SourceTag = styled.a`
   position: fixed;
   left: 50%;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 62px);
@@ -79,6 +58,7 @@ const SourceTag = styled.button`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-decoration: none;
   cursor: pointer;
   ${glassSurface}
 `;
@@ -172,7 +152,6 @@ export function MobileDeck() {
 
   const [active, setActive] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sourcesOpen, setSourcesOpen] = useState(false);
   const [swiped, setSwiped] = useState(() => localStorage.getItem('worldpulse-swiped') === '1');
 
   const onIndex = (i: number) => {
@@ -197,23 +176,25 @@ export function MobileDeck() {
           {currentLabel}
           <span aria-hidden>▾</span>
         </FilterButton>
-        <Right>
-          <Counter>
-            {Math.min(active + 1, dashboards.length)} / {dashboards.length}
-          </Counter>
-          <IconButton onClick={() => setSourcesOpen(true)}>ⓘ QUELLEN</IconButton>
-        </Right>
+        <Counter>
+          {Math.min(active + 1, dashboards.length)} / {dashboards.length}
+        </Counter>
       </TopBar>
 
       <SwipeDeck key={tag ?? 'all'} dashboards={dashboards} onIndex={onIndex} />
 
       {activeSource && (
-        <SourceTag onClick={() => setSourcesOpen(true)}>Quelle: {activeSource.name}</SourceTag>
+        <SourceTag
+          as={activeSource.url ? 'a' : 'span'}
+          href={activeSource.url}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          Quelle: {activeSource.name}
+        </SourceTag>
       )}
 
       {!swiped && dashboards.length > 1 && <Hint $gone={false}>← wischen zum Blättern →</Hint>}
-
-      {sourcesOpen && <SourcesOverlay onClose={() => setSourcesOpen(false)} />}
 
       {menuOpen && (
         <>

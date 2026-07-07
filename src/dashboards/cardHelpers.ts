@@ -8,6 +8,9 @@ import type { TrendSeries } from '../data/store';
 
 export const [blue, aqua, yellow, green, violet, red, magenta, orange] = SERIES;
 
+/** Rounded integer with German thousands separators (12183 → "12.183"). */
+export const deInt = (v: number): string => Math.round(v).toLocaleString('de-DE');
+
 /** Compact factory for the bundled single-series trend panels. */
 export function trendCard(
   id: string,

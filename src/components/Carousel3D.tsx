@@ -32,13 +32,12 @@ import {
   type Dashboard,
 } from '../dashboards';
 import { CARD_SOURCES } from '../dashboards/cardSources';
-import { SourcesOverlay } from './SourcesOverlay';
 import { glassSurface } from './glass';
 
 // Source footer for the open hero: a slim bar pinned to the bottom, reading as
-// the enlarged card's footer. Tapping it opens the full Quellen list. Shown
-// only while a hero is open, when the rest of the chrome is hidden.
-const HeroSource = styled.button`
+// the enlarged card's footer, linking to the source. Shown only while a hero is
+// open, when the rest of the chrome is hidden.
+const HeroSource = styled.a`
   position: fixed;
   left: 50%;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
@@ -54,6 +53,7 @@ const HeroSource = styled.button`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-decoration: none;
   cursor: pointer;
   ${glassSurface}
 `;
@@ -238,7 +238,6 @@ export function Carousel3D() {
   // dropped from the stack entirely while a hero is open (see EffectComposer),
   // so the offset itself can stay constant.
   const heroOpen = selected !== null;
-  const [sourcesOpen, setSourcesOpen] = useState(false);
   const heroSource = selected ? CARD_SOURCES[selected.id] : undefined;
   const aberration = useMemo(() => new Vector2(0.0003, 0.0003), []);
 
@@ -522,10 +521,15 @@ export function Carousel3D() {
     <HotkeyPanel hidden={heroOpen} layout={layout} onChange={setLayout} />
 
     {heroOpen && heroSource && (
-      <HeroSource onClick={() => setSourcesOpen(true)}>Quelle: {heroSource.name}</HeroSource>
+      <HeroSource
+        as={heroSource.url ? 'a' : 'span'}
+        href={heroSource.url}
+        target="_blank"
+        rel="noreferrer noopener"
+      >
+        Quelle: {heroSource.name}
+      </HeroSource>
     )}
-
-    {sourcesOpen && <SourcesOverlay onClose={() => setSourcesOpen(false)} />}
 
     {/* Hand tracking is desktop-only: detection + post-processing together
         overwhelm phone GPUs, and touch already covers those devices. */}

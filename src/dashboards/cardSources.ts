@@ -1,11 +1,10 @@
 // Central source registry — the single place that says where each card's data
-// comes from. Both the per-card source caption (desktop hero + mobile deck) and
-// the global "Quellen" overlay read from here, so a source is written once.
+// comes from. The per-card source caption (desktop hero footer + mobile deck)
+// reads from here, so a source is written once.
 //
 // `S` is the institution registry (name + official link); `CARD_SOURCES` maps a
-// card id to its institution; `SOURCE_GROUPS` is the grouped list the overlay
-// renders. Kept dependency-free (no imports from dashboards/data) so it never
-// participates in the dashboards ↔ data import cycle.
+// card id to its institution. Kept dependency-free (no imports from
+// dashboards/data) so it never participates in the dashboards ↔ data cycle.
 
 export interface Source {
   name: string;
@@ -196,20 +195,3 @@ export const CARD_SOURCES: Record<string, Source> = {
   'autocracy-share': S.vdem,
   'smartphone-leash': S.dataReportal,
 };
-
-/** Grouped view for the Quellen overlay. */
-export const SOURCE_GROUPS: { title: string; items: Source[] }[] = [
-  { title: 'Live-APIs (bei jedem Laden aktualisiert)', items: [S.treasury, S.worldBank, S.wikimedia, S.openMeteo] },
-  { title: 'Freiheit, Demokratie & Presse', items: [S.freedomHouse, S.vdem, S.rsf, S.cpj, S.accessNow, S.icnl, S.penAmerica, S.googleReport, S.bundestag, S.ukPolice, S.fsc] },
-  { title: 'Geld & Wirtschaft', items: [S.fed, S.ecb, S.riksbank, S.worldpay, S.bankRussia, S.imf, S.forbes, S.atlanticCouncil, S.creditreform, S.wto, S.ubs, S.bls, S.drv, S.hanke] },
-  { title: 'Deutschland', items: [S.destatis, S.ba, S.pks, S.lkaNRW, S.bnetza, S.berlinSenat] },
-  { title: 'Welt, Gesellschaft & Gesundheit', items: [S.unwpp, S.unhcr, S.oecd, S.eurostat, S.fao, S.owid, S.energyInst, S.itu, S.sipri, S.fas, S.cdc, S.who, S.samhsa, S.commonSense, S.walkFree, S.prisonBrief, S.transparency, S.dod, S.iiss, S.comparitech, S.oxcgrt, S.cleanCities, S.fda, S.c40, S.census, S.un] },
-];
-
-/**
- * The data are curated support points from the primary sources above — partly
- * rounded or interpolated between years. Reliable for the shape and order of
- * magnitude of each curve, not to the decimal.
- */
-export const SOURCE_DISCLAIMER =
-  'Die Reihen sind kuratierte Stützpunkte aus den genannten Primärquellen — teils gerundet oder interpoliert. Verlässlich für Form und Größenordnung, nicht auf die Nachkommastelle.';
