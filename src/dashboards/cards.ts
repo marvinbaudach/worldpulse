@@ -1486,7 +1486,7 @@ export const POOL: Dashboard[] = [
       hBarChart(f, {
         // Government requests for user data, per year (Meta + Google/Apple
         // transparency reports, approximate, latest reporting period).
-        label: 'Behördenanfragen nach Nutzerdaten · pro Jahr · Transparenzberichte',
+        label: 'Behördenanfragen zu Nutzerdaten · Transparenzberichte',
         value: 410_000,
         delta: null,
         color: blue,
@@ -1513,7 +1513,7 @@ export const POOL: Dashboard[] = [
       hBarChart(f, {
         // Government requests to remove content, per year (Google Transparency
         // Report, approximate). Russia dominates by a wide margin.
-        label: 'Behörden-Löschanfragen · Google/YouTube · Transparenzbericht',
+        label: 'Behörden-Löschanfragen · Google/YouTube · pro Jahr',
         value: 32_000,
         delta: null,
         color: red,
