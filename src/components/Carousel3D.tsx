@@ -46,10 +46,11 @@ const ZOOM_RATE = 2.0;
 // localStorage keys for the persisted theme filter and formation.
 const TAG_KEY = 'worldpulse-tag';
 const LAYOUT_KEY = 'worldpulse-layout';
-// Theme filter a fresh visitor lands on; 'all' is the stored sentinel for the
-// unfiltered pool, so an explicit "ALLE" survives a reload instead of falling
-// back to this default.
-const DEFAULT_TAG = 'schweiz';
+// Theme filter a fresh visitor lands on; null means the unfiltered "ALLE" pool
+// ('all' is its stored sentinel, so an explicit ALLE also survives a reload).
+// Default is the full pool now that country tags are reserved for country-
+// focused cards (Switzerland alone would otherwise show a single card).
+const DEFAULT_TAG: string | null = null;
 
 interface RingProps {
   onSelect: (id: string, start: HeroStart) => void;
