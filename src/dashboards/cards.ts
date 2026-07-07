@@ -40,6 +40,8 @@ import {
   DE_GROUP_RAPE_PANEL,
   DE_INSOLVENCY_JOBS_PANEL,
   DE_MIGRATION_PANEL,
+  DE_MIGRATION_FLOWS,
+  DE_POPULATION_PANEL,
   DE_TAX_QUOTA_PANEL,
   DE_POWER_PRICE_PANEL,
   BERLIN_WARRANTS_PANEL,
@@ -661,16 +663,47 @@ export const POOL: Dashboard[] = [
     [2015, '🏴 Asyl 2015'],
     [2014, '🇺🇦 Ukraine 2014'],
   ])),
-  trendCard('de-crime-foreign', 'Nichtdeutsche Tatverdächtige · Anteil laut PKS', 'Nichtdeutsche Tatverdächtige · 🇩🇪', DE_FOREIGN_SUSPECTS_PANEL, magenta, (v) => `${v.toFixed(1)}%`, 151),
-  trendCard('de-knife-attacks', 'Messerangriffe · Deutschland', 'Messerangriffe · 🇩🇪 · BKA PKS · Fälle/Jahr', DE_KNIFE_ATTACKS_PANEL, red, (v) => `${Math.round(v)}`, 313, eraMarkers(2005, 2024, [
-    [2015, '🚧 kein Grenzschutz'],
-    [2016, '🥂 Köln Silvester'],
-    [2020, '🦠 Corona-Lockdown'],
+  {
+    id: 'de-migration-flows',
+    title: 'Ein- und Auswanderung · Deutschland',
+    draw: (f) =>
+      lineChart(f, {
+        // Gross flows across the border; the gap between the two lines is the
+        // net migration that drives the population curve on the next card.
+        label: 'Wanderung über die Grenze · 🇩🇪 · pro Jahr',
+        value: DE_MIGRATION_FLOWS.inLatest,
+        unit: '',
+        fmt: (v) => `${v.toFixed(1)}M`,
+        delta: null,
+        seed: 317,
+        series: [
+          { name: 'Einwanderung', color: aqua, data: DE_MIGRATION_FLOWS.rows[0].data },
+          { name: 'Auswanderung', color: orange, data: DE_MIGRATION_FLOWS.rows[1].data },
+        ],
+        ticks: DE_MIGRATION_FLOWS.ticks,
+        xLabels: ['1991', '2002', '2013', 'heute'],
+        markers: eraMarkers(1991, 2023, [
+          [1992, '🧱 Balkan/Aussiedler'],
+          [2015, '📈 Zuwanderung 2015'],
+          [2022, '🇺🇦 Ukraine-Krieg 2022'],
+        ]),
+      }),
+  },
+  trendCard('de-population', 'Bevölkerung Deutschland · seit 1950', 'Bevölkerung · 🇩🇪 · Jahresende', DE_POPULATION_PANEL, blue, (v) => `${v.toFixed(1)} Mio.`, 319, eraMarkers(1950, 2024, [
+    // The population only moves on migration: near-flat for decades, a record
+    // ~84m after the 2015 and 2022 waves, since births stay below deaths.
+    [1990, '🇩🇪 Wiedervereinigung 1990'],
+    [2015, '📈 Zuwanderung 2015'],
+    [2022, '🇺🇦 Ukraine-Krieg 2022'],
   ])),
-  trendCard('de-group-rape', 'Gruppenvergewaltigungen · Deutschland', 'Gruppenvergewaltigungen · 🇩🇪 · BKA PKS · ≥2 Täter', DE_GROUP_RAPE_PANEL, violet, (v) => `${Math.round(v)}`, 317, eraMarkers(2005, 2024, [
-    [2015, '🚧 kein Grenzschutz'],
-    [2016, '🥂 Köln Silvester'],
-    [2020, '🦠 Corona-Lockdown'],
+  trendCard('de-crime-foreign', 'Nichtdeutsche Tatverdächtige · Anteil laut PKS', 'Nichtdeutsche Tatverdächtige · 🇩🇪', DE_FOREIGN_SUSPECTS_PANEL, magenta, (v) => `${v.toFixed(1)}%`, 151),
+  // NRW, not Germany: no honest nationwide knife-violence time series exists
+  // before the 2024 PKS, so this shows NRW's LKA public-space knife report.
+  trendCard('de-knife-attacks', 'Messergewalt · NRW', 'Messergewalt · NRW · öffentl. Raum · LKA', DE_KNIFE_ATTACKS_PANEL, red, (v) => `${Math.round(v)}`, 313),
+  // Series starts in 2019 (post §177 reform), so the years are comparable and
+  // no causal marker is implied — Corona is the only in-window event.
+  trendCard('de-group-rape', 'Gruppenvergewaltigungen · Deutschland', 'Gruppenvergewaltigungen · 🇩🇪 · PKS · nicht allein', DE_GROUP_RAPE_PANEL, violet, (v) => `${Math.round(v)}`, 317, eraMarkers(2019, 2023, [
+    [2020, '🦠 Corona'],
   ])),
   trendCard('de-tax-quota', 'Steuer- & Abgabenquote Deutschland', 'Steuer- & Abgabenquote · 🇩🇪 · % des BIP · OECD', DE_TAX_QUOTA_PANEL, yellow, (v) => `${v.toFixed(1)}%`, 259, eraMarkers(1965, 2023, [
     // Taxes plus social contributions as a share of GDP — the state's take hit

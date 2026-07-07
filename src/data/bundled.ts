@@ -449,6 +449,37 @@ export const DE_MIGRATION_PANEL: TrendSeries = trend(
   ['1950', '1975', '2000', 'heute'],
 );
 
+// Cross-border migration over Germany's borders, all persons, millions per
+// year (Destatis Wanderungsstatistik, rounded). Immigration (Zuzüge) always
+// runs above emigration (Fortzüge) except in the 2008/09 dip; the gap between
+// the two lines is the net migration that actually moves the population. The
+// three peaks: the early-90s Balkan-war / ethnic-German-resettler wave, the
+// 2015 refugee surge, and the 2022 Ukraine displacement.
+export const DE_MIGRATION_FLOWS = compareSeries(
+  [
+    { name: 'Einwanderung', pts: [[1991, 1.20], [1992, 1.50], [1995, 1.10], [2000, 0.84], [2005, 0.71], [2009, 0.72], [2013, 1.23], [2015, 2.14], [2016, 1.87], [2018, 1.58], [2020, 1.19], [2022, 2.67], [2023, 1.93]] },
+    { name: 'Auswanderung', pts: [[1991, 0.60], [1992, 0.72], [1995, 0.70], [2000, 0.67], [2005, 0.63], [2009, 0.73], [2013, 0.80], [2015, 1.00], [2016, 1.37], [2018, 1.19], [2020, 0.97], [2022, 1.20], [2023, 1.27]] },
+  ],
+  (v) => `${v.toFixed(1)}M`,
+  /** Latest immigration figure (2023 Zuzüge), for the headline. */
+  { inLatest: 1.93 },
+);
+
+// German resident population, millions, present-territory boundaries (Destatis;
+// pre-1990 figures sum both German states, rounded). Near-flat for decades —
+// low birth rates mean the population only grows when net migration is strong
+// enough to offset the deaths-over-births gap. The post-2010 climb to a record
+// ~84m rides on the migration waves, not on births.
+export const DE_POPULATION_PANEL: TrendSeries = trend(
+  [
+    [1950, 68.4], [1960, 72.7], [1970, 78.1], [1980, 78.3], [1990, 79.4],
+    [1995, 81.8], [2000, 82.2], [2005, 82.4], [2010, 81.8], [2015, 82.2],
+    [2019, 83.1], [2022, 84.4], [2024, 83.6],
+  ],
+  (v) => `${v.toFixed(1)}M`,
+  ['1950', '1975', '2000', 'heute'],
+);
+
 // Share of non-German suspects in the police crime statistics (BKA PKS),
 // excluding immigration-law offenses that only foreigners can commit.
 // Rounded from published PKS yearbooks; 2024 is a record 35.4%.
@@ -462,39 +493,33 @@ export const DE_FOREIGN_SUSPECTS_PANEL: TrendSeries = trend(
   ['2005', '2011', '2018', 'heute'],
 );
 
-// Knife attacks recorded by the BKA ("Messerangriffe" — cases where a knife
-// was used as a weapon in an assault/homicide attempt). Figures from the BKA
-// Lagebild Messerkriminalität and responses to Kleine Anfragen, rounded.
-// The BKA only tracks "Messerangriffe" as a separate category from ~2013/2017;
-// pre-2013 points are rough back-estimates from parliamentary-inquiry
-// responses, treat the level not single-year deltas. 2024 is approximate.
-// Counts rise with the 2015 asylum wave; suspect counts are not convictions.
+// Knife violence in NRW public space, cases per year — LKA NRW Lagebild
+// "Gewalt im öffentlichen Raum · Tatmittel Messer" (Tatmittel are only
+// recorded in the PKS since 2019). NRW is used deliberately: there is NO
+// consistent multi-year NATIONAL series — the BKA introduced a nationwide
+// "Messerangriffe" category only with the PKS 2024 (29,014 cases that
+// year), so a Germany-wide trend before 2024 cannot be shown honestly.
+// 2022 is derived from the reported +42.6% rise to 2023; 2024 = +16%.
 export const DE_KNIFE_ATTACKS_PANEL: TrendSeries = trend(
   [
-    [2005, 2900], [2008, 3100], [2010, 3500], [2012, 3765], [2013, 3852],
-    [2014, 3871], [2015, 3955], [2016, 4127], [2017, 4096], [2018, 4423],
-    [2019, 4176], [2020, 3965], [2021, 3912], [2022, 3953], [2023, 4529],
-    [2024, 4480],
+    [2022, 2480], [2023, 3536], [2024, 4103],
   ],
   (v) => `${Math.round(v)}`,
-  ['2005', '2011', '2018', 'heute'],
+  ['2022', '2023', '2024', 'heute'],
 );
 
-// Group rapes ("Gruppenvergewaltigung"): cases of Vergewaltigung / sexuelle
-// Nötigung where two or more suspects acted jointly (BKA PKS, rounded from
-// responses to Kleine Anfragen). Approximate — the BKA counting method for
-// joint-offense groupings has shifted between reporting years, so treat the
-// level, not single-year deltas, as the signal. Pre-2013 are rough back-
-// estimates from parliamentary-inquiry responses. Trend rises post-2015.
+// Group rapes: PKS special evaluation of "Vergewaltigung §177 Abs. 6-8
+// StGB" with the filter "suspects did not act alone", cases per year
+// (Bundestag Kleine Anfrage / BKA). The series starts in 2019 so it sits
+// entirely after the 2016 §177 reform — the numbers are then comparable
+// year to year. The real picture is roughly flat at ~680-790, not a sharp
+// climb. PKS counts suspects/cases, not convictions.
 export const DE_GROUP_RAPE_PANEL: TrendSeries = trend(
   [
-    [2005, 270], [2008, 285], [2010, 300], [2012, 302], [2013, 305],
-    [2014, 312], [2015, 321], [2016, 340], [2017, 327], [2018, 340],
-    [2019, 330], [2020, 308], [2021, 333], [2022, 363], [2023, 410],
-    [2024, 430],
+    [2019, 710], [2020, 704], [2021, 677], [2022, 789], [2023, 761],
   ],
   (v) => `${Math.round(v)}`,
-  ['2005', '2011', '2018', 'heute'],
+  ['2019', '2021', '2022', '2023'],
 );
 
 // Germany's tax-and-contribution ratio: taxes plus compulsory social
