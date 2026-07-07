@@ -37,9 +37,9 @@ import {
   M2_COMPARE,
   M2_PANEL,
   NUKE_TESTS_PANEL,
-  PRESS_FREEDOM_PANEL,
   PRESS_FREEDOM_COMPARE,
   BOOK_BANS_PANEL,
+  JAILED_JOURNALISTS_PANEL,
   OIL_CONSUMPTION_PANEL,
   OVERDOSE_PANEL,
   REFUGEE_PANEL,
@@ -620,11 +620,6 @@ export const POOL: Dashboard[] = [
         ],
       }),
   },
-  trendCard('press-freedom', 'Pressefreiheit · Weltschnitt', 'Pressefreiheit · 🌍 · RSF-Score', PRESS_FREEDOM_PANEL, aqua, (v) => v.toFixed(1), 173, eraMarkers(2022, 2025, [
-    // Higher score = freer; the line falls. 2025 is the first year the global
-    // average dropped below 55 — RSF's line into a "difficult situation".
-    [2025, '⚠️ unter 55'],
-  ])),
   {
     id: 'press-freedom-nations',
     title: 'Pressefreiheit · DE / USA / China',
@@ -649,6 +644,13 @@ export const POOL: Dashboard[] = [
   },
   trendCard('book-bans', 'Buchverbote an US-Schulen', 'Buchverbote · 🇺🇸 · Fälle/Schuljahr', BOOK_BANS_PANEL, orange, (v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`), 179, eraMarkers(2021, 2024, [
     [2023, '📚 Höhepunkt 23/24'],
+  ])),
+  trendCard('jailed-journalists', 'Inhaftierte Journalist:innen', 'Inhaftierte Journalist:innen · 🌍 · CPJ', JAILED_JOURNALISTS_PANEL, red, (v) => `${Math.round(v)}`, 181, eraMarkers(1992, 2024, [
+    // The two crackdowns that step the curve up on the 1992–2024 axis: Turkey's
+    // mass jailings after the 2016 coup attempt, and Belarus after the 2020
+    // election protests.
+    [2016, '🇹🇷 Türkei 2016'],
+    [2020, '🇧🇾 Belarus 2020'],
   ])),
   {
     id: 'gdp-growth',

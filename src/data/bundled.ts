@@ -502,16 +502,20 @@ export const INTERNET_PANEL: TrendSeries = trend(
   ['1990', '2001', '2013', 'heute'],
 );
 
-// RSF World Press Freedom Index — global average score (0–100, higher = freer).
-// RSF reset its methodology in 2022, so scores aren't comparable across that
-// break; this shows only the current-methodology window. 2024 (55.9) and 2025
-// (54.7) are RSF's published global averages; 2022–23 are approximate. 2025 is
-// the lowest in the index's 25-year history — the first time the global average
-// fell below 55, RSF's threshold into a "difficult situation".
-export const PRESS_FREEDOM_PANEL: TrendSeries = trend(
-  [[2022, 57.0], [2023, 56.2], [2024, 55.9], [2025, 54.7]],
-  (v) => v.toFixed(1),
-  ['2022', '2023', '2024', 'heute'],
+// Journalists jailed worldwide on 1 December each year (CPJ annual prison
+// census, running since 1992). Recent years are firm CPJ totals — the record
+// 370 in 2022, 320 (2023), 361 (2024), with 300+ every year since 2020;
+// earlier anchors are approximate census figures. The long climb tracks the
+// crackdown on the free press: China, Turkey's post-2016 purge, then Belarus,
+// Iran and Israel.
+export const JAILED_JOURNALISTS_PANEL: TrendSeries = trend(
+  [
+    [1992, 100], [2000, 81], [2005, 125], [2008, 125], [2010, 145],
+    [2012, 232], [2015, 199], [2016, 259], [2017, 262], [2019, 250],
+    [2020, 274], [2021, 293], [2022, 370], [2023, 320], [2024, 361],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['1992', '2003', '2013', 'heute'],
 );
 
 // RSF World Press Freedom Index — per-country score (0–100, higher = freer),
