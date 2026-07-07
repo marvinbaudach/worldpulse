@@ -23,7 +23,6 @@ import {
   CONFLICT_PANEL,
   DEBT_TREND_FALLBACK,
   DE_FAMILY,
-  DE_HOUSE_PRICE_INCOME_PANEL,
   DE_PENSION_LEVEL_PANEL,
   DE_RENT_BURDEN_PANEL,
   DE_WAGE_COMPARE,
@@ -37,6 +36,8 @@ import {
   EXTREME_POVERTY_PANEL,
   LIFE_PANEL,
   DE_FOREIGN_SUSPECTS_PANEL,
+  DE_KNIFE_ATTACKS_PANEL,
+  DE_GROUP_RAPE_PANEL,
   DE_INSOLVENCY_JOBS_PANEL,
   DE_MIGRATION_PANEL,
   DE_TAX_QUOTA_PANEL,
@@ -660,6 +661,18 @@ export const POOL: Dashboard[] = [
     [2014, '🇺🇦 Ukraine 2014'],
   ])),
   trendCard('de-crime-foreign', 'Nichtdeutsche Tatverdächtige · Anteil laut PKS', 'Nichtdeutsche Tatverdächtige · 🇩🇪', DE_FOREIGN_SUSPECTS_PANEL, magenta, (v) => `${v.toFixed(1)}%`, 151),
+  trendCard('de-knife-attacks', 'Messerangriffe · Deutschland', 'Messerangriffe · 🇩🇪 · BKA PKS · Fälle/Jahr', DE_KNIFE_ATTACKS_PANEL, red, (v) => `${Math.round(v)}`, 313, eraMarkers(2013, 2024, [
+    // The two big migration waves the knife-attack curve bends around, plus
+    // the Köln NYE assaults (reported Jan 2016) and the lockdown-era dip.
+    [2015, '🚧 kein Grenzschutz'],
+    [2016, '🥂 Köln Silvester'],
+    [2020, '🦠 Corona-Lockdown'],
+  ])),
+  trendCard('de-group-rape', 'Gruppenvergewaltigungen · Deutschland', 'Gruppenvergewaltigungen · 🇩🇪 · BKA PKS · ≥2 Täter', DE_GROUP_RAPE_PANEL, violet, (v) => `${Math.round(v)}`, 317, eraMarkers(2013, 2024, [
+    [2015, '🚧 kein Grenzschutz'],
+    [2016, '🥂 Köln Silvester'],
+    [2020, '🦠 Corona-Lockdown'],
+  ])),
   trendCard('de-tax-quota', 'Steuer- & Abgabenquote Deutschland', 'Steuer- & Abgabenquote · 🇩🇪 · % des BIP · OECD', DE_TAX_QUOTA_PANEL, yellow, (v) => `${v.toFixed(1)}%`, 259, eraMarkers(1965, 2023, [
     // Taxes plus social contributions as a share of GDP — the state's take hit
     // a historical high of ~39% in the early 2020s.
@@ -903,12 +916,6 @@ export const POOL: Dashboard[] = [
         markers: eraMarkers(2000, 2024, [[2022, '📉 Reallohn-Einbruch']]),
       }),
   },
-  trendCard('house-price-income', 'Hauspreis je Einkommen · Deutschland', 'Hauspreis / Einkommen · 🇩🇪 · 2015 = 100 · OECD', DE_HOUSE_PRICE_INCOME_PANEL, orange, (v) => `${Math.round(v)}`, 241, eraMarkers(2000, 2024, [
-    // The climb steepens once the ECB pins rates near zero; the 2022 rate
-    // hikes bring the first correction.
-    [2015, '🏦 Nullzins'],
-    [2022, '📈 Zinswende'],
-  ])),
   {
     id: 'homeownership',
     title: 'Wohneigentumsquote · Europa',

@@ -462,6 +462,37 @@ export const DE_FOREIGN_SUSPECTS_PANEL: TrendSeries = trend(
   ['2005', '2011', '2018', 'heute'],
 );
 
+// Knife attacks recorded by the BKA ("Messerangriffe" — cases where a knife
+// was used as a weapon in an assault/homicide attempt). Figures from the BKA
+// Lagebild Messerkriminalität and responses to Kleine Anfragen, rounded.
+// The series only exists as a separate category from ~2013; pre-2013 and 2024
+// are approximate. Counts rise with the 2015 asylum wave and again after 2022;
+// suspect counts are not convictions and skew with demographics/reporting.
+export const DE_KNIFE_ATTACKS_PANEL: TrendSeries = trend(
+  [
+    [2013, 3852], [2014, 3871], [2015, 3955], [2016, 4127], [2017, 4096],
+    [2018, 4423], [2019, 4176], [2020, 3965], [2021, 3912], [2022, 3953],
+    [2023, 4529], [2024, 4480],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2013', '2017', '2021', 'heute'],
+);
+
+// Group rapes ("Gruppenvergewaltigung"): cases of Vergewaltigung / sexuelle
+// Nötigung where two or more suspects acted jointly (BKA PKS, rounded from
+// responses to Kleine Anfragen). Approximate — the BKA counting method for
+// joint-offense groupings has shifted between reporting years, so treat the
+// level, not single-year deltas, as the signal. Trend rises post-2015/2022.
+export const DE_GROUP_RAPE_PANEL: TrendSeries = trend(
+  [
+    [2013, 305], [2014, 312], [2015, 321], [2016, 340], [2017, 327],
+    [2018, 340], [2019, 330], [2020, 308], [2021, 333], [2022, 363],
+    [2023, 410], [2024, 430],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2013', '2017', '2021', 'heute'],
+);
+
 // Germany's tax-and-contribution ratio: taxes plus compulsory social
 // security contributions as a share of GDP (OECD Revenue Statistics,
 // "tax-to-GDP", rounded). Climbed from ~32% in the 1960s to a record
@@ -1123,20 +1154,6 @@ export const DE_WAGE_COMPARE = compareSeries(
   (v) => v.toFixed(0),
   /** Latest real-wage index, for the headline. */
   { realLatest: 104 },
-);
-
-// House-price-to-income ratio for Germany (OECD Analytical House Price
-// database, index 2015 = 100). Falling through the 2000s, then a steep climb
-// once the ECB pinned rates near zero (2015+): homes ran ~35% ahead of income
-// by 2022 before the rate-hike correction. Buying a home decoupled from what
-// work pays — the core of the ownership squeeze.
-export const DE_HOUSE_PRICE_INCOME_PANEL: TrendSeries = trend(
-  [
-    [2000, 101], [2005, 96], [2010, 92], [2013, 95], [2015, 100],
-    [2018, 112], [2020, 123], [2022, 136], [2023, 128], [2024, 126],
-  ],
-  (v) => `${Math.round(v)}`,
-  ['2000', '2008', '2016', 'heute'],
 );
 
 // Central-bank balance sheets, Fed (USD) vs ECB (EUR), trillions (Fed H.4.1 /
