@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { ALL_DASHBOARDS, TAGS } from '../dashboards';
+import { useTagFilter } from '../hooks/useTagFilter';
 import { SwipeDeck } from './SwipeDeck';
 import { glassSurface } from './glass';
 
@@ -118,7 +119,7 @@ const Option = styled.button<{ $active: boolean }>`
 export function MobileDeck() {
   // Always open on the full deck (ALLE); the filter lives in state for the
   // session only, so it never inherits the 3D view's saved filter.
-  const [tag, setTag] = useState<string | null>(null);
+  const [tag, setTag] = useTagFilter(null);
 
   const dashboards = useMemo(
     () => (tag ? ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag)) : ALL_DASHBOARDS),

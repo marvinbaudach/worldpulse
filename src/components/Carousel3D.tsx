@@ -24,6 +24,7 @@ import { LAYOUT_MODES, layoutSlots, type LayoutMode } from '../layouts';
 import { useCarouselRotation } from '../hooks/useCarouselRotation';
 import { useHandTracking, type HandState } from '../hooks/useHandTracking';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useTagFilter } from '../hooks/useTagFilter';
 import {
   ALL_DASHBOARDS,
   MIN_COUNT,
@@ -51,7 +52,6 @@ const ZOOM_MAX = 2.5;
 const ZOOM_RATE = 2.0;
 
 // localStorage keys for the persisted theme filter and formation.
-const TAG_KEY = 'worldpulse-tag';
 const LAYOUT_KEY = 'worldpulse-layout';
 // Theme filter a fresh visitor lands on; null means the unfiltered "ALLE" pool
 // ('all' is its stored sentinel, so an explicit ALLE also survives a reload).
@@ -172,17 +172,10 @@ export function Carousel3D() {
     localStorage.setItem(LAYOUT_KEY, layout);
   }, [layout]);
   // Theme filter: a chip narrows the stage to the tagged cards; without one
-  // the full pool is on stage. Persisted (null stored as 'all') so both a
-  // filter and an explicit "ALLE" survive the reload; a fresh visitor lands
-  // on DEFAULT_TAG.
-  const [tag, setTag] = useState<string | null>(() => {
-    const stored = localStorage.getItem(TAG_KEY);
-    if (stored === null) return DEFAULT_TAG;
-    return stored === 'all' ? null : stored;
-  });
-  useEffect(() => {
-    localStorage.setItem(TAG_KEY, tag ?? 'all');
-  }, [tag]);
+  // the full pool is on stage. Kept in the URL (?filter=…) so a shared link
+  // restores the view, and mirrored to localStorage; a fresh visitor lands on
+  // DEFAULT_TAG.
+  const [tag, setTag] = useTagFilter(DEFAULT_TAG);
   const dashboards = useMemo(
     () => (tag ? ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag)) : ALL_DASHBOARDS),
     [tag],
