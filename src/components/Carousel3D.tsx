@@ -88,7 +88,7 @@ function Ring({
   spinning,
 }: RingProps) {
   const interactive = selectedId === null;
-  const { groupRef, tiltRef, wasDrag } = useCarouselRotation({
+  const { groupRef, tiltRef, wasDrag, spinTo } = useCarouselRotation({
     // Space toggles the idle spin; drag, wheel and inertia stay alive.
     autoSpin: spinning ? 0.03 : 0,
     paused,
@@ -104,6 +104,20 @@ function Ring({
     () => layoutSlots(layout, dashboards.length, radius, PANEL_H),
     [layout, dashboards.length, radius],
   );
+
+  // While a hero is open, keep the ring centred on it: an arrow-key switch
+  // changes selectedId, and the ring eases the incoming panel's slot to the
+  // front (visible turning behind the hero, and centred again on close).
+  useEffect(() => {
+    if (selectedId === null) {
+      spinTo(null);
+      return;
+    }
+    const i = dashboards.findIndex((d) => d.id === selectedId);
+    if (i < 0) return;
+    const s = slots[i];
+    spinTo(Math.atan2(s.x, s.z));
+  }, [selectedId, dashboards, slots, spinTo]);
 
   return (
     // Outer group tilts the formation (driven by vertical drag) so the far

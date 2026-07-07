@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { MathUtils } from 'three';
 import type { Group } from 'three';
@@ -78,6 +78,11 @@ export function useCarouselRotation({
   const moved = useRef(0);
   const assembleStart = useRef<number | null>(null);
   const flickReadyAt = useRef(0);
+  // Front rotation the ring should ease to while it is otherwise held (a hero
+  // is open): stepping heroes with the arrow keys sets this to the incoming
+  // panel's slot, so the ring turns underneath to keep that card centred.
+  // null = no target, the ring holds still while paused as before.
+  const spinTarget = useRef<number | null>(null);
   // Keep the latest `paused` callback so listeners never capture a stale one.
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
@@ -171,12 +176,45 @@ export function useCarouselRotation({
   /** True when the last gesture moved far enough to count as a drag. */
   const wasDrag = () => moved.current > CLICK_THRESHOLD;
 
+  /**
+   * Ask the ring to rotate a given slot azimuth (radians) to the front, easing
+   * there even while paused. Pass null to release the target and hand the ring
+   * back to its normal spin/inertia. Front rotation is the negated azimuth so
+   * the panel sitting at that azimuth ends up facing the camera.
+   */
+  const spinTo = useCallback((azimuth: number | null) => {
+    spinTarget.current = azimuth === null ? null : -azimuth;
+  }, []);
+
   useFrame((state, delta) => {
     // Clamp delta so a dropped frame does not cause a jump.
     const dt = Math.min(delta, 1 / 30);
 
-    // Hold still while a hero card is open, but keep the current angle.
-    if (pausedRef.current?.()) return;
+    // A hero card is open: the ring is otherwise held, but if an arrow-key
+    // switch handed us a target slot, ease that panel to the front so the ring
+    // turns underneath the hero and stays centred on the card being viewed.
+    if (pausedRef.current?.()) {
+      const target = spinTarget.current;
+      if (target !== null && groupRef.current) {
+        // Rotation accumulates unbounded, so aim at the nearest equivalent of
+        // the target angle — a one-panel step never unwinds a whole turn.
+        const twoPi = Math.PI * 2;
+        let diff = (target - rotation.current) % twoPi;
+        if (diff > Math.PI) diff -= twoPi;
+        else if (diff < -Math.PI) diff += twoPi;
+        rotation.current = MathUtils.damp(
+          rotation.current,
+          rotation.current + diff,
+          6,
+          dt,
+        );
+        groupRef.current.rotation.y = rotation.current;
+      }
+      return;
+    }
+    // Ring back under free control: drop any leftover spin-to target so the
+    // next hero open starts fresh from the panel that is clicked.
+    spinTarget.current = null;
 
     if (!dragging.current) {
       // Open-hand flick spins the ring; a pinch belongs to the grab gesture
@@ -219,5 +257,5 @@ export function useCarouselRotation({
     }
   });
 
-  return { groupRef, tiltRef, wasDrag };
+  return { groupRef, tiltRef, wasDrag, spinTo };
 }
