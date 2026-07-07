@@ -84,6 +84,7 @@ const S = {
   gsma: { name: 'GSMA (Schätzwerte)', url: 'https://gsma.com' },
   dataReportal: { name: 'DataReportal (Schätzung)', url: 'https://datareportal.com' },
   un: { name: 'Vereinte Nationen', url: 'https://un.org' },
+  fsc: { name: 'Free Speech Coalition · Age Verification Tracker', url: 'https://freespeechcoalition.com' },
 } as const;
 
 /** Card id → its data source. Unlisted cards simply show no caption. */
@@ -174,6 +175,7 @@ export const CARD_SOURCES: Record<string, Source> = {
   'de-family': S.destatis,
   'single-households': S.destatis,
   'digital-id': S.worldBank,
+  'age-verify': S.fsc,
   'alcohol-nations': S.who,
   'alcohol-deaths': S.cdc,
   'c40-cities': S.c40,
@@ -198,7 +200,7 @@ export const CARD_SOURCES: Record<string, Source> = {
 /** Grouped view for the Quellen overlay. */
 export const SOURCE_GROUPS: { title: string; items: Source[] }[] = [
   { title: 'Live-APIs (bei jedem Laden aktualisiert)', items: [S.treasury, S.worldBank, S.wikimedia, S.openMeteo] },
-  { title: 'Freiheit, Demokratie & Presse', items: [S.freedomHouse, S.vdem, S.rsf, S.cpj, S.accessNow, S.icnl, S.penAmerica, S.googleReport, S.bundestag, S.ukPolice] },
+  { title: 'Freiheit, Demokratie & Presse', items: [S.freedomHouse, S.vdem, S.rsf, S.cpj, S.accessNow, S.icnl, S.penAmerica, S.googleReport, S.bundestag, S.ukPolice, S.fsc] },
   { title: 'Geld & Wirtschaft', items: [S.fed, S.ecb, S.riksbank, S.worldpay, S.bankRussia, S.imf, S.forbes, S.atlanticCouncil, S.creditreform, S.wto, S.ubs, S.bls, S.drv, S.hanke] },
   { title: 'Deutschland', items: [S.destatis, S.ba, S.pks, S.lkaNRW, S.bnetza, S.berlinSenat] },
   { title: 'Welt, Gesellschaft & Gesundheit', items: [S.unwpp, S.unhcr, S.oecd, S.eurostat, S.fao, S.owid, S.energyInst, S.itu, S.sipri, S.fas, S.cdc, S.who, S.samhsa, S.commonSense, S.walkFree, S.prisonBrief, S.transparency, S.dod, S.iiss, S.comparitech, S.oxcgrt, S.cleanCities, S.fda, S.c40, S.census, S.un] },
