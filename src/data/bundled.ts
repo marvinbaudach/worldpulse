@@ -1106,6 +1106,20 @@ export const SHUTDOWN_PANEL: TrendSeries = trend(
   ['2016', '2019', '2021', 'heute'],
 );
 
+// US states with an enacted online age-verification law (requires an ID or
+// face/age check to access covered sites). Free Speech Coalition / age-
+// verification tracker, rounded. Louisiana was first (effective Jan 2023);
+// after the Supreme Court upheld Texas's law in June 2025 the count jumped
+// again. The quantified on-ramp to mandatory digital ID: age checks normalise
+// showing your face or papers just to use the internet.
+export const AGE_VERIF_PANEL: TrendSeries = trend(
+  [
+    [2022, 0], [2023, 8], [2024, 19], [2025, 24],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2022', '2023', '2024', 'heute'],
+);
+
 // Government requests for user data to Big Tech, count of requests per year
 // (Google & Meta transparency reports, rounded). Both climb steeply as
 // platforms become the default evidence trove for law enforcement.

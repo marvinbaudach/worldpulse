@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { ALL_DASHBOARDS, TAGS } from '../dashboards';
+import { CARD_SOURCES } from '../dashboards/cardSources';
 import { useTagFilter } from '../hooks/useTagFilter';
 import { SwipeDeck } from './SwipeDeck';
+import { SourcesOverlay } from './SourcesOverlay';
 import { glassSurface } from './glass';
 
 const Deck = styled.div`
@@ -37,6 +39,48 @@ const Counter = styled.div`
   color: rgba(255, 255, 255, 0.5);
   font: 600 12px/1 inherit;
   letter-spacing: 0.14em;
+`;
+
+const Right = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const IconButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 999px;
+  color: #cfe4ff;
+  font: 600 12px/1 inherit;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  ${glassSurface}
+`;
+
+// Source of the card currently on top of the deck; tapping it opens the full
+// list. Pinned bottom-centre, above the swipe hint and the safe area.
+const SourceTag = styled.button`
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 62px);
+  transform: translateX(-50%);
+  z-index: 12;
+  max-width: 90vw;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.7);
+  font: 600 11px/1.2 inherit;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  ${glassSurface}
 `;
 
 // One-time swipe cue: the pager is a native horizontal scroll, so nothing
@@ -128,6 +172,7 @@ export function MobileDeck() {
 
   const [active, setActive] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
   const [swiped, setSwiped] = useState(() => localStorage.getItem('worldpulse-swiped') === '1');
 
   const onIndex = (i: number) => {
@@ -138,6 +183,7 @@ export function MobileDeck() {
     }
   };
 
+  const activeSource = CARD_SOURCES[dashboards[active]?.id ?? ''];
   const currentLabel = tag ? (TAGS.find((t) => t.id === tag)?.label ?? 'ALLE') : 'ALLE';
   const pick = (next: string | null) => {
     setTag(next);
@@ -151,14 +197,23 @@ export function MobileDeck() {
           {currentLabel}
           <span aria-hidden>▾</span>
         </FilterButton>
-        <Counter>
-          {Math.min(active + 1, dashboards.length)} / {dashboards.length}
-        </Counter>
+        <Right>
+          <Counter>
+            {Math.min(active + 1, dashboards.length)} / {dashboards.length}
+          </Counter>
+          <IconButton onClick={() => setSourcesOpen(true)}>ⓘ QUELLEN</IconButton>
+        </Right>
       </TopBar>
 
       <SwipeDeck key={tag ?? 'all'} dashboards={dashboards} onIndex={onIndex} />
 
+      {activeSource && (
+        <SourceTag onClick={() => setSourcesOpen(true)}>Quelle: {activeSource.name}</SourceTag>
+      )}
+
       {!swiped && dashboards.length > 1 && <Hint $gone={false}>← wischen zum Blättern →</Hint>}
+
+      {sourcesOpen && <SourcesOverlay onClose={() => setSourcesOpen(false)} />}
 
       {menuOpen && (
         <>

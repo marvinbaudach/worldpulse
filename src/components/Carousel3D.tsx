@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type RefObject } from 'react';
+import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
 import {
   EffectComposer,
@@ -30,6 +31,32 @@ import {
   MIN_COUNT,
   type Dashboard,
 } from '../dashboards';
+import { CARD_SOURCES } from '../dashboards/cardSources';
+import { SourcesOverlay } from './SourcesOverlay';
+import { glassSurface } from './glass';
+
+// Source footer for the open hero: a slim bar pinned to the bottom, reading as
+// the enlarged card's footer. Tapping it opens the full Quellen list. Shown
+// only while a hero is open, when the rest of the chrome is hidden.
+const HeroSource = styled.button`
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: 92vw;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.74);
+  font: 600 11px/1.2 inherit;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  ${glassSurface}
+`;
 
 // Panel dimensions in world units (4:5 aspect ratio).
 const PANEL_W = 2.4;
@@ -211,6 +238,8 @@ export function Carousel3D() {
   // dropped from the stack entirely while a hero is open (see EffectComposer),
   // so the offset itself can stay constant.
   const heroOpen = selected !== null;
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const heroSource = selected ? CARD_SOURCES[selected.id] : undefined;
   const aberration = useMemo(() => new Vector2(0.0003, 0.0003), []);
 
   const open = (id: string, start: HeroStart) => {
@@ -491,6 +520,12 @@ export function Carousel3D() {
     <LayoutControls hidden={heroOpen} tag={tag} onTagChange={setTag} />
 
     <HotkeyPanel hidden={heroOpen} layout={layout} onChange={setLayout} />
+
+    {heroOpen && heroSource && (
+      <HeroSource onClick={() => setSourcesOpen(true)}>Quelle: {heroSource.name}</HeroSource>
+    )}
+
+    {sourcesOpen && <SourcesOverlay onClose={() => setSourcesOpen(false)} />}
 
     {/* Hand tracking is desktop-only: detection + post-processing together
         overwhelm phone GPUs, and touch already covers those devices. */}

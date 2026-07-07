@@ -28,6 +28,7 @@ import {
   DE_WAGE_COMPARE,
   FOOD_FERT_COMPARE,
   WEALTH_DIVERGE_COMPARE,
+  AGE_VERIF_PANEL,
   DE_SINGLE_HH_PANEL,
   DOLLAR_PANEL,
   CONTINENT_FERTILITY,
@@ -1835,6 +1836,19 @@ export const POOL: Dashboard[] = [
         ],
       }),
   },
+  trendCard(
+    'age-verify',
+    'Ausweispflicht fürs Netz',
+    'Alterskontrolle online · US-Staaten mit Gesetz',
+    AGE_VERIF_PANEL,
+    orange,
+    (v) => `${Math.round(v)}`,
+    347,
+    eraMarkers(2022, 2025, [
+      [2023, 'Louisiana'],
+      [2025, 'Supreme Court'],
+    ]),
+  ),
   {
     id: 'alcohol-nations',
     title: 'Alkoholkonsum international',

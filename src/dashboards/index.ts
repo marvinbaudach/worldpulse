@@ -106,6 +106,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   '5g-stations': ['welt'],
   inflation: ['geld', 'welt'],
   'digital-id': ['welt', 'soziales', 'freiheit'],
+  'age-verify': ['welt', 'soziales', 'freiheit'],
   'alcohol-nations': ['gesundheit', 'welt'],
   'alcohol-deaths': ['gesundheit'],
   'c40-cities': ['welt'],
