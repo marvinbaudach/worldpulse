@@ -305,6 +305,33 @@ export const POOL: Dashboard[] = [
       }),
   },
   {
+    id: 'refugees-interventions',
+    title: 'Vertriebene & westliche Militäreinsätze',
+    draw: (f) =>
+      areaChart(f, {
+        // Same UNHCR displacement curve, but marked with the NATO-led
+        // operations (Kosovo, Afghanistan, Libya) and, honestly labeled, the
+        // US-led Iraq coalition — which was NOT a NATO operation. The point is
+        // that the biggest jumps (2013-15 Syria, 2022 Ukraine) are NON-NATO
+        // wars: the interventions explain some displacement, not the surge.
+        label: 'Vertriebene · UNHCR · mit Militäreinsätzen',
+        value: REFUGEE_PANEL.latest,
+        fmt: (v) => `${Math.round(v / 1e6)}M`,
+        delta: REFUGEE_PANEL.yoyPct,
+        seed: 67,
+        color: aqua,
+        data: REFUGEE_PANEL.series,
+        ticks: REFUGEE_PANEL.ticks,
+        xLabels: REFUGEE_PANEL.xLabels,
+        markers: eraMarkers(1990, 2024, [
+          [1999, '🎗️ Kosovo · NATO'],
+          [2001, '🇦🇫 Afghanistan · NATO'],
+          [2003, '🇮🇶 Irak · US-Koalition'],
+          [2011, '🇱🇾 Libyen · NATO'],
+        ]),
+      }),
+  },
+  {
     id: 'us-interest',
     title: 'US-Zinszahlungen des Bundes',
     draw: (f) =>
