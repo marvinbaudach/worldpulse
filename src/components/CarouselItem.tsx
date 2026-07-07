@@ -262,9 +262,12 @@ export function CarouselItem({
     // Pressed glass catches a touch more light, selling the contact.
     const targetGlass = GLASS_OPACITY + pressed * 0.08;
     if (hidden) {
-      // Fade out under the hero copy; the pose keeps being published above.
-      mat.opacity = MathUtils.lerp(mat.opacity, 0, 0.2);
-      if (glassMat) glassMat.opacity = MathUtils.lerp(glassMat.opacity, 0, 0.2);
+      // Hide at once: the hero copy launches from exactly this panel's pose, so
+      // it covers the slot on the click frame. A gradual fade would instead be
+      // left behind visibly in the ring as the hero flies off and the ring
+      // rotates the emptied slot away. The pose keeps being published above.
+      mat.opacity = 0;
+      if (glassMat) glassMat.opacity = 0;
       wasHidden.current = true;
       return;
     }

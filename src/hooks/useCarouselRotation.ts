@@ -37,6 +37,11 @@ const CLICK_THRESHOLD = 6;
 // Angular-velocity kick per arrow-key press; holding the key keeps kicking
 // while friction bleeds it back toward the idle spin.
 const KEY_SPIN = 0.9;
+// How gently the ring eases to the open hero's slot (exponential damping; the
+// time constant is 1/λ seconds). Kept low so the ring keeps settling in the
+// background as the card lands (~0.75s fly-in) instead of snapping to center
+// ahead of it — the rotation should finish under a hero that is already there.
+const HERO_FOLLOW_LAMBDA = 3;
 // Tilt limits so the ring never flips fully over (balanced around the initial
 // tilt so dragging up or down both have room).
 const MIN_TILT = -1.0;
@@ -205,7 +210,7 @@ export function useCarouselRotation({
         rotation.current = MathUtils.damp(
           rotation.current,
           rotation.current + diff,
-          6,
+          HERO_FOLLOW_LAMBDA,
           dt,
         );
         groupRef.current.rotation.y = rotation.current;
