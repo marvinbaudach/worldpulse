@@ -1286,3 +1286,99 @@ export const DE_RENT_BURDEN_PANEL: TrendSeries = trend(
   (v) => `${v.toFixed(0)}%`,
   ['2010', '2015', '2020', 'heute'],
 );
+
+// Countries exploring a central bank digital currency (Atlantic Council CBDC
+// Tracker). 35 when the tracker started counting in May 2020, 146 today —
+// covering 98% of global GDP. Three have fully launched (Bahamas, Jamaica,
+// Nigeria); the digital euro entered its preparation phase in 2023.
+export const CBDC_PANEL: TrendSeries = trend(
+  [
+    [2020, 35], [2021, 87], [2022, 114], [2023, 130], [2024, 134],
+    [2025, 137], [2026, 146],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2020', '2022', '2024', 'heute'],
+);
+
+// Freedom House "Freedom in the World": countries whose aggregate score
+// declined vs improved, per report year. Declines have outnumbered gains
+// every single year for two decades now — 20 consecutive years of global
+// freedom decline as of the 2026 report.
+export const FREEDOM_COMPARE = compareSeries(
+  [
+    { name: 'verschlechtert', pts: [[2013, 54], [2014, 61], [2015, 72], [2016, 67], [2017, 71], [2018, 68], [2019, 64], [2020, 73], [2021, 60], [2022, 35], [2023, 52], [2024, 60], [2025, 54]] },
+    { name: 'verbessert', pts: [[2013, 40], [2014, 33], [2015, 43], [2016, 36], [2017, 35], [2018, 50], [2019, 37], [2020, 28], [2021, 25], [2022, 34], [2023, 21], [2024, 34], [2025, 35]] },
+  ],
+  (v) => `${Math.round(v)}`,
+  /** Latest count of declining countries, for the headline. */
+  { declinedLatest: 54 },
+);
+
+// Criminal investigations under §188 StGB ("Politikerbeleidigung") after the
+// 2021 expansion made insulting politicians a separate ex-officio offence:
+// ~1,400 proceedings in 2022, 4,792 by 2025 — a 216% rise in two years
+// (Bundestag / state justice ministry figures; 2023 interpolated).
+export const DE_SPEECH_PANEL: TrendSeries = trend(
+  [[2022, 1_400], [2024, 4_424], [2025, 4_792]],
+  (v) => `${(v / 1000).toFixed(1)}k`,
+  ['2022', '2023', '2024', 'heute'],
+);
+
+// UK arrests for online messages under s.127 Communications Act 2003 and s.1
+// Malicious Communications Act 1988 (police FOI data via The Times, 2025):
+// 5,502 arrests in 2017, 12,183 in 2023 — about 33 per day, +121%. Fewer than
+// 10% of those arrested in 2023 were convicted.
+export const UK_SPEECH_ARRESTS_PANEL: TrendSeries = trend(
+  [[2017, 5_502], [2020, 7_700], [2023, 12_183]],
+  (v) => `${(v / 1000).toFixed(0)}k`,
+  ['2017', '2019', '2021', '2023'],
+);
+
+// Homeownership among young households: England 25–34-year-olds (English
+// Housing Survey / IFS) and US under-35 householders (Census HVS), % owning.
+// England collapses from two-thirds in 1991 to ~a third by 2014; the US never
+// recovers its 2004 peak. Rounded survey figures.
+export const YOUNG_HOME_COMPARE = compareSeries(
+  [
+    { name: 'England 25–34', pts: [[1991, 67], [2004, 59], [2014, 36], [2024, 45]] },
+    { name: 'USA unter 35', pts: [[1991, 38], [2004, 43], [2016, 35], [2024, 36]] },
+  ],
+  (v) => `${v.toFixed(0)}%`,
+  /** Latest England share, for the headline. */
+  { engLatest: 45 },
+);
+
+// Active low- and zero-emission zones in Europe (Clean Cities Campaign /
+// urbanaccessregulations.eu). Sweden pioneered the first in 1996; Germany's
+// Umweltzonen wave followed 2008ff; national laws in France, Spain and Poland
+// push the count past 500. Early years approximate.
+export const LEZ_PANEL: TrendSeries = trend(
+  [[1996, 1], [2007, 15], [2012, 100], [2019, 228], [2022, 320], [2025, 507]],
+  (v) => `${Math.round(v)}`,
+  ['1996', '2006', '2015', 'heute'],
+);
+
+// Cumulative FDA-approved gene and gene-modified cell therapies (CAR-T, AAV,
+// lentiviral, CRISPR). Three approvals in all of 2017; the curve steepens
+// sharply after 2020 — Casgevy in 2023 was the first approved CRISPR edit of
+// human DNA. Counts from FDA CBER approval lists.
+export const GENE_THERAPY_PANEL: TrendSeries = trend(
+  [
+    [2017, 3], [2018, 3], [2019, 4], [2020, 5], [2021, 9], [2022, 15],
+    [2023, 22], [2024, 31], [2025, 34],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2017', '2020', '2023', 'heute'],
+);
+
+// Smartphone users worldwide (Statista / DataReportal, rounded estimates).
+// From a niche gadget in 2007 to 4.7 billion people carrying a networked
+// tracking device — with global average use around 4h40m per day.
+export const SMARTPHONE_PANEL: TrendSeries = trend(
+  [
+    [2007, 0.12e9], [2010, 0.3e9], [2012, 1.06e9], [2016, 2.5e9],
+    [2020, 3.6e9], [2025, 4.7e9],
+  ],
+  (v) => `${(v / 1e9).toFixed(1)} Mrd`,
+  ['2007', '2013', '2019', 'heute'],
+);

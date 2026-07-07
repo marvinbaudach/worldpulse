@@ -102,7 +102,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'cameras-world': ['welt', 'soziales', 'freiheit'],
   'gov-requests-country': ['welt', 'soziales', 'freiheit'],
   'youtube-removals': ['welt', 'soziales', 'freiheit'],
-  cashless: ['geld', 'welt'],
+  cashless: ['geld', 'welt', 'freiheit'],
   '5g-stations': ['welt'],
   inflation: ['geld', 'welt'],
   'digital-id': ['welt', 'soziales', 'freiheit'],
@@ -124,6 +124,16 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'rent-burden': ['geld', 'deutschland', 'soziales'],
   'de-underemployment': ['deutschland', 'soziales', 'geld'],
   'de-exports': ['deutschland', 'geld', 'welt'],
+  cbdc: ['geld', 'welt', 'freiheit'],
+  'freedom-decline': ['welt', 'freiheit'],
+  'covid-rights': ['welt', 'freiheit', 'gesundheit'],
+  'de-speech-cases': ['deutschland', 'freiheit'],
+  'uk-speech-arrests': ['welt', 'freiheit'],
+  'young-homeownership': ['geld', 'soziales', 'freiheit'],
+  'lez-zones': ['welt', 'freiheit'],
+  'shutdowns-per-year': ['welt', 'freiheit'],
+  'gene-therapies': ['gesundheit', 'welt', 'freiheit'],
+  'smartphone-leash': ['welt', 'soziales', 'freiheit'],
 };
 for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 
@@ -147,6 +157,8 @@ const FEATURED = new Set([
   'real-wages', 'homeownership', 'cb-balance',
   'wealth-divergence', 'food-fertilizer', 'pension-level', 'rent-burden',
   'de-underemployment', 'de-migration-flows', 'de-population', 'de-assault',
+  'cbdc', 'cashless', 'freedom-decline', 'covid-rights', 'de-speech-cases',
+  'uk-speech-arrests', 'young-homeownership', 'smartphone-leash',
 ]);
 
 /**

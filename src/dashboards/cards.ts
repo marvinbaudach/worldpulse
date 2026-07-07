@@ -70,6 +70,16 @@ import {
   US_INTEREST_PANEL,
   US_OBESITY_FASTFOOD,
   WORLD_POP_SINCE_1770,
+  CASHLESS_COMPARE,
+  CBDC_PANEL,
+  FREEDOM_COMPARE,
+  DE_SPEECH_PANEL,
+  UK_SPEECH_ARRESTS_PANEL,
+  YOUNG_HOME_COMPARE,
+  LEZ_PANEL,
+  SHUTDOWN_PANEL,
+  GENE_THERAPY_PANEL,
+  SMARTPHONE_PANEL,
 } from '../data/bundled';
 import {
   blue,
@@ -1998,4 +2008,130 @@ export const POOL: Dashboard[] = [
         ],
       }),
   },
+  {
+    id: 'cashless',
+    title: 'Bargeld im Rückzug',
+    draw: (f) =>
+      lineChart(f, {
+        // Cash share of point-of-sale transactions: Sweden is already nearly
+        // cashless, Germany and the euro area follow the same slope a decade
+        // behind — the quiet prerequisite for fully programmable money.
+        label: 'Barzahlungen · Anteil der Käufe · EZB/Riksbank',
+        value: CASHLESS_COMPARE.sweLatest,
+        unit: '%',
+        fmt: (v) => `${v.toFixed(0)}%`,
+        delta: null,
+        seed: 241,
+        series: [
+          { name: '🇪🇺 Eurozone', color: blue, data: CASHLESS_COMPARE.rows[0].data },
+          { name: '🇩🇪 Deutschland', color: yellow, data: CASHLESS_COMPARE.rows[1].data },
+          { name: '🇸🇪 Schweden', color: red, data: CASHLESS_COMPARE.rows[2].data },
+        ],
+        ticks: CASHLESS_COMPARE.ticks,
+        xLabels: ['2016', '2019', '2022', 'heute'],
+      }),
+  },
+  trendCard('cbdc', 'Digitales Zentralbankgeld · Länder', 'Länder mit CBDC-Projekt · Atlantic Council', CBDC_PANEL, violet, (v) => `${Math.round(v)}`, 251, eraMarkers(2020, 2026, [
+    [2020, '🇧🇸 Sand Dollar · 1. CBDC'],
+    [2023, '🇪🇺 Digitaler Euro · Vorbereitung'],
+  ])),
+  {
+    id: 'freedom-decline',
+    title: 'Freiheit weltweit · 20 Jahre Rückgang',
+    draw: (f) =>
+      lineChart(f, {
+        // Freedom House annual score changes: the red line (countries getting
+        // less free) has stayed above the green one every year for two
+        // decades — the "democratic recession" in a single picture.
+        label: 'Länder pro Jahr · Freedom House',
+        value: FREEDOM_COMPARE.declinedLatest,
+        unit: '',
+        fmt: (v) => `${Math.round(v)}`,
+        delta: null,
+        seed: 257,
+        series: [
+          { name: 'verschlechtert', color: red, data: FREEDOM_COMPARE.rows[0].data },
+          { name: 'verbessert', color: green, data: FREEDOM_COMPARE.rows[1].data },
+        ],
+        ticks: FREEDOM_COMPARE.ticks,
+        xLabels: ['2013', '2017', '2021', 'heute'],
+        markers: eraMarkers(2013, 2025, [[2020, '🦠 Corona-Jahr']]),
+      }),
+  },
+  {
+    id: 'covid-rights',
+    title: 'Corona · Grundrechtseingriffe weltweit',
+    draw: (f) =>
+      hBarChart(f, {
+        // ICNL/ECNL COVID-19 Civic Freedom Tracker: how many of ~198 countries
+        // enacted pandemic measures cutting into each basic right. Assembly
+        // was restricted in 156 countries — more than three quarters of the
+        // world locked down the right to protest at once.
+        label: 'Länder mit Eingriffen · ICNL · 2020–22',
+        value: 156,
+        fmt: (v) => `${Math.round(v)} Länder`,
+        rowFmt: (v) => `${Math.round(v)}`,
+        delta: null,
+        color: red,
+        unit: '',
+        rows: [
+          { name: 'Versammlungsfreiheit', v: 156 },
+          { name: 'Notstand ausgerufen', v: 112 },
+          { name: 'Meinungsfreiheit', v: 62 },
+          { name: 'Überwachung ausgeweitet', v: 62 },
+        ],
+      }),
+  },
+  trendCard('de-speech-cases', 'Politikerbeleidigung · Verfahren', 'Verfahren nach §188 StGB · 🇩🇪 · pro Jahr', DE_SPEECH_PANEL, red, (v) => `${Math.round(v)}`, 263, eraMarkers(2022, 2025, [
+    // §188 was expanded in 2021: insults against politicians became a
+    // separate ex-officio offence — prosecutions tripled within two years.
+    [2022, '⚖️ §188 verschärft 2021'],
+  ])),
+  trendCard('uk-speech-arrests', 'Verhaftet für Posts · England', 'Festnahmen wegen Online-Posts · 🇬🇧 · pro Jahr', UK_SPEECH_ARRESTS_PANEL, orange, (v) => `${Math.round(v)}`, 269, eraMarkers(2017, 2023, [
+    // The Australian reference case sits on the same axis: Zoe Buhler,
+    // arrested (handcuffed, pregnant, at home) for a Facebook protest event
+    // during Victoria's 2020 lockdown.
+    [2020, '🇦🇺 Zoe Buhler · Facebook-Post'],
+  ])),
+  {
+    id: 'young-homeownership',
+    title: '„You\'ll own nothing" · Wohneigentum U35',
+    draw: (f) =>
+      lineChart(f, {
+        // Homeownership among young households: two-thirds of English 25–34s
+        // owned in 1991, barely a third by 2014. The US never regained its
+        // 2004 peak. Owning a home is quietly leaving the normal biography.
+        label: 'Wohneigentum junger Haushalte · EHS/US Census',
+        value: YOUNG_HOME_COMPARE.engLatest,
+        unit: '%',
+        fmt: (v) => `${v.toFixed(0)}%`,
+        delta: null,
+        seed: 271,
+        series: [
+          { name: '🏴 England 25–34', color: blue, data: YOUNG_HOME_COMPARE.rows[0].data },
+          { name: '🇺🇸 USA unter 35', color: yellow, data: YOUNG_HOME_COMPARE.rows[1].data },
+        ],
+        ticks: YOUNG_HOME_COMPARE.ticks,
+        xLabels: ['1991', '2002', '2013', 'heute'],
+        markers: eraMarkers(1991, 2024, [[2008, '🏦 Finanzkrise']]),
+      }),
+  },
+  trendCard('lez-zones', 'Zufahrtsverbotszonen · Europa', 'Umwelt- & Null-Emissions-Zonen · Clean Cities', LEZ_PANEL, green, (v) => `${Math.round(v)}`, 277, eraMarkers(1996, 2025, [
+    [2008, '🇩🇪 Umweltzonen-Welle'],
+    [2023, '🇬🇧 ULEZ ganz London'],
+  ])),
+  trendCard('shutdowns-per-year', 'Internet-Abschaltungen pro Jahr', 'Staatliche Netzsperren · Access Now', SHUTDOWN_PANEL, red, (v) => `${Math.round(v)}`, 281, eraMarkers(2016, 2024, [
+    // Shutdowns are the standard response to protest movements — Iran 2019
+    // went dark nationwide for a week; 2023/24 are all-time records.
+    [2019, '🇮🇷 Iran offline'],
+    [2023, '📈 Rekord'],
+  ])),
+  trendCard('gene-therapies', 'Gentherapien · zugelassen', 'Gen- & Zelltherapien · FDA · kumuliert', GENE_THERAPY_PANEL, magenta, (v) => `${Math.round(v)}`, 283, eraMarkers(2017, 2025, [
+    [2017, '🧬 Erste CAR-T'],
+    [2023, '✂️ Erste CRISPR-Therapie'],
+  ])),
+  trendCard('smartphone-leash', 'Smartphones · die freiwillige Fußfessel', 'Smartphone-Nutzer · 🌍 · Ø 4h37m/Tag', SMARTPHONE_PANEL, aqua, (v) => `${(v / 1e9).toFixed(1)} Mrd`, 293, eraMarkers(2007, 2025, [
+    [2007, '📱 iPhone'],
+    [2016, '🌍 Jeder Dritte'],
+  ])),
 ];
