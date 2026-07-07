@@ -860,12 +860,15 @@ export const POOL: Dashboard[] = [
         fmt: (v) => v.toFixed(1),
         delta: null,
         seed: 173,
+        // Flags alone as legend labels — the full names overran the panel — and
+        // hues spread across the wheel (green/blue/yellow/violet/red) so no two
+        // adjacent lines share a warm tone.
         series: [
-          { name: '🇩🇪 Deutschland', color: green, data: PRESS_FREEDOM_COMPARE.rows[0].data },
-          { name: '🇺🇸 USA', color: yellow, data: PRESS_FREEDOM_COMPARE.rows[1].data },
-          { name: '🇹🇭 Thailand', color: orange, data: PRESS_FREEDOM_COMPARE.rows[2].data },
-          { name: '🇸🇦 Saudi-Arabien', color: magenta, data: PRESS_FREEDOM_COMPARE.rows[4].data },
-          { name: '🇨🇳 China', color: red, data: PRESS_FREEDOM_COMPARE.rows[3].data },
+          { name: '🇩🇪', color: green, data: PRESS_FREEDOM_COMPARE.rows[0].data },
+          { name: '🇺🇸', color: blue, data: PRESS_FREEDOM_COMPARE.rows[1].data },
+          { name: '🇹🇭', color: yellow, data: PRESS_FREEDOM_COMPARE.rows[2].data },
+          { name: '🇸🇦', color: violet, data: PRESS_FREEDOM_COMPARE.rows[4].data },
+          { name: '🇨🇳', color: red, data: PRESS_FREEDOM_COMPARE.rows[3].data },
         ],
         ticks: PRESS_FREEDOM_COMPARE.ticks,
         xLabels: ['2022', '2023', '2024', 'heute'],
