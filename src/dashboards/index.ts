@@ -134,6 +134,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'shutdowns-per-year': ['welt', 'freiheit'],
   'gene-therapies': ['gesundheit', 'welt', 'freiheit'],
   'smartphone-leash': ['welt', 'soziales', 'freiheit'],
+  'autocracy-share': ['welt', 'freiheit'],
 };
 for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 
@@ -158,7 +159,7 @@ const FEATURED = new Set([
   'wealth-divergence', 'food-fertilizer', 'pension-level', 'rent-burden',
   'de-underemployment', 'de-migration-flows', 'de-population', 'de-assault',
   'cbdc', 'cashless', 'freedom-decline', 'covid-rights', 'de-speech-cases',
-  'uk-speech-arrests', 'young-homeownership', 'smartphone-leash',
+  'uk-speech-arrests', 'young-homeownership', 'smartphone-leash', 'autocracy-share',
 ]);
 
 /**

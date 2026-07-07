@@ -1122,11 +1122,20 @@ export const DATA_REQUESTS = compareSeries(
 // Share of cash at the point of sale, % of transactions (Riksbank, Bundesbank,
 // ECB SPACE study; rounded, estimates). Sweden is nearly cashless; the euro
 // area and Germany still pay far more in cash but the slide is steady.
+// Cash share of point-of-sale purchases. Euro area/Germany from the ECB SPACE
+// study, Sweden from the Riksbank; the four extra countries from the FIS/
+// Worldpay Global Payments Report and Bank of Russia (approximate, rounded).
+// China, South Korea and Russia are the "cashless suspects" — Japan is the
+// honest counter-example: rich yet still heavily cash-based (~40%).
 export const CASHLESS_COMPARE = compareSeries(
   [
     { name: 'Eurozone', pts: [[2016, 79], [2019, 72], [2022, 59], [2024, 52]] },
     { name: 'Deutschland', pts: [[2016, 80], [2019, 74], [2021, 58], [2023, 51], [2024, 50]] },
     { name: 'Schweden', pts: [[2016, 20], [2019, 13], [2022, 9], [2024, 8]] },
+    { name: 'Südkorea', pts: [[2016, 26], [2019, 17], [2022, 15], [2024, 14]] },
+    { name: 'China', pts: [[2016, 40], [2019, 19], [2022, 10], [2024, 8]] },
+    { name: 'Japan', pts: [[2016, 62], [2019, 53], [2022, 46], [2024, 41]] },
+    { name: 'Russland', pts: [[2016, 60], [2019, 48], [2022, 34], [2024, 27]] },
   ],
   (v) => `${v.toFixed(0)}%`,
   /** Latest Swedish cash share, for the headline. */
@@ -1369,6 +1378,16 @@ export const GENE_THERAPY_PANEL: TrendSeries = trend(
   ],
   (v) => `${Math.round(v)}`,
   ['2017', '2020', '2023', 'heute'],
+);
+
+// Share of world population living in autocracies (V-Dem Democracy Reports,
+// electoral + closed autocracies). 48% in 2013, 72% a decade later — the
+// "third wave of autocratization"; the big step includes V-Dem downgrading
+// India to an electoral autocracy in its 2021 report.
+export const AUTOCRACY_SHARE_PANEL: TrendSeries = trend(
+  [[2013, 48], [2020, 68], [2021, 70], [2022, 72], [2023, 71], [2024, 72]],
+  (v) => `${v.toFixed(0)}%`,
+  ['2013', '2017', '2021', 'heute'],
 );
 
 // Smartphone users worldwide (Statista / DataReportal, rounded estimates).

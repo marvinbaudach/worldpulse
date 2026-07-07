@@ -80,6 +80,7 @@ import {
   SHUTDOWN_PANEL,
   GENE_THERAPY_PANEL,
   SMARTPHONE_PANEL,
+  AUTOCRACY_SHARE_PANEL,
 } from '../data/bundled';
 import {
   blue,
@@ -2013,10 +2014,12 @@ export const POOL: Dashboard[] = [
     title: 'Bargeld im Rückzug',
     draw: (f) =>
       lineChart(f, {
-        // Cash share of point-of-sale transactions: Sweden is already nearly
-        // cashless, Germany and the euro area follow the same slope a decade
-        // behind — the quiet prerequisite for fully programmable money.
-        label: 'Barzahlungen · Anteil der Käufe · EZB/Riksbank',
+        // Cash share of point-of-sale transactions: Sweden, South Korea, China
+        // and Russia are already nearly cashless; Germany and the euro area
+        // follow the same slope a decade behind — the quiet prerequisite for
+        // fully programmable money. Japan is the outlier: rich yet still ~40%
+        // cash, proof the slide is a policy choice, not a law of nature.
+        label: 'Barzahlungen · Anteil der Käufe · EZB/Riksbank/Worldpay',
         value: CASHLESS_COMPARE.sweLatest,
         unit: '%',
         fmt: (v) => `${v.toFixed(0)}%`,
@@ -2026,6 +2029,10 @@ export const POOL: Dashboard[] = [
           { name: '🇪🇺 Eurozone', color: blue, data: CASHLESS_COMPARE.rows[0].data },
           { name: '🇩🇪 Deutschland', color: yellow, data: CASHLESS_COMPARE.rows[1].data },
           { name: '🇸🇪 Schweden', color: red, data: CASHLESS_COMPARE.rows[2].data },
+          { name: '🇰🇷 Südkorea', color: green, data: CASHLESS_COMPARE.rows[3].data },
+          { name: '🇨🇳 China', color: magenta, data: CASHLESS_COMPARE.rows[4].data },
+          { name: '🇯🇵 Japan', color: aqua, data: CASHLESS_COMPARE.rows[5].data },
+          { name: '🇷🇺 Russland', color: orange, data: CASHLESS_COMPARE.rows[6].data },
         ],
         ticks: CASHLESS_COMPARE.ticks,
         xLabels: ['2016', '2019', '2022', 'heute'],
@@ -2129,6 +2136,9 @@ export const POOL: Dashboard[] = [
   trendCard('gene-therapies', 'Gentherapien · zugelassen', 'Gen- & Zelltherapien · FDA · kumuliert', GENE_THERAPY_PANEL, magenta, (v) => `${Math.round(v)}`, 283, eraMarkers(2017, 2025, [
     [2017, '🧬 Erste CAR-T'],
     [2023, '✂️ Erste CRISPR-Therapie'],
+  ])),
+  trendCard('autocracy-share', 'Menschheit unter Autokratie', 'Weltbevölkerung in Autokratien · V-Dem', AUTOCRACY_SHARE_PANEL, red, (v) => `${v.toFixed(0)}%`, 307, eraMarkers(2013, 2024, [
+    [2020, '🇮🇳 Indien: Wahlautokratie'],
   ])),
   trendCard('smartphone-leash', 'Smartphones · die freiwillige Fußfessel', 'Smartphone-Nutzer · 🌍 · Ø 4h37m/Tag', SMARTPHONE_PANEL, aqua, (v) => `${(v / 1e9).toFixed(1)} Mrd`, 293, eraMarkers(2007, 2025, [
     [2007, '📱 iPhone'],
