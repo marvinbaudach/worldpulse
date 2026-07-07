@@ -112,7 +112,7 @@ export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
     color: CRITICAL,
   });
 
-  drawSource(f, cfg.source);
+  if (cfg.source) drawSource(f, cfg.source);
 }
 
 export interface ChoroplethCfg {
@@ -127,7 +127,8 @@ export interface ChoroplethCfg {
   bounds?: { lonMin: number; lonMax: number; latMin: number; latMax: number };
   rows: { name: string; v: number }[];
   rowFmt: (v: number) => string;
-  source: string;
+  /** In-card source footer; omit when the source is shown separately. */
+  source?: string;
 }
 
 /**
@@ -204,5 +205,5 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
     color: CRITICAL,
   });
 
-  drawSource(f, cfg.source);
+  if (cfg.source) drawSource(f, cfg.source);
 }

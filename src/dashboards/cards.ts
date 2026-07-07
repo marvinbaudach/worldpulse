@@ -1431,7 +1431,6 @@ export const POOL: Dashboard[] = [
           { name: 'Schweiz', v: 19 },
         ],
         rowFmt: (v) => `${v.toFixed(0)} /100`,
-        source: 'Transparency International CPI 2024 · invertiert',
       }),
   },
   {
