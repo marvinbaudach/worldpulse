@@ -52,6 +52,7 @@ export const IT: Record<string, string> = {
   'Betroffene': 'Persone colpite',
   'Bevölkerung': 'Popolazione',
   'Bevölkerungsanteile': 'Quote di popolazione',
+  'Bewegungseffekte aktivieren': 'Attiva gli effetti di movimento',
   'Bilanzsumme · Fed vs. EZB · Bio.': 'Totale di bilancio · Fed vs. BCE · migliaia di mld',
   'Bio.': 'bln',
   'Brasilien': 'Brasile',

@@ -1,12 +1,30 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { ALL_DASHBOARDS, TAGS } from '../dashboards';
 import { refreshLiveData } from '../data/refresh';
+import { useDeviceTilt } from '../hooks/useDeviceTilt';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useTagFilter } from '../hooks/useTagFilter';
 import { t as trans } from '../i18n';
 import { MobileBackground } from './MobileBackground';
 import { SwipeDeck } from './SwipeDeck';
 import { glassSurface } from './glass';
+
+// iOS gates deviceorientation behind a user-gesture permission prompt;
+// everywhere else the event just fires. The user's choice persists so the
+// opt-in chip shows only until answered.
+type DOEWithPermission = typeof DeviceOrientationEvent & {
+  requestPermission?: () => Promise<'granted' | 'denied'>;
+};
+
+const MOTION_KEY = 'worldpulse-motion';
+
+function motionPermissionNeeded(): boolean {
+  return (
+    typeof DeviceOrientationEvent !== 'undefined' &&
+    typeof (DeviceOrientationEvent as DOEWithPermission).requestPermission === 'function'
+  );
+}
 
 const Deck = styled.div`
   position: fixed;
@@ -131,6 +149,34 @@ const InfoButton = styled.button`
   ${glassSurface}
 `;
 
+const MotionChip = styled.button`
+  position: fixed;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  z-index: 12;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 999px;
+  color: #cfe4ff;
+  font: 600 12px/1 inherit;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  ${glassSurface}
+`;
+
+const TiltFrame = styled.div`
+  flex: 1;
+  display: flex;
+  perspective: 1200px;
+`;
+
+const TiltLayer = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+`;
+
 const SourceNote = styled.div`
   position: fixed;
   left: 16px;
@@ -223,6 +269,40 @@ export function MobileDeck() {
     [tag],
   );
 
+  const reducedMotion = useReducedMotion();
+  const tiltRef = useRef<HTMLDivElement>(null);
+  const bgRef = useRef<HTMLDivElement>(null);
+  // 'granted' | 'ask' | 'denied' — non-iOS grants implicitly.
+  const [motion, setMotion] = useState(() => {
+    if (!motionPermissionNeeded()) return 'granted';
+    return localStorage.getItem(MOTION_KEY) ?? 'ask';
+  });
+
+  const askMotion = async () => {
+    try {
+      const res = await (DeviceOrientationEvent as DOEWithPermission).requestPermission?.();
+      const next = res === 'granted' ? 'granted' : 'denied';
+      localStorage.setItem(MOTION_KEY, next);
+      setMotion(next);
+    } catch {
+      localStorage.setItem(MOTION_KEY, 'denied');
+      setMotion('denied');
+    }
+  };
+
+  // A previously granted iOS permission still needs a per-session
+  // requestPermission() call, but it resolves silently — piggyback on the
+  // first tap anywhere in the deck.
+  useEffect(() => {
+    if (!motionPermissionNeeded() || motion !== 'granted') return;
+    const arm = () => void askMotion();
+    window.addEventListener('pointerdown', arm, { once: true });
+    return () => window.removeEventListener('pointerdown', arm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useDeviceTilt(motion === 'granted' && !reducedMotion, tiltRef, bgRef);
+
   const [active, setActive] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -265,7 +345,7 @@ export function MobileDeck() {
 
   return (
     <Deck>
-      <MobileBackground accent={activeTag.accent} />
+      <MobileBackground ref={bgRef} accent={activeTag.accent} />
       <TopBar>
         <FilterButton onClick={() => setMenuOpen(true)}>
           {currentLabel}
@@ -274,7 +354,11 @@ export function MobileDeck() {
         <Dots count={dashboards.length} active={Math.min(active, dashboards.length - 1)} />
       </TopBar>
 
-      <SwipeDeck key={tag} dashboards={dashboards} onIndex={onIndex} onRefresh={refresh} />
+      <TiltFrame>
+        <TiltLayer ref={tiltRef}>
+          <SwipeDeck key={tag} dashboards={dashboards} onIndex={onIndex} onRefresh={refresh} />
+        </TiltLayer>
+      </TiltFrame>
 
       {refreshing && <RefreshPill>{trans('Daten werden aktualisiert …')}</RefreshPill>}
 
@@ -287,6 +371,10 @@ export function MobileDeck() {
       )}
       {infoOpen && source && (
         <SourceNote onClick={() => setInfoOpen(false)}>{trans('Quelle')}: {trans(source)}</SourceNote>
+      )}
+
+      {motion === 'ask' && (
+        <MotionChip onClick={askMotion}>{trans('Bewegungseffekte aktivieren')}</MotionChip>
       )}
 
       {menuOpen && (
