@@ -76,5 +76,8 @@ Year-axis era markers: use `eraMarkers()`.
 - Some APIs need pre-encoded query brackets (Treasury) or lag a few days
   (Wikimedia per-country) — see the inline notes in `sources.ts`.
 - Country outlines (`data/world.ts` → `WORLD`) ship in the bundle, no fetch.
+- `data/vintage.ts` holds `DATA_VINTAGE`, the year the bundled datasets were
+  last refreshed. A Vite plugin warns on dev/build once it's stale; bump it
+  only after actually updating the static cards (checklist in that file).
 - Big files: `dashboards/cards.ts` (~1.5k lines, the pool) and
   `data/bundled.ts` (~1.1k lines, historical fallback series).
