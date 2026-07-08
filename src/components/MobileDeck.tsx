@@ -6,7 +6,7 @@ import { shareCard } from '../exportCard';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useTagFilter } from '../hooks/useTagFilter';
-import { t as trans } from '../i18n';
+import { LOCALE, LOCALES, setLocale, t as trans } from '../i18n';
 import { MobileAurora, hasWebGL } from './MobileAurora';
 import { MobileBackground } from './MobileBackground';
 import { SwipeDeck } from './SwipeDeck';
@@ -63,6 +63,18 @@ const DotsRow = styled.div`
   display: flex;
   align-items: center;
   gap: 6px;
+`;
+
+// The pager reads as a property of the deck, not the header: centered under
+// the cards (iOS-pager style) instead of squeezed next to the filter button —
+// top-center is out, the wider theme labels (DEUTSCHLAND) would collide.
+const DotsDock = styled.div`
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 26px);
+  transform: translateX(-50%);
+  z-index: 12;
+  pointer-events: none;
 `;
 
 const Dot = styled.div<{ $active: boolean; $small: boolean }>`
@@ -185,6 +197,25 @@ const ActionItem = styled.button`
   font: 600 13px/1 inherit;
   letter-spacing: 0.06em;
   text-align: left;
+  cursor: pointer;
+`;
+
+// Language switcher row at the bottom of the action menu — the mobile
+// counterpart of the desktop settings panel's SPRACHE fold.
+const LangRow = styled.div`
+  display: flex;
+  gap: 6px;
+`;
+
+const LangButton = styled.button<{ $active: boolean }>`
+  flex: 1;
+  padding: 11px 0;
+  border: none;
+  border-radius: 10px;
+  background: ${(p) => (p.$active ? 'rgba(57, 135, 229, 0.28)' : 'rgba(255, 255, 255, 0.05)')};
+  color: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.7)')};
+  font: 600 12px/1 inherit;
+  letter-spacing: 0.08em;
   cursor: pointer;
 `;
 
@@ -482,6 +513,15 @@ export function MobileDeck() {
               {trans('Bewegungseffekte aktivieren')}
             </ActionItem>
           )}
+          {/* Locale switch remounts the deck via App's key={locale}, which
+              also closes this menu. */}
+          <LangRow role="group" aria-label={trans('SPRACHE')}>
+            {LOCALES.map((l) => (
+              <LangButton key={l} $active={LOCALE === l} onClick={() => setLocale(l)}>
+                {l.toUpperCase()}
+              </LangButton>
+            ))}
+          </LangRow>
         </ActionMenu>
       )}
       {infoOpen && source && (
