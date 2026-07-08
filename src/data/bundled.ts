@@ -1143,6 +1143,64 @@ export const AGE_VERIF_PANEL: TrendSeries = trend(
   ['2022', '2023', '2024', 'heute'],
 );
 
+// Countries with a national online age-verification mandate enacted (porn
+// and/or social media): China's real-name minor mode, Germany's JMStV
+// enforcement, France's SREN law, Australia's under-16 social-media ban, the
+// UK's Online Safety Act (enforced July 2025), plus first followers (Italy,
+// Ireland, EU pilots…). Rough count — scope differs per country. The UK is
+// the template case: an ID or face scan gates adult content, and unverified
+// accounts drop into restricted child modes via the platforms' and Apple's/
+// Google's age-assurance hooks.
+export const AGE_VERIF_NATIONS_PANEL: TrendSeries = trend(
+  [
+    [2019, 2], [2021, 3], [2023, 5], [2024, 8], [2025, 15],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2019', '2021', '2023', 'heute'],
+);
+
+// States collecting air-passenger data (API/PNR systems; UN CTED / ICAO,
+// rounded estimates). UN Security Council resolutions 2178 (2014) and 2396
+// (2017) oblige every member state to collect Advance Passenger Information
+// and build PNR capability, and since 2023 an ICAO standard makes PNR
+// collection binding — every ticket, route and payment record lands in state
+// databases before boarding.
+export const PNR_PANEL: TrendSeries = trend(
+  [
+    [2005, 25], [2010, 40], [2014, 50], [2017, 60],
+    [2019, 70], [2022, 85], [2025, 100],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2005', '2012', '2019', 'heute'],
+);
+
+// Jurisdictions that have passed the FATF "travel rule" — mandatory KYC on
+// crypto transfers, extending bank-style identification to the last mostly
+// pseudonymous payment rail (FATF targeted updates: 2023 survey 35 of 98,
+// 2024 survey 65 of 94 jurisdictions with legislation; EU enforcement via
+// the Transfer of Funds Regulation since Dec 2024). Rounded.
+export const KYC_PANEL: TrendSeries = trend(
+  [
+    [2019, 5], [2020, 10], [2021, 18], [2022, 29],
+    [2023, 35], [2024, 65], [2025, 73],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2019', '2021', '2023', 'heute'],
+);
+
+// People without an officially recognised proof of identity, worldwide
+// (World Bank ID4D Global Dataset). The gap closes fast — India's Aadhaar
+// alone enrolled over a billion people — so this is the global digital-ID
+// rollout curve read in reverse. The methodology was revised several times
+// and the latest point is a rough extrapolation.
+export const ID_GAP_PANEL: TrendSeries = trend(
+  [
+    [2016, 1.5e9], [2017, 1.1e9], [2018, 1.0e9], [2021, 8.5e8], [2025, 7.5e8],
+  ],
+  (v) => `${localeNum(v / 1e9, 2)} ${tr('Mrd')}`,
+  ['2016', '2019', '2022', 'heute'],
+);
+
 // Government requests for user data to Big Tech, count of requests per year
 // (Google & Meta transparency reports, rounded). Both climb steeply as
 // platforms become the default evidence trove for law enforcement.
