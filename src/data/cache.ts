@@ -33,3 +33,12 @@ export async function fetchJson<T>(url: string): Promise<T> {
   if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
   return (await res.json()) as T;
 }
+
+/** Drop every cached derived dataset — a user-initiated refresh must hit the
+    network, not the TTL cache. */
+export function clearDataCache(): void {
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (k?.startsWith(PREFIX)) localStorage.removeItem(k);
+  }
+}

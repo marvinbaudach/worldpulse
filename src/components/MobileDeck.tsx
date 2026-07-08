@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { ALL_DASHBOARDS, TAGS } from '../dashboards';
+import { refreshLiveData } from '../data/refresh';
 import { useTagFilter } from '../hooks/useTagFilter';
 import { t as trans } from '../i18n';
 import { MobileBackground } from './MobileBackground';
@@ -92,6 +93,22 @@ const Hint = styled.div<{ $gone: boolean }>`
   pointer-events: none;
   opacity: ${(p) => (p.$gone ? 0 : 1)};
   transition: opacity 0.4s ease;
+  ${glassSurface}
+`;
+
+const RefreshPill = styled.div`
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 68px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  padding: 9px 16px;
+  border-radius: 999px;
+  color: #cfe4ff;
+  font: 600 12px/1 inherit;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  pointer-events: none;
   ${glassSurface}
 `;
 
@@ -210,6 +227,13 @@ export function MobileDeck() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [swiped, setSwiped] = useState(() => localStorage.getItem('worldpulse-swiped') === '1');
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    await refreshLiveData();
+    setRefreshing(false);
+  };
 
   // Guard against same-index re-fires: SwipeDeck's snap effect re-runs on
   // every parent render (onIndex is a fresh closure), and an unguarded reset
@@ -246,7 +270,9 @@ export function MobileDeck() {
         <Dots count={dashboards.length} active={Math.min(active, dashboards.length - 1)} />
       </TopBar>
 
-      <SwipeDeck key={tag} dashboards={dashboards} onIndex={onIndex} />
+      <SwipeDeck key={tag} dashboards={dashboards} onIndex={onIndex} onRefresh={refresh} />
+
+      {refreshing && <RefreshPill>{trans('Daten werden aktualisiert …')}</RefreshPill>}
 
       {!swiped && dashboards.length > 1 && <Hint $gone={false}>{trans('← wischen zum Blättern →')}</Hint>}
 

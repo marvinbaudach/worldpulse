@@ -70,6 +70,7 @@ export const IT: Record<string, string> = {
   'Corona-Impfdosen · je 100 Einw. · 2020–23': 'Dosi di vaccino anti-Covid · ogni 100 ab. · 2020–23',
   'DEUTSCHLAND': 'GERMANIA',
   'DR Kongo': 'RD Congo',
+  'Daten werden aktualisiert …': 'Aggiornamento dei dati …',
   'Depressive Episode im Jahr · 🇺🇸 · 12–17 J.': 'Episodio depressivo nell\'anno · 🇺🇸 · 12–17 anni',
   'Destatis / historische Statistik · Eheschließungen und Scheidungen je 1.000 Einwohner; frühe Jahre gerundet.': 'Destatis / statistiche storiche · matrimoni e divorzi ogni 1.000 abitanti; primi anni arrotondati.',
   'Destatis Wanderungsstatistik · Zu- und Fortzüge über die Grenze, gerundet.': 'Statistiche migratorie Destatis · ingressi e uscite oltre confine, arrotondati.',
