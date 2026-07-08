@@ -34,11 +34,41 @@ const FilterButton = styled.button`
   ${glassSurface}
 `;
 
-const Counter = styled.div`
-  color: rgba(255, 255, 255, 0.5);
-  font: 600 12px/1 inherit;
-  letter-spacing: 0.14em;
+const DotsRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
 `;
+
+const Dot = styled.div<{ $active: boolean; $small: boolean }>`
+  width: ${(p) => (p.$active ? 18 : 6)}px;
+  height: 6px;
+  border-radius: 999px;
+  background: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.28)')};
+  transform: scale(${(p) => (p.$small ? 0.6 : 1)});
+  transition: width 0.25s ease, background 0.25s ease, transform 0.25s ease;
+`;
+
+// iOS-pager style dots: with many cards only a sliding window of dots shows,
+// and the window-edge dots shrink to signal "more beyond".
+const MAX_DOTS = 9;
+
+function Dots({ count, active }: { count: number; active: number }) {
+  if (count <= 1) return null;
+  const visible = Math.min(count, MAX_DOTS);
+  const start = Math.max(0, Math.min(active - Math.floor(MAX_DOTS / 2), count - visible));
+  return (
+    <DotsRow>
+      {Array.from({ length: visible }, (_, j) => {
+        const i = start + j;
+        const edge =
+          count > MAX_DOTS &&
+          ((j === 0 && start > 0) || (j === visible - 1 && start + visible < count));
+        return <Dot key={i} $active={i === active} $small={edge} />;
+      })}
+    </DotsRow>
+  );
+}
 
 // One-time swipe cue: the pager is a native horizontal scroll, so nothing
 // signals it is swipeable until you try. Fades out on the first swipe.
@@ -97,6 +127,18 @@ const Backdrop = styled.div`
   inset: 0;
   z-index: 30;
   background: rgba(3, 5, 9, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: backdrop-in 0.28s ease;
+
+  @keyframes backdrop-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 `;
 
 const Sheet = styled.div`
@@ -194,9 +236,7 @@ export function MobileDeck() {
           {currentLabel}
           <span aria-hidden>▾</span>
         </FilterButton>
-        <Counter>
-          {Math.min(active + 1, dashboards.length)} / {dashboards.length}
-        </Counter>
+        <Dots count={dashboards.length} active={Math.min(active, dashboards.length - 1)} />
       </TopBar>
 
       <SwipeDeck key={tag} dashboards={dashboards} onIndex={onIndex} />
