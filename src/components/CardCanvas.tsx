@@ -32,9 +32,12 @@ export function CardCanvas({ dashboard, animate }: CardCanvasProps) {
 
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const draw = (t: number) => {
-      const rect = canvas.getBoundingClientRect();
-      const w = Math.max(1, Math.round(rect.width * dpr));
-      const h = Math.max(1, Math.round(rect.height * dpr));
+      // Layout size, not getBoundingClientRect(): the intro can replay while
+      // the card is mid-drag with rotate/rotateY transforms applied, and the
+      // transformed bounding box changes every frame — reallocating the
+      // backing store and jumping `u`. clientWidth/Height ignore transforms.
+      const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+      const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
       if (canvas.width !== w) canvas.width = w;
       if (canvas.height !== h) canvas.height = h;
       dashboard.draw({ ctx, w, h, t, u: w / MOBILE_REF_W, compact: true });
