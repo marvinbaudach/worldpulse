@@ -4,7 +4,7 @@
 
 export { type LineCfg, type AreaCfg, lineChart, areaChart } from './line';
 export { type BarCfg, type HBarCfg, barChart, hBarChart } from './bar';
-export { type NukeMapCfg, type ChoroplethCfg, nukeMap, choroplethMap } from './map';
+export { type NukeMapCfg, type ChoroplethCfg, type TempMapCfg, nukeMap, choroplethMap, tempMap } from './map';
 export {
   type WealthSplitCfg,
   type TimelineCfg,

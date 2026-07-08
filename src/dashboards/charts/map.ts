@@ -1,8 +1,10 @@
-// Choropleth-style world maps: the nuclear-arsenal map with radar pings and
-// the value choropleth, both with a ranked top-N list below.
+// Choropleth-style world maps: the nuclear-arsenal map with radar pings, the
+// value choropleth and the signed temperature map, each with a ranked top-N
+// list below.
 
+import { t as tr } from '../../i18n';
 import { drawHeader, drawSurface, easeOut, fmtCompact, stagger, type Frame } from '../draw';
-import { CRITICAL, GRID } from '../theme';
+import { CRITICAL, FONT, GRID, INK_SECONDARY, MUTED } from '../theme';
 import { drawRankedList, drawSource } from './shared';
 
 export interface NukeMapCfg {
@@ -200,6 +202,144 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
   drawRankedList(f, {
     rows: cfg.rows,
     top: my0 + mh + 18 * u,
+    rowFmt: cfg.rowFmt,
+    color: CRITICAL,
+  });
+
+  if (cfg.source) drawSource(f, cfg.source);
+}
+
+// ---------------------------------------------------------------------------
+// Temperature map: signed values need their own diverging ramp, so the
+// sequential shading of choroplethMap doesn't fit. Like the other map ramps
+// (nuke red, choropleth red) the stops are chart-local, not series colors:
+// temperature color is semantic (frost blue -> mild green -> hot dark red),
+// tuned for the dark surface.
+
+const TEMP_STOPS: [number, string][] = [
+  [-30, '#3a6fd0'],
+  [-10, '#4f9bd6'],
+  [0, '#2fa17c'],
+  [10, '#4f9d3f'],
+  [18, '#9aa32f'],
+  [25, '#d08a25'],
+  [32, '#c94f1d'],
+  [38, '#a01910'],
+  [46, '#570803'],
+];
+
+const channel = (a: number, b: number, f2: number) => Math.round(a + (b - a) * f2);
+const rgb = (hex: string) => [
+  parseInt(hex.slice(1, 3), 16),
+  parseInt(hex.slice(3, 5), 16),
+  parseInt(hex.slice(5, 7), 16),
+];
+
+/** Piecewise-linear RGB along TEMP_STOPS, clamped at the ends. */
+function tempColor(v: number): string {
+  if (v <= TEMP_STOPS[0][0]) return TEMP_STOPS[0][1];
+  for (let i = 1; i < TEMP_STOPS.length; i++) {
+    const [v1, c1] = TEMP_STOPS[i - 1];
+    const [v2, c2] = TEMP_STOPS[i];
+    if (v <= v2) {
+      const f2 = (v - v1) / (v2 - v1);
+      const [r1, g1, b1] = rgb(c1);
+      const [r2, g2, b2] = rgb(c2);
+      return `rgb(${channel(r1, r2, f2)},${channel(g1, g2, f2)},${channel(b1, b2, f2)})`;
+    }
+  }
+  return TEMP_STOPS[TEMP_STOPS.length - 1][1];
+}
+
+export interface TempMapCfg {
+  label: string;
+  /** Current 2-m temperature (°C) per ISO3 country. */
+  tempByIso: Record<string, number>;
+  world?: { id: string; rings: number[][][] }[];
+  /** Hottest countries right now. */
+  rows: { name: string; v: number }[];
+  rowFmt: (v: number) => string;
+  source: string;
+}
+
+/**
+ * World map shaded by the current temperature per country, with a gradient
+ * legend under the map and the hottest countries listed below.
+ */
+export function tempMap(f: Frame, cfg: TempMapCfg): void {
+  const { ctx, u, t, w, h } = f;
+  drawSurface(f);
+  const top = drawHeader(f, cfg.label);
+  const pad = 36 * u;
+
+  const mx0 = pad;
+  const mw = w - 2 * pad;
+  const my0 = top + 4 * u;
+  const legendH = 34 * u;
+  const captionH = 22 * u;
+  const listGap = 12 * u;
+  const rowMin = 42 * u;
+  const mapMax = h - 46 * u - my0 - legendH - captionH - listGap - cfg.rows.length * rowMin;
+  const mh = Math.min((mw * 145) / 360, mapMax);
+  const px = (lon: number) => mx0 + ((lon + 180) / 360) * mw;
+  const py = (lat: number) => my0 + ((85 - Math.min(85, Math.max(-60, lat))) / 145) * mh;
+  const p = easeOut(t / 1.1);
+
+  if (cfg.world) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(mx0, my0, mw, mh);
+    ctx.clip();
+    // Same thin seam as the choropleth, so neighbours in the same climate
+    // zone stay readable as separate countries.
+    ctx.strokeStyle = 'rgba(5,7,12,0.65)';
+    ctx.lineWidth = 1 * u;
+    ctx.lineJoin = 'round';
+    for (const country of cfg.world) {
+      const v = cfg.tempByIso[country.id];
+      ctx.fillStyle = v === undefined ? 'rgba(214,222,236,0.05)' : tempColor(v);
+      ctx.globalAlpha = v === undefined ? 1 : 0.25 + 0.75 * p;
+      for (const ring of country.rings) {
+        ctx.beginPath();
+        ring.forEach(([lon, lat], i) => {
+          if (i === 0) ctx.moveTo(px(lon), py(lat));
+          else ctx.lineTo(px(lon), py(lat));
+        });
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // Gradient legend: the ramp from -20° to +45° with labeled ticks.
+  const lgY = my0 + mh + 10 * u;
+  const lgLo = -20;
+  const lgHi = 45;
+  const grad = ctx.createLinearGradient(mx0, 0, mx0 + mw, 0);
+  for (let v = lgLo; v <= lgHi; v += 5) {
+    grad.addColorStop((v - lgLo) / (lgHi - lgLo), tempColor(v));
+  }
+  ctx.fillStyle = grad;
+  ctx.fillRect(mx0, lgY, mw, 8 * u);
+  ctx.fillStyle = INK_SECONDARY;
+  ctx.font = `400 ${12 * u}px ${FONT}`;
+  ctx.textAlign = 'center';
+  for (const v of [-10, 0, 10, 20, 30, 40]) {
+    ctx.fillText(`${v}°`, mx0 + ((v - lgLo) / (lgHi - lgLo)) * mw, lgY + 22 * u);
+  }
+  ctx.textAlign = 'left';
+
+  // Ranked hottest-now list, with its own small caption.
+  const capY = lgY + legendH;
+  ctx.fillStyle = MUTED;
+  ctx.font = `600 ${12 * u}px ${FONT}`;
+  ctx.fillText(tr('Heißeste Länder · jetzt').toUpperCase(), pad, capY + 10 * u);
+  drawRankedList(f, {
+    rows: cfg.rows,
+    top: capY + captionH + listGap - 12 * u,
     rowFmt: cfg.rowFmt,
     color: CRITICAL,
   });
