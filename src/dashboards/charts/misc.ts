@@ -2,7 +2,7 @@
 // conflict timeline, the running debt clock, the weekly weather forecast and
 // the strip treemap.
 
-import { t as tr } from '../../i18n';
+import { localePct, t as tr } from '../../i18n';
 import {
   drawGrid,
   drawGridLabels,
@@ -51,7 +51,7 @@ export interface WealthSplitCfg {
 export function wealthSplit(f: Frame, cfg: WealthSplitCfg): void {
   const { ctx, u, t, w } = f;
   drawSurface(f);
-  const top = drawHeader(f, cfg.label, cfg.value, cfg.fmt, null);
+  const top = drawHeader(f, cfg.label);
   const pad = 36 * u;
   const x0 = pad;
   const x1 = w - pad;
@@ -151,7 +151,7 @@ export interface TimelineCfg {
 export function timelineChart(f: Frame, cfg: TimelineCfg): void {
   const { ctx, u, t, w, h } = f;
   drawSurface(f);
-  const top = drawHeader(f, cfg.label, cfg.value, cfg.fmt ?? ((v) => fmtCompact(v)), null);
+  const top = drawHeader(f, cfg.label);
   const pad = 36 * u;
   const x0 = pad;
   const x1 = w - pad;
@@ -268,7 +268,7 @@ export function debtClock(f: Frame, cfg: DebtClockCfg): void {
   ctx.fillText(text, pad, pad + 74 * u);
 
   // Rising debt is the alarming direction: the YoY chip stays critical-red.
-  const chipText = `▲ ${cfg.yoyPct.toFixed(1)}% YoY`;
+  const chipText = `▲ ${localePct(cfg.yoyPct, 1)} YoY`;
   ctx.font = `600 ${19 * u}px ${FONT}`;
   const cw = ctx.measureText(chipText).width;
   const cy = pad + 106 * u;
@@ -444,7 +444,7 @@ function drawWeatherIcon(
 export function weatherForecast(f: Frame, cfg: ForecastCfg): void {
   const { ctx, u, t, w, h } = f;
   drawSurface(f);
-  const top = drawHeader(f, cfg.label, cfg.current, (v) => `${v.toFixed(1)}°C`, null);
+  const top = drawHeader(f, cfg.label);
   const pad = 36 * u;
 
   const lo = Math.min(...cfg.days.map((d) => d.min));
@@ -511,7 +511,7 @@ export interface TreemapCfg {
 export function treemap(f: Frame, cfg: TreemapCfg): void {
   const { ctx, u, t, w, h } = f;
   drawSurface(f);
-  const top = drawHeader(f, cfg.label, cfg.value, cfg.fmt, null);
+  const top = drawHeader(f, cfg.label);
 
   const pad = 36 * u;
   const x0 = pad;
@@ -566,7 +566,7 @@ export function treemap(f: Frame, cfg: TreemapCfg): void {
       // Direct labels once the block is big enough to hold them; narrower
       // blocks fall back to the short label (flag) plus the share, so no
       // block above a sliver stays anonymous.
-      const pct = `${((r.v / total) * 100).toFixed(1)}%`;
+      const pct = localePct((r.v / total) * 100, 1);
       if (bw > 78 * u && sh > 44 * u) {
         ctx.fillStyle = r.muted ? INK_SECONDARY : INK;
         ctx.font = `500 ${13 * u}px ${FONT}`;

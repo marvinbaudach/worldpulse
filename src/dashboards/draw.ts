@@ -5,17 +5,14 @@
 
 import {
   BASELINE,
-  CRITICAL,
   FONT,
-  GOOD,
   GRID,
-  INK,
   INK_SECONDARY,
   MUTED,
   SURFACE,
   SURFACE_DEEP,
 } from './theme';
-import { t as tr } from '../i18n';
+import { localeNum, t as tr } from '../i18n';
 
 /** Deterministic PRNG so every panel shows the same data on every visit. */
 function rng(seed: number): () => number {
@@ -57,15 +54,15 @@ export function stagger(t: number, i: number, gap = 0.05, dur = 0.6): number {
 export function fmtCompact(v: number, unit = ''): string {
   const s =
     v >= 1e12
-      ? `${(v / 1e12).toFixed(2)} ${tr('Bio.')}`
+      ? `${localeNum(v / 1e12, 2)} ${tr('Bio.')}`
       : v >= 1e9
-        ? `${(v / 1e9).toFixed(1)} ${tr('Mrd')}`
+        ? `${localeNum(v / 1e9, 1)} ${tr('Mrd')}`
         : v >= 1_000_000
-          ? `${(v / 1_000_000).toFixed(1)} ${tr('Mio')}`
+          ? `${localeNum(v / 1_000_000, 1)} ${tr('Mio')}`
           : v >= 10_000
-            ? `${(v / 1000).toFixed(0)}k`
+            ? `${localeNum(v / 1000, 0)}k`
             : v >= 1000
-              ? `${(v / 1000).toFixed(1)}k`
+              ? `${localeNum(v / 1000, 1)}k`
               : `${Math.round(v)}`;
   return unit + s;
 }
@@ -122,10 +119,9 @@ function drawEyebrow({ ctx, u, w }: Frame, label: string): number {
 }
 
 /**
- * Eyebrow-only header for comparison cards: multi-series panels have no
- * single headline value, so the title stands alone and the chart gets the
- * vertical room the big figure would have taken.
- * Returns the y where the chart area begins.
+ * Eyebrow-only header: the panels carry no big figure or delta chip (the
+ * title carries the card, values live in the chart). Returns the y where
+ * the chart area begins.
  */
 export function drawCompareHeader(f: Frame, label: string): number {
   const shift = drawEyebrow(f, label);
@@ -133,48 +129,13 @@ export function drawCompareHeader(f: Frame, label: string): number {
 }
 
 /**
- * Standard header: eyebrow label, big animated figure, delta chip.
+ * Standard header: eyebrow title only. The big animated figure and delta
+ * chip were retired on user request — the title carries the card, and the
+ * headline values live in the chart itself.
  * Returns the y where the chart area begins.
  */
-export function drawHeader(
-  f: Frame,
-  label: string,
-  value: number,
-  format: (v: number) => string,
-  deltaPct: number | null,
-  sub?: string,
-): number {
-  const { ctx, u, t } = f;
-  const pad = 36 * u;
-  const p = easeOut(t / 0.9);
-
-  const shift = drawEyebrow(f, label);
-
-  ctx.fillStyle = INK;
-  ctx.font = `700 ${54 * u}px ${FONT}`;
-  ctx.fillText(format(value * p), pad, pad + 78 * u + shift);
-
-  if (deltaPct !== null) {
-    const up = deltaPct >= 0;
-    const color = up ? GOOD : CRITICAL;
-    const text = `${up ? '▲' : '▼'} ${Math.abs(deltaPct).toFixed(1)}%`;
-    ctx.font = `600 ${19 * u}px ${FONT}`;
-    const tw = ctx.measureText(text).width;
-    const cx = pad + 4 * u;
-    const cy = pad + 100 * u + shift;
-    ctx.fillStyle = up ? 'rgba(12,163,12,0.14)' : 'rgba(208,59,59,0.14)';
-    roundRect(ctx, cx - 10 * u, cy - 20 * u, tw + 20 * u, 30 * u, 15 * u);
-    ctx.fill();
-    ctx.fillStyle = color;
-    ctx.fillText(text, cx, cy + 2 * u);
-    if (sub) {
-      ctx.fillStyle = MUTED;
-      ctx.font = `400 ${17 * u}px ${FONT}`;
-      ctx.fillText(tr(sub), cx + tw + 24 * u, cy + 2 * u);
-    }
-  }
-
-  return pad + 132 * u + shift;
+export function drawHeader(f: Frame, label: string): number {
+  return drawCompareHeader(f, label);
 }
 
 /** Letter-spaced text (canvas has no letter-spacing of its own). */

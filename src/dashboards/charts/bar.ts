@@ -34,7 +34,7 @@ export interface BarCfg {
 export function barChart(f: Frame, cfg: BarCfg): void {
   const { ctx, u, t } = f;
   drawSurface(f);
-  const top = drawHeader(f, cfg.label, cfg.value, cfg.fmt ?? ((v) => fmtCompact(v)), cfg.delta);
+  const top = drawHeader(f, cfg.label);
   const r = plotRect(f, top + 26 * u);
   drawGrid(f, r.y0, r.y1, cfg.ticks.length);
 
@@ -92,13 +92,7 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
   drawSurface(f);
   const unit = cfg.unit ?? '€';
   const rowFmt = cfg.rowFmt ?? ((v: number) => fmtCompact(v, unit));
-  const top = drawHeader(
-    f,
-    cfg.label,
-    cfg.value,
-    cfg.fmt ?? ((v) => fmtCompact(v, unit)),
-    cfg.delta,
-  );
+  const top = drawHeader(f, cfg.label);
   const pad = 36 * u;
   const rowH = (f.h - 60 * u - (top + 10 * u)) / cfg.rows.length;
   const max = Math.max(...cfg.rows.map((d) => d.v));
