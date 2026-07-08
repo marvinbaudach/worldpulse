@@ -9,6 +9,7 @@ import { updateGlassLod } from './glassLod';
 import type { Slot } from '../layouts';
 import { SETTLED_T, type Dashboard } from '../dashboards';
 import { onLiveUpdate } from '../data/store';
+import { onLocaleChange } from '../i18n';
 import { useDashboardTexture } from '../hooks/useDashboardTexture';
 
 interface CarouselItemProps {
@@ -122,6 +123,10 @@ export function CarouselItem({
       }),
     [dash, dashboard.live, dashboard.dynamic],
   );
+
+  // A runtime language switch re-rasterises every panel in place — no
+  // remount, so the ring keeps its pose instead of replaying the boot bloom.
+  useEffect(() => onLocaleChange(() => dash.render(SETTLED_T)), [dash]);
 
   // Drop this panel's pose when it unmounts, so a hero never flies toward
   // a slot that no longer exists (e.g. after the count shrank).

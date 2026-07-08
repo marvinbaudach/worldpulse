@@ -16,19 +16,27 @@ const DICTS: Partial<Record<Locale, Record<string, string>>> = {
   it: IT,
 };
 
-/** First browser-preferred language we support; English for everyone else. */
+export const LOCALES: Locale[] = ['de', 'en', 'fr', 'it'];
+const STORE_KEY = 'worldpulse-locale';
+
+function isLocale(v: unknown): v is Locale {
+  return LOCALES.includes(v as Locale);
+}
+
+/** A manual pick (stored) wins; otherwise the first supported browser
+    language; English for everyone else. */
 function detectLocale(): Locale {
+  const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(STORE_KEY) : null;
+  if (isLocale(stored)) return stored;
   const prefs = typeof navigator !== 'undefined' ? (navigator.languages ?? [navigator.language]) : [];
   for (const lang of prefs) {
     const primary = lang?.slice(0, 2).toLowerCase();
-    if (primary === 'de' || primary === 'en' || primary === 'fr' || primary === 'it') {
-      return primary;
-    }
+    if (isLocale(primary)) return primary;
   }
   return 'en';
 }
 
-export const LOCALE: Locale = detectLocale();
+export let LOCALE: Locale = detectLocale();
 
 const TAGLINE: Record<Locale, string> = {
   de: '3D-Datenkarussell',
@@ -37,9 +45,36 @@ const TAGLINE: Record<Locale, string> = {
   it: 'Carosello di dati 3D',
 };
 
-if (typeof document !== 'undefined') {
+function applyLocale(): void {
+  if (typeof document === 'undefined') return;
   document.documentElement.lang = LOCALE;
   document.title = `Worldpulse · ${TAGLINE[LOCALE]}`;
+}
+applyLocale();
+
+type LocaleListener = (l: Locale) => void;
+const listeners = new Set<LocaleListener>();
+
+/** Subscribe to runtime locale switches; returns the unsubscribe. */
+export function onLocaleChange(fn: LocaleListener): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+/** Switch the locale at runtime: persists the pick, retitles the page and
+    notifies subscribers (the app remounts the canvas views so every panel
+    texture redraws in the new language). */
+export function setLocale(next: Locale): void {
+  if (next === LOCALE) return;
+  LOCALE = next;
+  localStorage.setItem(STORE_KEY, next);
+  applyLocale();
+  listeners.forEach((fn) => fn(next));
+}
+
+/** Cycle de → en → fr → it → de (the language hotkey). */
+export function cycleLocale(): void {
+  setLocale(LOCALES[(LOCALES.indexOf(LOCALE) + 1) % LOCALES.length]);
 }
 
 /**

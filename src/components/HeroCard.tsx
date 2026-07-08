@@ -1,10 +1,11 @@
-import { useMemo, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
 import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
 import type { Group, Mesh, MeshPhysicalMaterial } from 'three';
 import { GlassPlate, GLASS_OPACITY } from './GlassPlate';
-import type { Dashboard } from '../dashboards';
+import { SETTLED_T, type Dashboard } from '../dashboards';
+import { onLocaleChange } from '../i18n';
 import { useDashboardTexture } from '../hooks/useDashboardTexture';
 
 /** World-space transform captured from the clicked ring panel. */
@@ -172,6 +173,9 @@ export function HeroCard({
   // it), then let the shared hook own the texture's creation and disposal.
   const { w: texW, h: texH } = useMemo(heroTextureSize, []);
   const dash = useDashboardTexture(dashboard, texW, texH);
+
+  // Language switch while the hero is open: re-rasterise it in place.
+  useEffect(() => onLocaleChange(() => dash.render(SETTLED_T)), [dash]);
 
   useFrame((state, delta) => {
     const pivot = pivotRef.current;

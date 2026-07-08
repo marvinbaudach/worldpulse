@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { t as tr } from '../i18n';
+import { LOCALE, cycleLocale, setLocale, t as tr, type Locale } from '../i18n';
 import styled from 'styled-components';
 import { LAYOUT_MODES, type LayoutMode } from '../layouts';
 import { glassSurface } from './glass';
@@ -62,12 +62,45 @@ const Group = styled.div`
   }
 `;
 
-const GroupTitle = styled.div`
-  margin-bottom: 8px;
+// Accordion header: the whole title row toggles its section.
+const GroupTitle = styled.button<{ $open: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: ${(p) => (p.$open ? '8px' : '0')};
+  padding: 0;
+  border: none;
+  background: transparent;
   color: rgba(255, 255, 255, 0.4);
+  font-family: inherit;
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.18em;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.18s ease;
+
+  &:hover {
+    color: rgba(255, 255, 255, 0.7);
+  }
+`;
+
+const Chevron = styled.span<{ $open: boolean }>`
+  font-size: 8px;
+  transform: rotate(${(p) => (p.$open ? '90deg' : '0deg')});
+  transition: transform 0.2s ease;
+`;
+
+// Fold body: rows collapse to zero height when the section is closed.
+const GroupBody = styled.div<{ $open: boolean }>`
+  display: grid;
+  grid-template-rows: ${(p) => (p.$open ? '1fr' : '0fr')};
+  transition: grid-template-rows 0.22s ease;
+
+  & > div {
+    overflow: hidden;
+  }
 `;
 
 // A shortcut line: key badge on the left, description on the right. Formation
@@ -144,11 +177,21 @@ const Toggle = styled.button<{ $open: boolean }>`
 // Static shortcuts the app already listens for elsewhere (Carousel3D). Listed
 // here purely so a presenter can discover them; the panel only *drives* the
 // formation rows.
+// Native language names — never translated, so every visitor can find their
+// own language regardless of the current locale.
+const LANGUAGES: { id: Locale; label: string }[] = [
+  { id: 'de', label: 'Deutsch' },
+  { id: 'en', label: 'English' },
+  { id: 'fr', label: 'Français' },
+  { id: 'it', label: 'Italiano' },
+];
+
 const HINTS: { keys: string; label: string }[] = [
   { keys: '␣', label: 'Rotation pausieren' },
   { keys: '←  →', label: 'Nachbar-Panel' },
   { keys: '+  −', label: 'Zoom' },
   { keys: 'Esc', label: 'Panel schließen' },
+  { keys: 'L', label: 'Sprache wechseln' },
 ];
 
 /**
@@ -156,8 +199,18 @@ const HINTS: { keys: string; label: string }[] = [
  * The formations live here as interactive rows carrying their 1–4 hotkeys, so
  * they no longer need a bar of their own. Number keys pick a formation.
  */
+type Section = 'formation' | 'sprache' | 'steuerung';
+
 export function HotkeyPanel({ layout, onChange, hidden }: HotkeyPanelProps) {
   const [open, setOpen] = useState(false);
+  // Independent accordion folds; the long static hint list starts collapsed
+  // so the two switchers stay above the fold.
+  const [folds, setFolds] = useState<Record<Section, boolean>>({
+    formation: true,
+    sprache: true,
+    steuerung: false,
+  });
+  const toggleFold = (k: Section) => setFolds((f) => ({ ...f, [k]: !f[k] }));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -171,6 +224,11 @@ export function HotkeyPanel({ layout, onChange, hidden }: HotkeyPanelProps) {
         setOpen((v) => !v);
         return;
       }
+      // Cycle de → en → fr → it; the pick is stored and survives reloads.
+      if (e.key === 'l' || e.key === 'L') {
+        cycleLocale();
+        return;
+      }
       const i = Number(e.key) - 1;
       if (i >= 0 && i < LAYOUT_MODES.length) onChange(LAYOUT_MODES[i].id);
     };
@@ -182,27 +240,74 @@ export function HotkeyPanel({ layout, onChange, hidden }: HotkeyPanelProps) {
     <Wrap $hidden={hidden}>
       <Panel $open={open} role="region" aria-label={tr('Tastenkürzel')}>
         <Group>
-          <GroupTitle>{tr('FORMATION')}</GroupTitle>
-          {LAYOUT_MODES.map((mode, i) => (
-            <Row
-              key={mode.id}
-              type="button"
-              $active={layout === mode.id}
-              onClick={() => onChange(mode.id)}
-            >
-              <Keycap $active={layout === mode.id}>{i + 1}</Keycap>
-              <Label>{tr(mode.label)}</Label>
-            </Row>
-          ))}
+          <GroupTitle
+            type="button"
+            $open={folds.formation}
+            aria-expanded={folds.formation}
+            onClick={() => toggleFold('formation')}
+          >
+            {tr('FORMATION')} <Chevron $open={folds.formation}>▶</Chevron>
+          </GroupTitle>
+          <GroupBody $open={folds.formation}>
+            <div>
+              {LAYOUT_MODES.map((mode, i) => (
+                <Row
+                  key={mode.id}
+                  type="button"
+                  $active={layout === mode.id}
+                  onClick={() => onChange(mode.id)}
+                >
+                  <Keycap $active={layout === mode.id}>{i + 1}</Keycap>
+                  <Label>{tr(mode.label)}</Label>
+                </Row>
+              ))}
+            </div>
+          </GroupBody>
         </Group>
         <Group>
-          <GroupTitle>{tr('STEUERUNG')}</GroupTitle>
-          {HINTS.map((h) => (
-            <Row key={h.label} as="div" $static>
-              <Keycap>{h.keys}</Keycap>
-              <Label>{tr(h.label)}</Label>
-            </Row>
-          ))}
+          <GroupTitle
+            type="button"
+            $open={folds.sprache}
+            aria-expanded={folds.sprache}
+            onClick={() => toggleFold('sprache')}
+          >
+            {tr('SPRACHE')} <Chevron $open={folds.sprache}>▶</Chevron>
+          </GroupTitle>
+          <GroupBody $open={folds.sprache}>
+            <div>
+              {LANGUAGES.map((lang) => (
+                <Row
+                  key={lang.id}
+                  type="button"
+                  $active={LOCALE === lang.id}
+                  onClick={() => setLocale(lang.id)}
+                >
+                  <Keycap $active={LOCALE === lang.id}>{lang.id.toUpperCase()}</Keycap>
+                  <Label>{lang.label}</Label>
+                </Row>
+              ))}
+            </div>
+          </GroupBody>
+        </Group>
+        <Group>
+          <GroupTitle
+            type="button"
+            $open={folds.steuerung}
+            aria-expanded={folds.steuerung}
+            onClick={() => toggleFold('steuerung')}
+          >
+            {tr('STEUERUNG')} <Chevron $open={folds.steuerung}>▶</Chevron>
+          </GroupTitle>
+          <GroupBody $open={folds.steuerung}>
+            <div>
+              {HINTS.map((h) => (
+                <Row key={h.label} as="div" $static>
+                  <Keycap>{h.keys}</Keycap>
+                  <Label>{tr(h.label)}</Label>
+                </Row>
+              ))}
+            </div>
+          </GroupBody>
         </Group>
       </Panel>
       <Toggle

@@ -8,6 +8,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { GlobalStyle } from './GlobalStyle';
 import { loadLiveData } from './data/sources';
 import { useIsMobile } from './hooks/useIsMobile';
+import { LOCALE, onLocaleChange } from './i18n';
 
 // "Loading" is a staged boot sequence: it gives the pulse loader one full
 // beat before the iris hands the screen center over to the blooming ring,
@@ -33,6 +34,11 @@ export default function App() {
   const [showLoader, setShowLoader] = useState(true);
   // Phones skip the WebGL ring entirely for a light 2D-canvas card deck.
   const isMobile = useIsMobile();
+  // Language hotkey: a locale switch re-renders the DOM overlays through
+  // this state; the WebGL panels redraw their own textures in place (see
+  // CarouselItem/HeroCard), so the ring never replays its boot intro.
+  const [locale, setLocaleState] = useState(LOCALE);
+  useEffect(() => onLocaleChange(setLocaleState), []);
 
   useEffect(() => {
     // Fire off the public-API fetches and the price socket during the boot
@@ -48,7 +54,7 @@ export default function App() {
   return (
     <Stage>
       <GlobalStyle />
-      {done && (isMobile ? <MobileDeck /> : <Carousel3D />)}
+      {done && (isMobile ? <MobileDeck key={locale} /> : <Carousel3D />)}
       {!isMobile && <PerfHud />}
 
       {showLoader && (
