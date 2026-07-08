@@ -18,6 +18,21 @@ const CITY: Record<string, { lat: number; lon: number }> = {
 
 const STATIONS = [...new Set(LIVE_FEEDS.map((f) => f.code))].filter((c) => CITY[c]);
 
+// Relay nodes padding out the uplink network — purely visual waypoints on the
+// data route. The real sources stay the hub stations above; relays render
+// smaller and dimmer so the hierarchy remains readable.
+const RELAY: Record<string, { lat: number; lon: number }> = {
+  HNL: { lat: 21.3, lon: -157.9 },
+  GRU: { lat: -23.5, lon: -46.6 },
+  KEF: { lat: 64.1, lon: -21.9 },
+  LON: { lat: 51.5, lon: -0.1 },
+  JNB: { lat: -26.2, lon: 28.0 },
+  DEL: { lat: 28.6, lon: 77.2 },
+  SIN: { lat: 1.4, lon: 103.8 },
+  TYO: { lat: 35.7, lon: 139.7 },
+  SYD: { lat: -33.9, lon: 151.2 },
+};
+
 // How long the dots take to converge into the center once loading is done —
 // they collapse into exactly the point the carousel panels bloom out of.
 const CONVERGE_MS = 750;
@@ -385,10 +400,12 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
       grid.push([0, Math.sin(a), Math.cos(a)]);
       grid.push([Math.sin(a), Math.cos(a), 0]);
     }
-    const stations = STATIONS.map((code) => ({
-      code,
-      v: toVec(CITY[code].lat, CITY[code].lon),
-    }));
+    // Hubs + relays, sorted by longitude so the closed arc loop reads as one
+    // eastbound round-the-world data route instead of criss-cross chords.
+    const stations = [
+      ...STATIONS.map((code) => ({ code, hub: true, lon: CITY[code].lon, v: toVec(CITY[code].lat, CITY[code].lon) })),
+      ...Object.entries(RELAY).map(([code, c]) => ({ code, hub: false, lon: c.lon, v: toVec(c.lat, c.lon) })),
+    ].toSorted((a, b) => a.lon - b.lon);
     // Great-circle arcs between consecutive stations (loop closed).
     const arcs = stations.map((s, i) => ({
       a: s.v,
@@ -512,24 +529,27 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
       }
 
       // Stations: bright dot, ping ring, code label on the front side.
+      // Hubs (the real API cities) stay big and bright; relays render
+      // smaller and dimmer so the source hierarchy stays readable.
       stations.forEach((st, i) => {
         const q = project(st.v);
         if (q.z < -0.05) return;
         const front = Math.min(1, (q.z + 0.05) / 0.6);
-        const a = front * aEase * (1 - ease);
+        const a = front * aEase * (1 - ease) * (st.hub ? 1 : 0.6);
+        const dotR = st.hub ? 4 : 2.6;
         ctx.fillStyle = `rgba(120, 180, 255, ${a})`;
         ctx.beginPath();
-        ctx.arc(q.x, q.y, 4, 0, Math.PI * 2);
+        ctx.arc(q.x, q.y, dotR, 0, Math.PI * 2);
         ctx.fill();
         const ring = (t * 0.7 + i * 0.33) % 1;
         ctx.strokeStyle = `rgba(57, 135, 229, ${(1 - ring) * 0.55 * a})`;
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.arc(q.x, q.y, 4 + ring * 14, 0, Math.PI * 2);
+        ctx.arc(q.x, q.y, dotR + ring * (st.hub ? 14 : 9), 0, Math.PI * 2);
         ctx.stroke();
-        ctx.fillStyle = `rgba(143, 184, 236, ${0.85 * a})`;
-        ctx.font = `600 11px ${MONO}`;
-        ctx.fillText(st.code, q.x + 9, q.y + 4);
+        ctx.fillStyle = `rgba(143, 184, 236, ${(st.hub ? 0.85 : 0.6) * a})`;
+        ctx.font = st.hub ? `600 11px ${MONO}` : `500 9px ${MONO}`;
+        ctx.fillText(st.code, q.x + dotR + 5, q.y + 4);
       });
 
       // Shockwave + dust: once the flash peaks, a pressure ring races outward
