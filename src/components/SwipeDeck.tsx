@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { CardCanvas } from './CardCanvas';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import type { Dashboard } from '../dashboards';
 
 // Tinder-style throw: the top card follows the finger with a little rotation,
@@ -51,19 +52,30 @@ const RISE = 'transform 360ms cubic-bezier(0.22, 1.2, 0.36, 1), opacity 240ms ea
 interface SwipeDeckProps {
   dashboards: Dashboard[];
   onIndex: (i: number) => void;
+  /** Fired when the user pulls the deck down far enough (pull-to-refresh). */
+  onRefresh?: () => void;
+  /** Dominant chart color of the settled front card (background tinting). */
+  onColor?: (color: string | null) => void;
 }
 
-export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
+export function SwipeDeck({ dashboards, onIndex, onRefresh, onColor }: SwipeDeckProps) {
   const [index, setIndex] = useState(0);
   const curRef = useRef<HTMLDivElement>(null);
   const prevRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLDivElement>(null);
-  const drag = useRef({ active: false, startX: 0, dx: 0, w: 1, t0: 0, detent: false });
+  const drag = useRef({
+    active: false,
+    startX: 0,
+    dx: 0,
+    startY: 0,
+    dy: 0,
+    w: 1,
+    t0: 0,
+    detent: false,
+    axis: null as null | 'x' | 'y',
+  });
   const animating = useRef(false);
-  // Only the first card plays the chart fly-in; once you swipe, the cards you
-  // land on are already settled (they were drawn behind), so a replay would
-  // just flash the finished chart and then restart it.
-  const intro = useRef(true);
+  const reducedMotion = useReducedMotion();
 
   // After every index change, snap the three roles back to their resting look
   // (imperative styles from the drag/throw would otherwise stick).
@@ -98,7 +110,6 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
   // to a drag position beforehand — the reflow here makes that state animate.
   const throwCard = (goNext: boolean) => {
     animating.current = true;
-    intro.current = false; // no chart replay on the card we land on
     const off = goNext ? -1 : 1;
     const el = curRef.current;
     const rise = goNext ? nextRef.current : prevRef.current;
@@ -158,9 +169,12 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
       active: true,
       startX: e.clientX,
       dx: 0,
+      startY: e.clientY,
+      dy: 0,
       w: e.currentTarget.clientWidth || 1,
       t0: performance.now(),
       detent: false,
+      axis: null,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
     setCur(CENTER, 'none');
@@ -170,6 +184,22 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     const d = drag.current;
     if (!d.active) return;
     d.dx = e.clientX - d.startX;
+    d.dy = e.clientY - d.startY;
+    // Axis lock: classified once past a 12px dead zone so the card never
+    // flips modes mid-gesture (a diagonal drag would otherwise jitter between
+    // the pull and throw transforms every frame).
+    if (d.axis === null && Math.hypot(d.dx, d.dy) > 12) {
+      d.axis = d.dy > 0 && d.dy > Math.abs(d.dx) * 1.5 ? 'y' : 'x';
+    }
+    // Still inside the dead zone: don't run either path yet, or a pure
+    // downward pull would flash the neighbours before the lock lands.
+    if (d.axis === null) return;
+    // Mostly-vertical downward drag = pull-to-refresh: the card follows the
+    // finger down with resistance instead of arming the horizontal throw.
+    if (d.axis === 'y') {
+      setCur(`${CENTER} translateY(${Math.min(70, Math.max(0, d.dy) * 0.3)}px)`, 'none');
+      return;
+    }
     // Detent: a soft tick the instant the drag passes the commit distance, so
     // the card feels like it "catches" a notch under the thumb. Re-arms if you
     // pull back below it, so the notch can be felt again on the next pass.
@@ -199,6 +229,25 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
     const d = drag.current;
     if (!d.active) return;
     d.active = false;
+    // A y-locked gesture never reaches the horizontal throw logic: it either
+    // commits the pull or springs everything back to rest (neighbours too).
+    if (d.axis === 'y') {
+      if (d.dy > 110) {
+        // Committed pull: trigger the refresh, then spring back.
+        navigator.vibrate?.(8);
+        onRefresh?.();
+      }
+      setCur(CENTER, SPRING);
+      for (const r of [nextRef.current, prevRef.current]) {
+        if (r) {
+          r.style.transition = SPRING;
+          r.style.transform = BEHIND;
+        }
+      }
+      if (nextRef.current) nextRef.current.style.opacity = '1';
+      if (prevRef.current) prevRef.current.style.opacity = '0';
+      return;
+    }
     // A small nudge is enough — either a short distance OR a quick flick.
     const dist = Math.min(60, d.w * 0.16);
     const speed = Math.abs(d.dx) / Math.max(performance.now() - d.t0, 1); // px/ms
@@ -250,14 +299,18 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
 
   return (
     <Stack>
+      {/* Neighbours hold the intro's empty start frame (restT 0), not the
+          settled chart — otherwise a peek during the drag spoils the finished
+          result the landing fly-in is about to build. Under reduced motion
+          there is no fly-in, so they hold the settled frame instead. */}
       {prev && (
         <Card key={prev.id} ref={prevRef} style={{ zIndex: 2, opacity: 0, transform: BEHIND }}>
-          <CardCanvas dashboard={prev} animate={false} />
+          <CardCanvas dashboard={prev} animate={false} restT={reducedMotion ? undefined : 0} />
         </Card>
       )}
       {next && (
         <Card key={next.id} ref={nextRef} style={{ zIndex: 1, transform: BEHIND }}>
-          <CardCanvas dashboard={next} animate={false} />
+          <CardCanvas dashboard={next} animate={false} restT={reducedMotion ? undefined : 0} />
         </Card>
       )}
       <Card
@@ -269,7 +322,11 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
         onPointerUp={onUp}
         onPointerCancel={onUp}
       >
-        <CardCanvas dashboard={cur} animate={intro.current} />
+        {/* This <Card> keeps its React identity (key={cur.id}) as the deck
+            advances — the neighbour that becomes current re-renders into this
+            same slot rather than mounting fresh. So `animate` flipping
+            false -> true here is what replays CardCanvas's fly-in on landing. */}
+        <CardCanvas dashboard={cur} animate={!reducedMotion} onColor={onColor} />
       </Card>
     </Stack>
   );

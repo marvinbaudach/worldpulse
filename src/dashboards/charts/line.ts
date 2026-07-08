@@ -10,7 +10,6 @@ import {
   drawLegend,
   drawSurface,
   easeOut,
-  fmtCompact,
   linePath,
   makeSeries,
   type Frame,
@@ -98,14 +97,7 @@ export interface LineCfg {
 export function lineChart(f: Frame, cfg: LineCfg): void {
   const { ctx, u, t } = f;
   drawSurface(f);
-  // Comparison cards (2+ series) have no single headline value — a big figure
-  // would be ambiguous (7.0 Bio. of whom?), so the title stands alone and the
-  // plot takes the freed height. Single-series cards keep the standard header.
-  const fmt = cfg.fmt ?? ((v: number) => fmtCompact(v, cfg.unit));
-  const top =
-    cfg.series.length > 1
-      ? drawCompareHeader(f, cfg.label)
-      : drawHeader(f, cfg.label, cfg.value, fmt, cfg.delta);
+  const top = cfg.series.length > 1 ? drawCompareHeader(f, cfg.label) : drawHeader(f, cfg.label);
   const r = plotRect(f, top + 26 * u);
 
   // Shaded bands (behind grid + series): contiguous true-runs of the mask.
@@ -197,7 +189,7 @@ export interface AreaCfg {
 export function areaChart(f: Frame, cfg: AreaCfg): void {
   const { ctx, u, t } = f;
   drawSurface(f);
-  const top = drawHeader(f, cfg.label, cfg.value, cfg.fmt ?? ((v) => fmtCompact(v)), cfg.delta);
+  const top = drawHeader(f, cfg.label);
   const r = plotRect(f, top + 26 * u);
   drawGrid(f, r.y0, r.y1, cfg.ticks.length);
 

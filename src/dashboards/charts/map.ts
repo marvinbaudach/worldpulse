@@ -23,7 +23,7 @@ export interface NukeMapCfg {
 export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
   const { ctx, u, t, w } = f;
   drawSurface(f);
-  const top = drawHeader(f, cfg.label, cfg.total, (v) => fmtCompact(v), null);
+  const top = drawHeader(f, cfg.label);
   const pad = 36 * u;
 
   const mx0 = pad;
@@ -138,7 +138,7 @@ export interface ChoroplethCfg {
 export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
   const { ctx, u, t, w, h } = f;
   drawSurface(f);
-  const top = drawHeader(f, cfg.label, cfg.value, cfg.fmt, null);
+  const top = drawHeader(f, cfg.label);
   const pad = 36 * u;
 
   const mx0 = pad;

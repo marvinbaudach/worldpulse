@@ -67,6 +67,7 @@ export function xAxisLabels(f: Frame, labels: string[], x0: number, x1: number, 
 
 /** Muted source/attribution line pinned to the panel's bottom-left. */
 export function drawSource(f: Frame, source: string): void {
+  if (f.compact) return; // mobile shows the source behind the info button
   const { ctx, u, h } = f;
   ctx.fillStyle = MUTED;
   ctx.font = `400 ${13 * u}px ${FONT}`;

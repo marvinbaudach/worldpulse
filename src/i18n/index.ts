@@ -97,3 +97,20 @@ export function t(s: string): string {
 export function localeInt(v: number): string {
   return Math.round(v).toLocaleString(LOCALE);
 }
+
+/** Locale-aware fixed-decimal number (1.5 → "1.50"/"1,50"), the drop-in for
+    `toFixed` in panel formatters. Without `digits`, trailing zeros are dropped
+    like plain template interpolation would. */
+export function localeNum(v: number, digits?: number): string {
+  return v.toLocaleString(
+    LOCALE,
+    digits === undefined ? undefined : { minimumFractionDigits: digits, maximumFractionDigits: digits },
+  );
+}
+
+/** Locale-aware percentage: decimal comma where the locale wants one, and a
+    no-break space before the sign for de/fr (13.4 → "13,4 %" / "13.4%"). */
+export function localePct(v: number, digits = 0): string {
+  const gap = LOCALE === 'de' || LOCALE === 'fr' ? ' ' : '';
+  return `${localeNum(v, digits)}${gap}%`;
+}

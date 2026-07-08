@@ -6,6 +6,7 @@
 // down the ring. Series math lives in series.ts, the bundled historical
 // datasets and fallbacks in bundled.ts.
 
+import { localeNum, t as tr } from '../i18n';
 import { cached, fetchJson } from './cache';
 import { niceScale, norm, trend } from './series';
 import { CH_CENSUS, WORLD_HISTORY, debtTrend } from './bundled';
@@ -230,12 +231,12 @@ async function loadPopulation(): Promise<void> {
 
   live.swissPop = trend(
     [...CH_CENSUS, ...points.che],
-    (v) => `${(v / 1e6).toFixed(0)}M`,
+    (v) => `${localeNum(v / 1e6, 0)} ${tr('Mio')}`,
     ['1500', '1675', '1850', 'heute'],
   );
   live.worldPop = trend(
     [...WORLD_HISTORY, ...points.wld],
-    (v) => `${(v / 1e9).toFixed(0)}B`,
+    (v) => `${localeNum(v / 1e9, 0)} ${tr('Mrd')}`,
     ['Jahr 0', '675', '1350', 'heute'],
   );
 }
@@ -307,7 +308,7 @@ async function loadHomicide(): Promise<void> {
     ...data.bra,
     ...data.jpn,
   ];
-  const s = niceScale(Math.min(...all), Math.max(...all), (v) => v.toFixed(0));
+  const s = niceScale(Math.min(...all), Math.max(...all), (v) => localeNum(v, 0));
   live.homicide = {
     byIso: data.byIso,
     rows: data.top,

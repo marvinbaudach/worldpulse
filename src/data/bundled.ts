@@ -4,7 +4,7 @@
 // produce. These also back the fallbacks for the panels that do fetch, so the
 // ring keeps its true curves even with every API unreachable.
 
-import { t as tr } from '../i18n';
+import { localeNum, localePct, t as tr } from '../i18n';
 import type { TrendSeries } from './store';
 import {
   compareSeries,
@@ -40,7 +40,7 @@ const DEBT_HISTORY: [number, number][] = [
 export function debtTrend(latest: number): { series: number[]; ticks: string[] } {
   const year = new Date().getFullYear();
   const series = yearly([...DEBT_HISTORY, [year, latest]]);
-  const s = niceScale(0, latest, (v) => `$${(v / 1e12).toFixed(0)}T`);
+  const s = niceScale(0, latest, (v) => `$${localeNum(v / 1e12, 0)} ${tr('Bio.')}`);
   return {
     series: norm(resample(series, 40), s.lo, s.hi),
     ticks: s.ticks,
@@ -95,13 +95,13 @@ export const WORLD_HISTORY: [number, number][] = [
 
 export const SWISS_POP_FALLBACK: TrendSeries = trend(
   [...CH_CENSUS, [2025, 9_092_436]],
-  (v) => `${(v / 1e6).toFixed(0)}M`,
+  (v) => `${localeNum(v / 1e6, 0)} ${tr('Mio')}`,
   ['1500', '1675', '1850', 'heute'],
 );
 
 export const WORLD_POP_FALLBACK: TrendSeries = trend(
   [...WORLD_HISTORY, [2025, 8.215e9]],
-  (v) => `${(v / 1e9).toFixed(0)}B`,
+  (v) => `${localeNum(v / 1e9, 0)} ${tr('Mrd')}`,
   ['Jahr 0', '675', '1350', 'heute'],
 );
 
@@ -116,7 +116,7 @@ export const WORLD_POP_SINCE_1770: TrendSeries = trend(
     [1980, 4.46e9], [1990, 5.33e9], [2000, 6.15e9], [2010, 6.96e9],
     [2020, 7.84e9], [2025, 8.22e9],
   ],
-  (v) => `${(v / 1e9).toFixed(2)}B`,
+  (v) => `${localeNum(v / 1e9, 2)} ${tr('Mrd')}`,
   ['1770', '1855', '1940', 'heute'],
 );
 
@@ -186,7 +186,7 @@ function climatePanel() {
     co2raw.push(interpAt(co2Pts, ya));
     tempraw.push(interpAt(tempPts, ya));
   }
-  const ts = niceScale(Math.min(...tempraw) - 0.5, Math.max(...tempraw) + 0.5, (v) => `${v > 0 ? '+' : ''}${v.toFixed(0)}°`);
+  const ts = niceScale(Math.min(...tempraw) - 0.5, Math.max(...tempraw) + 0.5, (v) => `${v > 0 ? '+' : ''}${localeNum(v, 0)}°`);
   return {
     temp: norm(tempraw, ts.lo, ts.hi),
     ticks: ts.ticks,
@@ -244,7 +244,7 @@ const CONFLICT_ANCHORS: [number, number][] = [
 
 export const CONFLICT_PANEL: TrendSeries = trend(
   CONFLICT_ANCHORS,
-  (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(0)}M` : `${Math.round(v / 1000)}k`),
+  (v) => (v >= 1e6 ? `${localeNum(v / 1e6, 0)} ${tr('Mio')}` : `${Math.round(v / 1000)}k`),
   ['1900', '1941', '1983', 'heute'],
   64,
 );
@@ -267,7 +267,7 @@ const REFUGEE_ANCHORS: [number, number][] = [
 
 export const REFUGEE_PANEL: TrendSeries = trend(
   REFUGEE_ANCHORS,
-  (v) => `${Math.round(v / 1e6)}M`,
+  (v) => `${Math.round(v / 1e6)} ${tr('Mio')}`,
   ['1990', '2001', '2013', 'heute'],
 );
 
@@ -289,7 +289,7 @@ const US_INTEREST_ANCHORS: [number, number][] = [
 
 export const US_INTEREST_PANEL: TrendSeries = trend(
   US_INTEREST_ANCHORS,
-  (v) => (v >= 1e12 ? `$${(v / 1e12).toFixed(1)}T` : `$${Math.round(v / 1e9)}B`),
+  (v) => (v >= 1e12 ? `$${localeNum(v / 1e12, 1)} ${tr('Bio.')}` : `$${Math.round(v / 1e9)} ${tr('Mrd')}`),
   ['1990', '2002', '2013', 'heute'],
 );
 
@@ -339,7 +339,7 @@ export const US_HOMICIDE_PANEL: TrendSeries = trend(
     [2000, 5.5], [2010, 4.8], [2014, 4.4], [2020, 6.5], [2021, 6.8],
     [2023, 5.7], [2024, 5.0],
   ],
-  (v) => v.toFixed(1),
+  (v) => localeNum(v, 1),
   ['1900', '1941', '1983', 'heute'],
 );
 
@@ -369,7 +369,7 @@ export const M2_PANEL: TrendSeries = trend(
     [2000, 4.9e12], [2008, 8.2e12], [2015, 12.3e12], [2020, 19.1e12],
     [2022, 21.7e12], [2024, 21.4e12],
   ],
-  (v) => `$${(v / 1e12).toFixed(0)}T`,
+  (v) => `$${localeNum(v / 1e12, 0)} ${tr('Bio.')}`,
   ['1900', '1941', '1983', 'heute'],
 );
 
@@ -384,7 +384,7 @@ export const M2_COMPARE = compareSeries(
     { name: 'Eurozone', pts: [[1990, 0.6], [1995, 0.75], [2000, 1.0], [2005, 1.35], [2010, 1.8], [2015, 2.05], [2020, 2.65], [2024, 2.85]] },
     { name: 'Schweiz', pts: [[1990, 0.72], [1995, 0.85], [2000, 1.0], [2005, 1.2], [2010, 1.75], [2015, 2.3], [2020, 2.55], [2024, 2.5]] },
   ],
-  (v) => `${v.toFixed(1)}×`,
+  (v) => `${localeNum(v, 1)}×`,
   /** Latest US multiple, for the headline. */
   { usLatest: 4.4 },
 );
@@ -415,7 +415,7 @@ export const DE_INSOLVENCY_CLAIMS_PANEL: TrendSeries = trend(
     [2015, 17], [2019, 27], [2020, 44], [2021, 48], [2022, 15],
     [2023, 27], [2024, 58], [2025, 48],
   ],
-  (v) => `${v.toFixed(0)}`,
+  (v) => `${localeNum(v, 0)}`,
   ['2000', '2008', '2017', 'heute'],
 );
 
@@ -430,7 +430,7 @@ export const INDUSTRY_COMPARE = compareSeries(
     { name: 'USA', pts: [[1950, 15], [1960, 22], [1970, 35], [1980, 48], [1990, 62], [2000, 91], [2005, 95], [2008, 100], [2009, 89], [2015, 100], [2018, 103], [2020, 96], [2022, 103], [2024, 102], [2025, 103]] },
     { name: 'Deutschland', pts: [[1950, 12], [1960, 32], [1970, 55], [1980, 66], [1990, 78], [2000, 84], [2005, 91], [2008, 104], [2009, 86], [2011, 102], [2015, 100], [2018, 105], [2020, 91], [2022, 93], [2023, 91], [2024, 87], [2025, 85]] },
   ],
-  (v) => `${v.toFixed(0)}`,
+  (v) => `${localeNum(v, 0)}`,
   /** Germany's latest index level, for the headline. */
   { deuLatest: 85 },
 );
@@ -446,7 +446,7 @@ export const DE_MIGRATION_PANEL: TrendSeries = trend(
     [2000, 18], [2005, 18.6], [2010, 19.3], [2013, 20.5], [2015, 21.0],
     [2017, 23.6], [2019, 26.0], [2022, 28.7], [2024, 30.4],
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   ['1950', '1975', '2000', 'heute'],
 );
 
@@ -461,7 +461,7 @@ export const DE_MIGRATION_FLOWS = compareSeries(
     { name: 'Einwanderung', pts: [[1991, 1.20], [1992, 1.50], [1995, 1.10], [2000, 0.84], [2005, 0.71], [2009, 0.72], [2013, 1.23], [2015, 2.14], [2016, 1.87], [2018, 1.58], [2020, 1.19], [2022, 2.67], [2023, 1.93]] },
     { name: 'Auswanderung', pts: [[1991, 0.60], [1992, 0.72], [1995, 0.70], [2000, 0.67], [2005, 0.63], [2009, 0.73], [2013, 0.80], [2015, 1.00], [2016, 1.37], [2018, 1.19], [2020, 0.97], [2022, 1.20], [2023, 1.27]] },
   ],
-  (v) => `${v.toFixed(1)}M`,
+  (v) => `${localeNum(v, 1)} ${tr('Mio')}`,
   /** Latest immigration figure (2023 Zuzüge), for the headline. */
   { inLatest: 1.93 },
 );
@@ -477,7 +477,7 @@ export const DE_POPULATION_PANEL: TrendSeries = trend(
     [1995, 81.8], [2000, 82.2], [2005, 82.4], [2010, 81.8], [2015, 82.2],
     [2019, 83.1], [2022, 84.4], [2024, 83.6],
   ],
-  (v) => `${v.toFixed(1)}M`,
+  (v) => `${localeNum(v, 1)} ${tr('Mio')}`,
   ['1950', '1975', '2000', 'heute'],
 );
 
@@ -498,7 +498,7 @@ export const DE_FOREIGN_COMPARE = compareSeries(
     { name: 'Tatverdächtige', pts: [[2005, 22.5], [2010, 21.9], [2014, 24.3], [2016, 30.5], [2019, 30.4], [2022, 33.4], [2023, 34.4], [2024, 35.4]] },
     { name: 'Ausländeranteil', pts: [[2005, 8.8], [2010, 8.7], [2014, 10.0], [2016, 11.2], [2019, 12.5], [2022, 14.6], [2023, 15.3], [2024, 16.0]] },
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   /** Latest non-German suspect share, for the headline. */
   { tvLatest: 35.4 },
 );
@@ -568,7 +568,7 @@ export const DE_TAX_QUOTA_PANEL: TrendSeries = trend(
     [2015, 36.8], [2018, 38.5], [2019, 38.6], [2020, 38.0], [2021, 39.3],
     [2022, 39.3], [2023, 37.4],
   ],
-  (v) => `${v.toFixed(1)}%`,
+  (v) => `${localePct(v, 1)}`,
   ['1965', '1985', '2005', 'heute'],
 );
 
@@ -583,7 +583,7 @@ export const DE_POWER_PRICE_PANEL: TrendSeries = trend(
     [2009, 23], [2012, 26], [2015, 29], [2018, 30], [2020, 32],
     [2021, 32], [2022, 37], [2023, 42], [2024, 40], [2025, 39],
   ],
-  (v) => `${v.toFixed(0)} ct`,
+  (v) => `${localeNum(v, 0)} ct`,
   ['1991', '2002', '2013', 'heute'],
 );
 
@@ -599,7 +599,7 @@ export const BERLIN_WARRANTS_PANEL: TrendSeries = trend(
     [2020, 19_500], [2021, 20_500], [2022, 22_000], [2023, 24_000],
     [2024, 26_000],
   ],
-  (v) => `${(v / 1000).toFixed(0)}k`,
+  (v) => `${localeNum(v / 1000, 0)}k`,
   ['2013', '2017', '2021', 'heute'],
 );
 
@@ -622,7 +622,7 @@ export const DE_STATE_QUOTA_PANEL: TrendSeries = trend(
     [2013, 44.7], [2015, 44.0], [2019, 45.2], [2020, 50.9], [2021, 51.1],
     [2022, 49.5], [2023, 48.4], [2024, 49.5],
   ],
-  (v) => `${v.toFixed(1)}%`,
+  (v) => `${localePct(v, 1)}`,
   ['1880', '1930', '1975', 'heute'],
 );
 
@@ -637,7 +637,7 @@ export const DE_OLD_AGE_PANEL: TrendSeries = trend(
     [2000, 26], [2010, 31], [2020, 37], [2024, 40], [2030, 46],
     [2035, 49], [2040, 50], [2050, 53], [2060, 55],
   ],
-  (v) => `${v.toFixed(0)}`,
+  (v) => `${localeNum(v, 0)}`,
   ['1950', '1987', '2023', '2060'],
 );
 
@@ -657,7 +657,7 @@ export const DE_UNDEREMPLOYMENT_COMPARE = compareSeries(
     { name: 'Arbeitslose (offiziell)', pts: [[2009, 3.42], [2011, 2.98], [2013, 2.95], [2015, 2.79], [2017, 2.53], [2019, 2.27], [2020, 2.70], [2022, 2.42], [2023, 2.61], [2024, 2.79]] },
     { name: 'Langzeitarbeitslose', pts: [[2009, 1.13], [2011, 1.06], [2013, 1.07], [2015, 1.04], [2017, 0.90], [2019, 0.72], [2020, 0.82], [2021, 1.00], [2022, 0.93], [2024, 1.03]] },
   ],
-  (v) => `${v.toFixed(1)} ${tr('Mio')}`,
+  (v) => `${localeNum(v, 1)} ${tr('Mio')}`,
   /** Latest underemployment figure, for the headline. */
   { underLatest: 3.58 },
 );
@@ -675,7 +675,7 @@ export const DE_EXPORT_COMPARE = compareSeries(
     { name: 'China', pts: [[1990, 1.8], [1995, 2.9], [2000, 3.9], [2005, 7.3], [2008, 8.9], [2009, 9.6], [2010, 10.3], [2015, 13.7], [2018, 12.7], [2020, 14.7], [2022, 14.4], [2024, 14.5]] },
     { name: 'USA', pts: [[1990, 11.3], [1995, 11.3], [2000, 12.1], [2005, 8.6], [2008, 8.0], [2010, 8.4], [2015, 9.1], [2018, 8.5], [2020, 8.1], [2024, 8.4]] },
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   /** Latest German world-export share, for the headline. */
   { deuLatest: 7.0 },
 );
@@ -689,7 +689,7 @@ export const AI_JOBS_COMPARE = compareSeries(
     { name: 'Absolventen', pts: [[2015, 5.0], [2018, 3.9], [2019, 3.9], [2020, 9.0], [2021, 5.6], [2022, 4.0], [2023, 4.4], [2024, 5.0], [2025, 5.8]] },
     { name: 'Gesamt', pts: [[2015, 5.3], [2018, 3.9], [2019, 3.7], [2020, 8.1], [2021, 5.4], [2022, 3.6], [2023, 3.6], [2024, 4.0], [2025, 4.2]] },
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   /** Latest recent-graduate rate, for the headline. */
   { gradLatest: 5.8 },
 );
@@ -700,7 +700,7 @@ export const INTERNET_PANEL: TrendSeries = trend(
     [1990, 0.003e9], [1995, 0.04e9], [2000, 0.41e9], [2005, 1.02e9],
     [2010, 2.0e9], [2015, 3.2e9], [2020, 4.7e9], [2024, 5.5e9],
   ],
-  (v) => `${(v / 1e9).toFixed(1)}B`,
+  (v) => `${localeNum(v / 1e9, 1)} ${tr('Mrd')}`,
   ['1990', '2001', '2013', 'heute'],
 );
 
@@ -727,7 +727,7 @@ export const ASSET_MEGACOMPARE = (() => {
     data: norm(resample(yearly(d.pts.map(([yr, v]) => [yr, Math.log10(v)] as [number, number])), N), LO, HI),
   }));
   const fmtD = (v: number) =>
-    v >= 1e12 ? `$${v / 1e12}T` : v >= 1e9 ? `$${v / 1e9}B` : v >= 1e6 ? `$${v / 1e6}M` : v >= 1e3 ? `$${v / 1e3}k` : `$${v}`;
+    v >= 1e12 ? `$${localeNum(v / 1e12)} ${tr('Bio.')}` : v >= 1e9 ? `$${localeNum(v / 1e9)} ${tr('Mrd')}` : v >= 1e6 ? `$${localeNum(v / 1e6)} ${tr('Mio')}` : v >= 1e3 ? `$${localeNum(v / 1e3)}k` : `$${v}`;
   const ticks = Array.from({ length: 5 }, (_, i) => fmtD(10 ** (LO + (i * (HI - LO)) / 4)));
   return { rows, ticks, btcLatest: 95000 };
 })();
@@ -761,7 +761,7 @@ export const PRESS_FREEDOM_COMPARE = compareSeries(
     { name: 'China', pts: [[2022, 25.2], [2023, 23.0], [2024, 23.4], [2025, 22.6]] },
     { name: 'Saudi-Arabien', pts: [[2022, 28.3], [2023, 25.5], [2024, 27.6], [2025, 24.0]] },
   ],
-  (v) => v.toFixed(1),
+  (v) => localeNum(v, 1),
   /** Latest German score, for the headline. */
   { deLatest: 82.0 },
 );
@@ -772,7 +772,7 @@ export const PRESS_FREEDOM_COMPARE = compareSeries(
 // the shelves uncounted, so the dip understates books still unavailable.
 export const BOOK_BANS_PANEL: TrendSeries = trend(
   [[2021, 2532], [2022, 3362], [2023, 10046], [2024, 6870]],
-  (v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`),
+  (v) => (v >= 1000 ? `${localeNum(v / 1000, 1)}k` : `${v}`),
   ['21/22', '22/23', '23/24', '24/25'],
 );
 
@@ -798,7 +798,7 @@ export const EXTREME_POVERTY_PANEL: TrendSeries = trend(
     [1990, 38], [2000, 29], [2010, 16], [2015, 10.8], [2019, 8.9],
     [2020, 9.7], [2022, 9.0], [2024, 8.5],
   ],
-  (v) => `${v.toFixed(1)}%`,
+  (v) => `${localePct(v, 1)}`,
   ['1990', '2001', '2013', 'heute'],
 );
 
@@ -813,7 +813,7 @@ export const OIL_CONSUMPTION_PANEL: TrendSeries = trend(
     [2000, 76], [2008, 86], [2010, 88], [2019, 100], [2020, 91],
     [2023, 102],
   ],
-  (v) => `${v.toFixed(0)} mb/d`,
+  (v) => `${localeNum(v, 0)} mb/d`,
   ['1900', '1941', '1982', 'heute'],
 );
 
@@ -839,7 +839,7 @@ export const OBESITY_PANEL: TrendSeries = trend(
     [1975, 4.7], [1985, 6.4], [1995, 8.5], [2005, 10.3],
     [2010, 11.7], [2016, 13.1], [2022, 16],
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   ['1900', '1940', '1980', 'heute'],
 );
 
@@ -853,7 +853,7 @@ export const CONTINENT_FERTILITY = compareSeries(
     { name: 'Nordamerika', pts: [[1900, 3.8], [1920, 3.2], [1935, 2.2], [1950, 3.3], [1958, 3.7], [1970, 2.3], [1990, 2.0], [2010, 1.9], [2024, 1.6]] },
     { name: 'Europa', pts: [[1900, 4.5], [1915, 3.4], [1930, 2.5], [1950, 2.7], [1970, 2.2], [1990, 1.7], [2000, 1.4], [2010, 1.6], [2024, 1.4]] },
   ],
-  (v) => v.toFixed(1),
+  (v) => localeNum(v, 1),
   /** Global births per woman, for the headline. */
   { world: 2.2 },
 );
@@ -868,7 +868,7 @@ export const PISA_DE = compareSeries(
     { name: 'Lesen', pts: [[2000, 484], [2003, 491], [2006, 495], [2009, 497], [2012, 508], [2015, 509], [2018, 498], [2022, 480]] },
     { name: 'Naturwiss.', pts: [[2000, 487], [2003, 502], [2006, 516], [2009, 520], [2012, 524], [2015, 509], [2018, 503], [2022, 492]] },
   ],
-  (v) => `${v.toFixed(0)}`,
+  (v) => `${localeNum(v, 0)}`,
   /** Latest maths score, for the headline. */
   { deuLatest: 475 },
 );
@@ -923,7 +923,7 @@ function teenSadnessPanel() {
     girlsRaw.push(interpAt(TEEN_SAD_GIRLS, y));
     boysRaw.push(interpAt(TEEN_SAD_BOYS, y));
   }
-  const s = niceScale(0, Math.max(...girlsRaw), (v) => `${v.toFixed(0)}%`);
+  const s = niceScale(0, Math.max(...girlsRaw), (v) => `${localePct(v, 0)}`);
   return {
     girls: norm(girlsRaw, s.lo, s.hi),
     boys: norm(boysRaw, s.lo, s.hi),
@@ -945,7 +945,7 @@ export const SUICIDE_BY_AGE = compareSeries(
     { name: '15–19 J.', pts: [[1980, 8.5], [1990, 11.1], [2000, 8.0], [2007, 6.9], [2015, 9.8], [2018, 11.4], [2021, 11.0]] },
     { name: '20–24 J.', pts: [[1980, 16.1], [1990, 15.1], [2000, 12.5], [2007, 12.5], [2015, 15.0], [2018, 17.0], [2021, 18.0]] },
   ],
-  (v) => v.toFixed(1),
+  (v) => localeNum(v, 1),
   /** Latest 20–24 rate, for the headline. */
   { oldestLatest: 18.0 },
 );
@@ -958,7 +958,7 @@ export const TEEN_MDE = maskedTrend(
     [2004, 9.0], [2007, 8.2], [2010, 8.0], [2011, 8.2], [2013, 10.7],
     [2015, 12.5], [2017, 13.3], [2019, 15.7], [2021, 20.1], [2022, 19.5],
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   2012,
 );
 
@@ -974,7 +974,7 @@ export const TEEN_SCREEN_PANEL: TrendSeries = trend(
     [1955, 2.3], [1965, 2.5], [1980, 3.0], [1999, 3.9], [2004, 4.4],
     [2009, 5.6], [2015, 6.7], [2019, 7.4], [2021, 8.6], [2023, 8.4],
   ],
-  (v) => `${v.toFixed(1)} h`,
+  (v) => `${localeNum(v, 1)} h`,
   ['1955', '1978', '2000', 'heute'],
 );
 
@@ -988,7 +988,7 @@ export const TEEN_RX_PANEL: TrendSeries = trend(
     [1970, 0.1], [1988, 0.4], [1995, 1.2], [2002, 2.4], [2010, 3.0],
     [2016, 4.2], [2019, 5.0], [2022, 6.3],
   ],
-  (v) => `${v.toFixed(1)}%`,
+  (v) => `${localePct(v, 1)}`,
   ['1970', '1987', '2004', 'heute'],
 );
 
@@ -1000,7 +1000,7 @@ export const DE_NUCLEAR_PANEL: TrendSeries = trend(
     [2000, 22.4], [2004, 21.3], [2006, 20.3], [2010, 20.5], [2011, 12.7],
     [2015, 12.1], [2017, 10.8], [2019, 9.5], [2022, 4.3], [2023, 0],
   ],
-  (v) => `${v.toFixed(1)} GW`,
+  (v) => `${localeNum(v, 1)} GW`,
   ['2000', '2008', '2016', '2023'],
 );
 
@@ -1030,7 +1030,7 @@ export const DE_GRID_INTERVENTIONS_PANEL: TrendSeries = trend(
     [2014, 5.2], [2015, 16.0], [2017, 20.4], [2019, 13.7], [2021, 12.2],
     [2023, 14.8],
   ],
-  (v) => `${v.toFixed(1)} TWh`,
+  (v) => `${localeNum(v, 1)} TWh`,
   ['2000', '2008', '2016', '2023'],
 );
 
@@ -1091,7 +1091,7 @@ function obesityFastfoodPanel() {
     years.push(y);
     raw.push(interpAt(US_OBESITY_ANCHORS, y));
   }
-  const s = niceScale(0, Math.max(...raw), (v) => `${v.toFixed(0)}%`);
+  const s = niceScale(0, Math.max(...raw), (v) => `${localePct(v, 0)}`);
   return {
     data: norm(raw, s.lo, s.hi),
     ticks: s.ticks,
@@ -1113,7 +1113,7 @@ export const CAMERAS_PANEL: TrendSeries = trend(
     [2000, 25e6], [2006, 60e6], [2012, 160e6], [2016, 350e6],
     [2018, 570e6], [2021, 1e9], [2023, 1.1e9], [2025, 1.25e9],
   ],
-  (v) => `${(v / 1e9).toFixed(2)} Mrd`,
+  (v) => `${localeNum(v / 1e9, 2)} ${tr('Mrd')}`,
   ['2000', '2008', '2017', 'heute'],
 );
 
@@ -1141,6 +1141,64 @@ export const AGE_VERIF_PANEL: TrendSeries = trend(
   ],
   (v) => `${Math.round(v)}`,
   ['2022', '2023', '2024', 'heute'],
+);
+
+// Countries with a national online age-verification mandate enacted (porn
+// and/or social media): China's real-name minor mode, Germany's JMStV
+// enforcement, France's SREN law, Australia's under-16 social-media ban, the
+// UK's Online Safety Act (enforced July 2025), plus first followers (Italy,
+// Ireland, EU pilots…). Rough count — scope differs per country. The UK is
+// the template case: an ID or face scan gates adult content, and unverified
+// accounts drop into restricted child modes via the platforms' and Apple's/
+// Google's age-assurance hooks.
+export const AGE_VERIF_NATIONS_PANEL: TrendSeries = trend(
+  [
+    [2019, 2], [2021, 3], [2023, 5], [2024, 8], [2025, 15],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2019', '2021', '2023', 'heute'],
+);
+
+// States collecting air-passenger data (API/PNR systems; UN CTED / ICAO,
+// rounded estimates). UN Security Council resolutions 2178 (2014) and 2396
+// (2017) oblige every member state to collect Advance Passenger Information
+// and build PNR capability, and since 2023 an ICAO standard makes PNR
+// collection binding — every ticket, route and payment record lands in state
+// databases before boarding.
+export const PNR_PANEL: TrendSeries = trend(
+  [
+    [2005, 25], [2010, 40], [2014, 50], [2017, 60],
+    [2019, 70], [2022, 85], [2025, 100],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2005', '2012', '2019', 'heute'],
+);
+
+// Jurisdictions that have passed the FATF "travel rule" — mandatory KYC on
+// crypto transfers, extending bank-style identification to the last mostly
+// pseudonymous payment rail (FATF targeted updates: 2023 survey 35 of 98,
+// 2024 survey 65 of 94 jurisdictions with legislation; EU enforcement via
+// the Transfer of Funds Regulation since Dec 2024). Rounded.
+export const KYC_PANEL: TrendSeries = trend(
+  [
+    [2019, 5], [2020, 10], [2021, 18], [2022, 29],
+    [2023, 35], [2024, 65], [2025, 73],
+  ],
+  (v) => `${Math.round(v)}`,
+  ['2019', '2021', '2023', 'heute'],
+);
+
+// People without an officially recognised proof of identity, worldwide
+// (World Bank ID4D Global Dataset). The gap closes fast — India's Aadhaar
+// alone enrolled over a billion people — so this is the global digital-ID
+// rollout curve read in reverse. The methodology was revised several times
+// and the latest point is a rough extrapolation.
+export const ID_GAP_PANEL: TrendSeries = trend(
+  [
+    [2016, 1.5e9], [2017, 1.1e9], [2018, 1.0e9], [2021, 8.5e8], [2025, 7.5e8],
+  ],
+  (v) => `${localeNum(v / 1e9, 2)} ${tr('Mrd')}`,
+  ['2016', '2019', '2022', 'heute'],
 );
 
 // Government requests for user data to Big Tech, count of requests per year
@@ -1174,7 +1232,7 @@ export const CASHLESS_COMPARE = compareSeries(
     { name: 'Japan', pts: [[2016, 62], [2019, 53], [2022, 46], [2024, 41]] },
     { name: 'Russland', pts: [[2016, 60], [2019, 48], [2022, 34], [2024, 27]] },
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   /** Latest Swedish cash share, for the headline. */
   { sweLatest: 8 },
 );
@@ -1188,7 +1246,7 @@ export const DE_FAMILY = compareSeries(
     { name: 'Heiraten', pts: [[1900, 8.5], [1920, 14.5], [1933, 9.7], [1950, 10.7], [1960, 9.4], [1970, 7.4], [1980, 6.3], [1990, 6.5], [2000, 5.1], [2010, 4.7], [2022, 4.4]] },
     { name: 'Scheidungen', pts: [[1900, 0.15], [1920, 0.6], [1933, 0.8], [1950, 1.5], [1960, 0.9], [1970, 1.3], [1980, 1.6], [1990, 1.9], [2000, 2.4], [2004, 2.6], [2010, 2.3], [2022, 1.6]] },
   ],
-  (v) => v.toFixed(1),
+  (v) => localeNum(v, 1),
   /** Latest marriage rate, for the headline. */
   { marLatest: 4.4 },
 );
@@ -1201,7 +1259,7 @@ export const DE_SINGLE_HH_PANEL: TrendSeries = trend(
     [1900, 7], [1925, 11], [1950, 12], [1961, 21], [1970, 25],
     [1980, 31], [1990, 34], [2000, 36], [2011, 40], [2022, 41],
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   ['1900', '1940', '1980', 'heute'],
 );
 
@@ -1216,7 +1274,7 @@ export const DE_FEMALE_LFP_PANEL: TrendSeries = trend(
     [1882, 40], [1907, 30], [1925, 35], [1950, 44], [1961, 47], [1970, 46],
     [1980, 50], [1991, 57], [2000, 63], [2010, 70], [2016, 74], [2023, 76],
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   ['1882', '1930', '1980', 'heute'],
 );
 
@@ -1239,7 +1297,7 @@ export const DOLLAR_PANEL: TrendSeries = trend(
     [1913, 1.0], [1920, 0.49], [1933, 0.76], [1945, 0.55], [1960, 0.33],
     [1975, 0.18], [1985, 0.092], [2000, 0.057], [2010, 0.045], [2024, 0.032],
   ],
-  (v) => `${(v * 100).toFixed(0)}¢`,
+  (v) => `${localeNum(v * 100, 0)}¢`,
   ['1913', '1950', '1987', 'heute'],
 );
 
@@ -1254,7 +1312,7 @@ export const DE_WAGE_COMPARE = compareSeries(
     { name: 'Nominallohn', pts: [[2000, 78], [2005, 83], [2010, 89], [2015, 100], [2018, 107], [2020, 108], [2022, 112], [2024, 122]] },
     { name: 'Reallohn', pts: [[2000, 92], [2005, 93], [2010, 95], [2015, 100], [2018, 104], [2020, 104], [2022, 100], [2024, 104]] },
   ],
-  (v) => v.toFixed(0),
+  (v) => localeNum(v, 0),
   /** Latest real-wage index, for the headline. */
   { realLatest: 104 },
 );
@@ -1269,7 +1327,7 @@ export const CB_BALANCE_COMPARE = compareSeries(
     { name: '🇺🇸 Fed', pts: [[2000, 0.6], [2007, 0.9], [2008, 2.2], [2011, 2.9], [2014, 4.5], [2019, 4.2], [2021, 8.8], [2022, 8.5], [2024, 7.0]] },
     { name: '🇪🇺 EZB', pts: [[2000, 0.8], [2007, 1.5], [2008, 2.0], [2012, 3.0], [2014, 2.2], [2018, 4.7], [2021, 8.6], [2022, 8.0], [2024, 6.4]] },
   ],
-  (v) => `${v.toFixed(0)} Bio.`,
+  (v) => `${localeNum(v, 0)} ${tr('Bio.')}`,
   /** Latest Fed balance sheet, for the headline. */
   { fedLatest: 7.0 },
 );
@@ -1284,7 +1342,7 @@ export const WEALTH_DIVERGE_COMPARE = compareSeries(
     { name: '💰 Milliardäre', pts: [[2010, 1.0], [2015, 1.96], [2018, 2.53], [2020, 2.22], [2021, 3.64], [2022, 3.53], [2024, 3.94]] },
     { name: '👷 Reallohn 🇩🇪', pts: [[2010, 1.0], [2015, 1.05], [2018, 1.09], [2020, 1.09], [2022, 1.05], [2024, 1.09]] },
   ],
-  (v) => `${v.toFixed(1)}×`,
+  (v) => `${localeNum(v, 1)}×`,
   /** Latest billionaire multiple, for the headline. */
   { richLatest: 3.9 },
 );
@@ -1315,7 +1373,7 @@ export const DE_PENSION_LEVEL_PANEL: TrendSeries = trend(
     [1990, 55.0], [2000, 52.9], [2005, 52.6], [2010, 51.6], [2015, 47.7],
     [2020, 49.4], [2024, 48.2], [2030, 48.0], [2035, 46.5], [2040, 45.0],
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   ['1990', '2007', '2024', '2040'],
 );
 
@@ -1329,7 +1387,7 @@ export const DE_RENT_BURDEN_PANEL: TrendSeries = trend(
     [2010, 22], [2013, 25], [2015, 27], [2018, 30], [2020, 32],
     [2022, 33], [2024, 35],
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   ['2010', '2015', '2020', 'heute'],
 );
 
@@ -1366,7 +1424,7 @@ export const FREEDOM_COMPARE = compareSeries(
 // (Bundestag / state justice ministry figures; 2023 interpolated).
 export const DE_SPEECH_PANEL: TrendSeries = trend(
   [[2022, 1_400], [2024, 4_424], [2025, 4_792]],
-  (v) => `${(v / 1000).toFixed(1)}k`,
+  (v) => `${localeNum(v / 1000, 1)}k`,
   ['2022', '2023', '2024', 'heute'],
 );
 
@@ -1376,7 +1434,7 @@ export const DE_SPEECH_PANEL: TrendSeries = trend(
 // 10% of those arrested in 2023 were convicted.
 export const UK_SPEECH_ARRESTS_PANEL: TrendSeries = trend(
   [[2017, 5_502], [2020, 7_700], [2023, 12_183]],
-  (v) => `${(v / 1000).toFixed(0)}k`,
+  (v) => `${localeNum(v / 1000, 0)}k`,
   ['2017', '2019', '2021', '2023'],
 );
 
@@ -1389,7 +1447,7 @@ export const YOUNG_HOME_COMPARE = compareSeries(
     { name: 'England 25–34', pts: [[1991, 67], [2004, 59], [2014, 36], [2024, 45]] },
     { name: 'USA unter 35', pts: [[1991, 38], [2004, 43], [2016, 35], [2024, 36]] },
   ],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   /** Latest England share, for the headline. */
   { engLatest: 45 },
 );
@@ -1423,7 +1481,7 @@ export const GENE_THERAPY_PANEL: TrendSeries = trend(
 // India to an electoral autocracy in its 2021 report.
 export const AUTOCRACY_SHARE_PANEL: TrendSeries = trend(
   [[2013, 48], [2020, 68], [2021, 70], [2022, 72], [2023, 71], [2024, 72]],
-  (v) => `${v.toFixed(0)}%`,
+  (v) => `${localePct(v, 0)}`,
   ['2013', '2017', '2021', 'heute'],
 );
 
@@ -1435,6 +1493,6 @@ export const SMARTPHONE_PANEL: TrendSeries = trend(
     [2007, 0.12e9], [2010, 0.3e9], [2012, 1.06e9], [2016, 2.5e9],
     [2020, 3.6e9], [2025, 4.7e9],
   ],
-  (v) => `${(v / 1e9).toFixed(1)} Mrd`,
+  (v) => `${localeNum(v / 1e9, 1)} ${tr('Mrd')}`,
   ['2007', '2013', '2019', 'heute'],
 );
