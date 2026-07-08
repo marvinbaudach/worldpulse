@@ -215,7 +215,7 @@ export const POOL: Dashboard[] = [
       areaChart(f, {
         label: 'Schweizer Bevölkerung · seit 1500',
         value: p.latest,
-        fmt: (v) => `${(v / 1e6).toFixed(2)}M`,
+        fmt: (v) => `${(v / 1e6).toFixed(2)} ${tr('Mio')}`,
         delta: p.yoyPct,
         seed: 19,
         color: magenta,
@@ -243,7 +243,7 @@ export const POOL: Dashboard[] = [
       areaChart(f, {
         label: 'Weltbevölkerung · seit 1770',
         value: p.latest,
-        fmt: (v) => `${(v / 1e9).toFixed(2)}B`,
+        fmt: (v) => `${(v / 1e9).toFixed(2)} ${tr('Mrd')}`,
         // No delta chip: a YoY figure under a 250-year curve reads as if it
         // were the growth over the whole span.
         delta: null,
@@ -316,7 +316,7 @@ export const POOL: Dashboard[] = [
       areaChart(f, {
         label: 'Vertriebene',
         value: REFUGEE_PANEL.latest,
-        fmt: (v) => `${Math.round(v / 1e6)}M`,
+        fmt: (v) => `${Math.round(v / 1e6)} ${tr('Mio')}`,
         delta: REFUGEE_PANEL.yoyPct,
         seed: 67,
         color: aqua,
@@ -349,7 +349,7 @@ export const POOL: Dashboard[] = [
         // wars: the interventions explain some displacement, not the surge.
         label: 'Vertriebene · mit Militäreinsätzen',
         value: REFUGEE_PANEL.latest,
-        fmt: (v) => `${Math.round(v / 1e6)}M`,
+        fmt: (v) => `${Math.round(v / 1e6)} ${tr('Mio')}`,
         delta: REFUGEE_PANEL.yoyPct,
         seed: 67,
         color: aqua,
@@ -372,7 +372,7 @@ export const POOL: Dashboard[] = [
       areaChart(f, {
         label: 'US-Zinslast · jährlich',
         value: US_INTEREST_PANEL.latest,
-        fmt: (v) => `$${(v / 1e12).toFixed(2)}T`,
+        fmt: (v) => `$${(v / 1e12).toFixed(2)} ${tr('Bio.')}`,
         delta: US_INTEREST_PANEL.yoyPct,
         seed: 71,
         color: yellow,
@@ -475,7 +475,7 @@ export const POOL: Dashboard[] = [
         // UN World Population Prospects 2024 (millions).
         label: 'Bevölkerungsanteile',
         value: 8.16e9,
-        fmt: (v) => `${(v / 1e9).toFixed(2)}B`,
+        fmt: (v) => `${(v / 1e9).toFixed(2)} ${tr('Mrd')}`,
         rows: [
           { name: 'Indien', v: 1451, short: '🇮🇳' },
           { name: 'China', v: 1419, short: '🇨🇳' },
@@ -518,7 +518,7 @@ export const POOL: Dashboard[] = [
         xLabels: ['1990', '2001', '2013', 'heute'],
       }),
   },
-  trendCard('m2-history', 'US-Geldmenge seit 1900', 'US-Geldmenge M2 · seit 1900', M2_PANEL, yellow, (v) => `$${(v / 1e12).toFixed(1)}T`, 97, eraMarkers(1900, 2024, [
+  trendCard('m2-history', 'US-Geldmenge seit 1900', 'US-Geldmenge M2 · seit 1900', M2_PANEL, yellow, (v) => `$${(v / 1e12).toFixed(1)} ${tr('Bio.')}`, 97, eraMarkers(1900, 2024, [
     // The turns behind the money-supply explosion on the 1900–2024 axis:
     // the end of gold convertibility and the two big money-printing waves.
     [1971, '⛓️‍💥 Gold-Ende 1971'],
@@ -789,7 +789,7 @@ export const POOL: Dashboard[] = [
         label: 'Wanderung über die Grenze · 🇩🇪 · pro Jahr',
         value: DE_MIGRATION_FLOWS.inLatest,
         unit: '',
-        fmt: (v) => `${v.toFixed(1)}M`,
+        fmt: (v) => `${v.toFixed(1)} ${tr('Mio')}`,
         delta: null,
         seed: 317,
         series: [
@@ -1150,7 +1150,7 @@ export const POOL: Dashboard[] = [
         ]),
       }),
   },
-  trendCard('internet', 'Menschen online weltweit', 'Internetnutzer', INTERNET_PANEL, blue, (v) => `${(v / 1e9).toFixed(1)}B`, 103, [
+  trendCard('internet', 'Menschen online weltweit', 'Internetnutzer', INTERNET_PANEL, blue, (v) => `${(v / 1e9).toFixed(1)} ${tr('Mrd')}`, 103, [
     // Significant inflection points on the 1990–2024 span. at = (year-1990)/34.
     { at: 0.03, label: '🌐 WWW frei' },
     { at: 0.5, label: '📱 Smartphone' },
@@ -1266,7 +1266,7 @@ export const POOL: Dashboard[] = [
         label: 'Bilanzsumme · Fed vs. EZB · Bio.',
         value: CB_BALANCE_COMPARE.fedLatest,
         unit: '',
-        fmt: (v) => `${v.toFixed(1)} Bio.`,
+        fmt: (v) => `${v.toFixed(1)} ${tr('Bio.')}`,
         delta: null,
         seed: 243,
         series: [
@@ -1433,7 +1433,7 @@ export const POOL: Dashboard[] = [
         // population group. The poorer half of humanity holds ~1 percent.
         label: 'Wem gehört das Vermögen?',
         value: 454e12,
-        fmt: (v) => `$${Math.round(v / 1e12)}T`,
+        fmt: (v) => `$${Math.round(v / 1e12)} ${tr('Bio.')}`,
         axisTop: 'Bevölkerung',
         axisBottom: 'Vermögen',
         groups: [
@@ -1879,7 +1879,7 @@ export const POOL: Dashboard[] = [
         ],
       }),
   },
-  trendCard('cameras-world', 'Überwachungskameras weltweit', 'Installierte CCTV-Kameras', CAMERAS_PANEL, aqua, (v) => `${(v / 1e9).toFixed(2)} Mrd`, 183, eraMarkers(2000, 2025, [
+  trendCard('cameras-world', 'Überwachungskameras weltweit', 'Installierte CCTV-Kameras', CAMERAS_PANEL, aqua, (v) => `${(v / 1e9).toFixed(2)} ${tr('Mrd')}`, 183, eraMarkers(2000, 2025, [
     [2008, '🏅 Peking · Ausbaustart China'],
     [2021, '🎥 1 Mrd weltweit'],
   ]), 'IHS Markit / Marktschätzungen · installierte Überwachungskameras weltweit; vor 2010 grob rückgeschätzt.'),
@@ -2464,7 +2464,7 @@ export const POOL: Dashboard[] = [
     [2020, '🇮🇳 Indien: Wahlautokratie'],
     [2021, '🇲🇲 Myanmar: Militärputsch'],
   ]), 'V-Dem Democracy Reports · Anteil der Weltbevölkerung in Wahl- und geschlossenen Autokratien.'),
-  trendCard('smartphone-leash', 'Smartphones · die freiwillige Fußfessel', 'Smartphone-Nutzer · 🌍 · Ø 4h37m/Tag', SMARTPHONE_PANEL, aqua, (v) => `${(v / 1e9).toFixed(1)} Mrd`, 293, eraMarkers(2007, 2025, [
+  trendCard('smartphone-leash', 'Smartphones · die freiwillige Fußfessel', 'Smartphone-Nutzer · 🌍 · Ø 4h37m/Tag', SMARTPHONE_PANEL, aqua, (v) => `${(v / 1e9).toFixed(1)} ${tr('Mrd')}`, 293, eraMarkers(2007, 2025, [
     [2007, '📱 iPhone'],
     [2008, '🤖 Android'],
     [2016, '🌍 Jeder Dritte'],

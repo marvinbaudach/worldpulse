@@ -40,7 +40,7 @@ const DEBT_HISTORY: [number, number][] = [
 export function debtTrend(latest: number): { series: number[]; ticks: string[] } {
   const year = new Date().getFullYear();
   const series = yearly([...DEBT_HISTORY, [year, latest]]);
-  const s = niceScale(0, latest, (v) => `$${(v / 1e12).toFixed(0)}T`);
+  const s = niceScale(0, latest, (v) => `$${(v / 1e12).toFixed(0)} ${tr('Bio.')}`);
   return {
     series: norm(resample(series, 40), s.lo, s.hi),
     ticks: s.ticks,
@@ -95,13 +95,13 @@ export const WORLD_HISTORY: [number, number][] = [
 
 export const SWISS_POP_FALLBACK: TrendSeries = trend(
   [...CH_CENSUS, [2025, 9_092_436]],
-  (v) => `${(v / 1e6).toFixed(0)}M`,
+  (v) => `${(v / 1e6).toFixed(0)} ${tr('Mio')}`,
   ['1500', '1675', '1850', 'heute'],
 );
 
 export const WORLD_POP_FALLBACK: TrendSeries = trend(
   [...WORLD_HISTORY, [2025, 8.215e9]],
-  (v) => `${(v / 1e9).toFixed(0)}B`,
+  (v) => `${(v / 1e9).toFixed(0)} ${tr('Mrd')}`,
   ['Jahr 0', '675', '1350', 'heute'],
 );
 
@@ -116,7 +116,7 @@ export const WORLD_POP_SINCE_1770: TrendSeries = trend(
     [1980, 4.46e9], [1990, 5.33e9], [2000, 6.15e9], [2010, 6.96e9],
     [2020, 7.84e9], [2025, 8.22e9],
   ],
-  (v) => `${(v / 1e9).toFixed(2)}B`,
+  (v) => `${(v / 1e9).toFixed(2)} ${tr('Mrd')}`,
   ['1770', '1855', '1940', 'heute'],
 );
 
@@ -244,7 +244,7 @@ const CONFLICT_ANCHORS: [number, number][] = [
 
 export const CONFLICT_PANEL: TrendSeries = trend(
   CONFLICT_ANCHORS,
-  (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(0)}M` : `${Math.round(v / 1000)}k`),
+  (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(0)} ${tr('Mio')}` : `${Math.round(v / 1000)}k`),
   ['1900', '1941', '1983', 'heute'],
   64,
 );
@@ -267,7 +267,7 @@ const REFUGEE_ANCHORS: [number, number][] = [
 
 export const REFUGEE_PANEL: TrendSeries = trend(
   REFUGEE_ANCHORS,
-  (v) => `${Math.round(v / 1e6)}M`,
+  (v) => `${Math.round(v / 1e6)} ${tr('Mio')}`,
   ['1990', '2001', '2013', 'heute'],
 );
 
@@ -289,7 +289,7 @@ const US_INTEREST_ANCHORS: [number, number][] = [
 
 export const US_INTEREST_PANEL: TrendSeries = trend(
   US_INTEREST_ANCHORS,
-  (v) => (v >= 1e12 ? `$${(v / 1e12).toFixed(1)}T` : `$${Math.round(v / 1e9)}B`),
+  (v) => (v >= 1e12 ? `$${(v / 1e12).toFixed(1)} ${tr('Bio.')}` : `$${Math.round(v / 1e9)} ${tr('Mrd')}`),
   ['1990', '2002', '2013', 'heute'],
 );
 
@@ -369,7 +369,7 @@ export const M2_PANEL: TrendSeries = trend(
     [2000, 4.9e12], [2008, 8.2e12], [2015, 12.3e12], [2020, 19.1e12],
     [2022, 21.7e12], [2024, 21.4e12],
   ],
-  (v) => `$${(v / 1e12).toFixed(0)}T`,
+  (v) => `$${(v / 1e12).toFixed(0)} ${tr('Bio.')}`,
   ['1900', '1941', '1983', 'heute'],
 );
 
@@ -461,7 +461,7 @@ export const DE_MIGRATION_FLOWS = compareSeries(
     { name: 'Einwanderung', pts: [[1991, 1.20], [1992, 1.50], [1995, 1.10], [2000, 0.84], [2005, 0.71], [2009, 0.72], [2013, 1.23], [2015, 2.14], [2016, 1.87], [2018, 1.58], [2020, 1.19], [2022, 2.67], [2023, 1.93]] },
     { name: 'Auswanderung', pts: [[1991, 0.60], [1992, 0.72], [1995, 0.70], [2000, 0.67], [2005, 0.63], [2009, 0.73], [2013, 0.80], [2015, 1.00], [2016, 1.37], [2018, 1.19], [2020, 0.97], [2022, 1.20], [2023, 1.27]] },
   ],
-  (v) => `${v.toFixed(1)}M`,
+  (v) => `${v.toFixed(1)} ${tr('Mio')}`,
   /** Latest immigration figure (2023 Zuzüge), for the headline. */
   { inLatest: 1.93 },
 );
@@ -477,7 +477,7 @@ export const DE_POPULATION_PANEL: TrendSeries = trend(
     [1995, 81.8], [2000, 82.2], [2005, 82.4], [2010, 81.8], [2015, 82.2],
     [2019, 83.1], [2022, 84.4], [2024, 83.6],
   ],
-  (v) => `${v.toFixed(1)}M`,
+  (v) => `${v.toFixed(1)} ${tr('Mio')}`,
   ['1950', '1975', '2000', 'heute'],
 );
 
@@ -700,7 +700,7 @@ export const INTERNET_PANEL: TrendSeries = trend(
     [1990, 0.003e9], [1995, 0.04e9], [2000, 0.41e9], [2005, 1.02e9],
     [2010, 2.0e9], [2015, 3.2e9], [2020, 4.7e9], [2024, 5.5e9],
   ],
-  (v) => `${(v / 1e9).toFixed(1)}B`,
+  (v) => `${(v / 1e9).toFixed(1)} ${tr('Mrd')}`,
   ['1990', '2001', '2013', 'heute'],
 );
 
@@ -727,7 +727,7 @@ export const ASSET_MEGACOMPARE = (() => {
     data: norm(resample(yearly(d.pts.map(([yr, v]) => [yr, Math.log10(v)] as [number, number])), N), LO, HI),
   }));
   const fmtD = (v: number) =>
-    v >= 1e12 ? `$${v / 1e12}T` : v >= 1e9 ? `$${v / 1e9}B` : v >= 1e6 ? `$${v / 1e6}M` : v >= 1e3 ? `$${v / 1e3}k` : `$${v}`;
+    v >= 1e12 ? `$${v / 1e12} ${tr('Bio.')}` : v >= 1e9 ? `$${v / 1e9} ${tr('Mrd')}` : v >= 1e6 ? `$${v / 1e6} ${tr('Mio')}` : v >= 1e3 ? `$${v / 1e3}k` : `$${v}`;
   const ticks = Array.from({ length: 5 }, (_, i) => fmtD(10 ** (LO + (i * (HI - LO)) / 4)));
   return { rows, ticks, btcLatest: 95000 };
 })();
@@ -1113,7 +1113,7 @@ export const CAMERAS_PANEL: TrendSeries = trend(
     [2000, 25e6], [2006, 60e6], [2012, 160e6], [2016, 350e6],
     [2018, 570e6], [2021, 1e9], [2023, 1.1e9], [2025, 1.25e9],
   ],
-  (v) => `${(v / 1e9).toFixed(2)} Mrd`,
+  (v) => `${(v / 1e9).toFixed(2)} ${tr('Mrd')}`,
   ['2000', '2008', '2017', 'heute'],
 );
 
@@ -1269,7 +1269,7 @@ export const CB_BALANCE_COMPARE = compareSeries(
     { name: '🇺🇸 Fed', pts: [[2000, 0.6], [2007, 0.9], [2008, 2.2], [2011, 2.9], [2014, 4.5], [2019, 4.2], [2021, 8.8], [2022, 8.5], [2024, 7.0]] },
     { name: '🇪🇺 EZB', pts: [[2000, 0.8], [2007, 1.5], [2008, 2.0], [2012, 3.0], [2014, 2.2], [2018, 4.7], [2021, 8.6], [2022, 8.0], [2024, 6.4]] },
   ],
-  (v) => `${v.toFixed(0)} Bio.`,
+  (v) => `${v.toFixed(0)} ${tr('Bio.')}`,
   /** Latest Fed balance sheet, for the headline. */
   { fedLatest: 7.0 },
 );
@@ -1435,6 +1435,6 @@ export const SMARTPHONE_PANEL: TrendSeries = trend(
     [2007, 0.12e9], [2010, 0.3e9], [2012, 1.06e9], [2016, 2.5e9],
     [2020, 3.6e9], [2025, 4.7e9],
   ],
-  (v) => `${(v / 1e9).toFixed(1)} Mrd`,
+  (v) => `${(v / 1e9).toFixed(1)} ${tr('Mrd')}`,
   ['2007', '2013', '2019', 'heute'],
 );
