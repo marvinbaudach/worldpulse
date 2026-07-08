@@ -1,6 +1,8 @@
 {
+  "id": "./",
   "name": "Worldpulse",
   "short_name": "Worldpulse",
+  "lang": "de",
   "description": "Live-Dashboards aus offenen Daten",
   "start_url": "./",
   "scope": "./",
