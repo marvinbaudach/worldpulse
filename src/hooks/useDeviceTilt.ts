@@ -22,10 +22,16 @@ export function useDeviceTilt(
     let gx = 0;
     let gy = 0;
     let raf = 0;
+    // The loop only spins once a sensor actually reports — gyro-less devices never start it.
+    let started = false;
 
     const onOrient = (e: DeviceOrientationEvent) => {
       tx = Math.max(-1, Math.min(1, (e.gamma ?? 0) / 30));
       ty = Math.max(-1, Math.min(1, ((e.beta ?? BETA_REST) - BETA_REST) / 30));
+      if (!started) {
+        started = true;
+        raf = requestAnimationFrame(tick);
+      }
     };
 
     const tick = () => {
@@ -41,7 +47,6 @@ export function useDeviceTilt(
     };
 
     window.addEventListener('deviceorientation', onOrient);
-    raf = requestAnimationFrame(tick);
     return () => {
       window.removeEventListener('deviceorientation', onOrient);
       cancelAnimationFrame(raf);

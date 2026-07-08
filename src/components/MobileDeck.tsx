@@ -174,7 +174,6 @@ const TiltLayer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  will-change: transform;
 `;
 
 const SourceNote = styled.div`
@@ -272,10 +271,11 @@ export function MobileDeck() {
   const reducedMotion = useReducedMotion();
   const tiltRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLDivElement>(null);
-  // 'granted' | 'ask' | 'denied' — non-iOS grants implicitly.
-  const [motion, setMotion] = useState(() => {
+  // Non-iOS grants implicitly.
+  const [motion, setMotion] = useState<'granted' | 'ask' | 'denied'>(() => {
     if (!motionPermissionNeeded()) return 'granted';
-    return localStorage.getItem(MOTION_KEY) ?? 'ask';
+    const stored = localStorage.getItem(MOTION_KEY);
+    return stored === 'granted' || stored === 'denied' ? stored : 'ask';
   });
 
   const askMotion = async () => {
