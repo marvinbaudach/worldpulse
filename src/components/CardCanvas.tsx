@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { SETTLED_T, type Dashboard } from '../dashboards';
+import { onLiveUpdate } from '../data/store';
 
 // The draw functions are written against a 512-wide reference layout (u =
 // w / 512). Mobile cards render ~370 CSS px wide, which shrinks that design
@@ -40,6 +41,7 @@ export function CardCanvas({ dashboard, animate }: CardCanvasProps) {
     };
 
     let raf = 0;
+    let settled = !animate;
     if (animate) {
       let start = 0;
       const tick = (now: number) => {
@@ -49,6 +51,7 @@ export function CardCanvas({ dashboard, animate }: CardCanvasProps) {
           draw(t);
           raf = requestAnimationFrame(tick);
         } else {
+          settled = true;
           draw(SETTLED_T); // lock the fully-settled frame
         }
       };
@@ -57,11 +60,23 @@ export function CardCanvas({ dashboard, animate }: CardCanvasProps) {
       draw(SETTLED_T);
     }
 
+    // Live cards keep counting (the once-a-second tick) and dynamic cards
+    // repaint when a dataset lands — the same triggers the WebGL ring uses.
+    // Guarded on `settled` so an update never interrupts the intro replay.
+    const offLive =
+      dashboard.live || dashboard.dynamic
+        ? onLiveUpdate((kind) => {
+            if (!settled) return;
+            if (kind === 'tick' ? dashboard.live : dashboard.dynamic) draw(SETTLED_T);
+          })
+        : undefined;
+
     const onResize = () => draw(SETTLED_T);
     window.addEventListener('resize', onResize);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
+      offLive?.();
     };
   }, [dashboard, animate]);
 

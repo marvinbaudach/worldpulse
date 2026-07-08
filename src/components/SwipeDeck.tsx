@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { CardCanvas } from './CardCanvas';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import type { Dashboard } from '../dashboards';
 
 // Tinder-style throw: the top card follows the finger with a little rotation,
@@ -60,10 +61,7 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
   const nextRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, startX: 0, dx: 0, w: 1, t0: 0, detent: false });
   const animating = useRef(false);
-  // Only the first card plays the chart fly-in; once you swipe, the cards you
-  // land on are already settled (they were drawn behind), so a replay would
-  // just flash the finished chart and then restart it.
-  const intro = useRef(true);
+  const reducedMotion = useReducedMotion();
 
   // After every index change, snap the three roles back to their resting look
   // (imperative styles from the drag/throw would otherwise stick).
@@ -98,7 +96,6 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
   // to a drag position beforehand — the reflow here makes that state animate.
   const throwCard = (goNext: boolean) => {
     animating.current = true;
-    intro.current = false; // no chart replay on the card we land on
     const off = goNext ? -1 : 1;
     const el = curRef.current;
     const rise = goNext ? nextRef.current : prevRef.current;
@@ -269,7 +266,11 @@ export function SwipeDeck({ dashboards, onIndex }: SwipeDeckProps) {
         onPointerUp={onUp}
         onPointerCancel={onUp}
       >
-        <CardCanvas dashboard={cur} animate={intro.current} />
+        {/* This <Card> keeps its React identity (key={cur.id}) as the deck
+            advances — the neighbour that becomes current re-renders into this
+            same slot rather than mounting fresh. So `animate` flipping
+            false -> true here is what replays CardCanvas's fly-in on landing. */}
+        <CardCanvas dashboard={cur} animate={!reducedMotion} />
       </Card>
     </Stack>
   );
