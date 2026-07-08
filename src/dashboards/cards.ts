@@ -39,6 +39,7 @@ import {
   DE_FOREIGN_COMPARE,
   DE_ASSAULT_PANEL,
   DE_KNIFE_ATTACKS_PANEL,
+  DE_TVBZ_AGE_COMPARE,
   DE_INSOLVENCY_JOBS_PANEL,
   DE_MIGRATION_PANEL,
   DE_MIGRATION_FLOWS,
@@ -109,6 +110,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'military',
     title: 'Militärausgaben · Top 10',
+    source:
+      'World Bank · Militärausgaben in laufenden US-$, live abgerufen (letztes Jahr je Land); Fallback-Reihenfolge nach SIPRI 2025.',
     dynamic: true,
     draw: (f) => {
       // Live World Bank feed (current USD, latest year per country). The
@@ -135,6 +138,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'us-debt',
     title: 'US-Staatsschulden',
+    source:
+      'US Treasury Fiscal Data · „Debt to the Penny", live abgerufen; Langfrist-Trend aus Treasury Historical Debt Outstanding. Zwischen den Tagesständen hochgerechnet.',
     live: true,
     dynamic: true,
     draw: (f) => {
@@ -162,6 +167,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'nukes',
     title: 'Atomsprengköpfe weltweit',
+    source: 'Federation of American Scientists (FAS) · Schätzung 2025.',
     draw: (f) =>
       nukeMap(f, {
         label: 'Atomsprengköpfe',
@@ -174,6 +180,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'homicide-map',
     title: 'Mordrate weltweit',
+    source:
+      'World Bank · vorsätzliche Tötungen je 100k Einwohner, live abgerufen; letztes verfügbares Jahr je Land.',
     dynamic: true,
     draw: (f) => {
       const hm = live.homicide;
@@ -198,6 +206,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'swiss-pop',
     title: 'Schweizer Bevölkerung · 500 Jahre',
+    source:
+      'BFS-Volkszählungen ab 1850, davor historische Schätzungen; ab 1960 World Bank, live abgerufen.',
     dynamic: true,
     draw: (f) => {
       const p = live.swissPop ?? SWISS_POP_FALLBACK;
@@ -225,6 +235,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'world-pop',
     title: 'Weltbevölkerung · seit 1770',
+    source:
+      'UN World Population Prospects / Our World in Data; frühe Jahre historische Schätzungen.',
     draw: (f) => {
       const p = WORLD_POP_SINCE_1770;
       areaChart(f, {
@@ -248,6 +260,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'oil-consumption',
     title: 'Weltweiter Ölverbrauch',
+    source:
+      'Energy Institute Statistical Review of World Energy; vor 1965 historische BP-/Our-World-in-Data-Reihen.',
     draw: (f) =>
       areaChart(f, {
         label: 'Ölverbrauch · Mio. Barrel/Tag',
@@ -269,6 +283,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'conflict-deaths',
     title: 'Tote in bewaffneten Konflikten',
+    source:
+      'UCDP via Our World in Data · Tote in bewaffneten Konflikten; gerundete Anker, interpoliert.',
     draw: (f) =>
       areaChart(f, {
         label: 'Kriegstote · seit 1900',
@@ -294,6 +310,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'refugees',
     title: 'Vertriebene weltweit',
+    source: 'UNHCR Global Trends · gewaltsam Vertriebene weltweit, gerundet.',
     draw: (f) =>
       areaChart(f, {
         label: 'Vertriebene',
@@ -320,6 +337,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'refugees-interventions',
     title: 'Vertriebene & westliche Militäreinsätze',
+    source:
+      'UNHCR Global Trends; Einsatz-Marker nach öffentlichen Quellen. Die größten Sprünge (Syrien 2013–15, Ukraine 2022) gehen auf Nicht-NATO-Kriege zurück.',
     draw: (f) =>
       areaChart(f, {
         // Same UNHCR displacement curve, but marked with the NATO-led
@@ -347,6 +366,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'us-interest',
     title: 'US-Zinszahlungen des Bundes',
+    source: 'OMB / CBO · Netto-Zinsausgaben des US-Bundes pro Jahr, gerundet.',
     draw: (f) =>
       areaChart(f, {
         label: 'US-Zinslast · jährlich',
@@ -366,6 +386,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'overdose',
     title: 'US-Drogentote (Überdosis)',
+    source: 'CDC · Überdosis-Tote ab 1999; frühere Werte NCHS-Schätzungen.',
     draw: (f) =>
       areaChart(f, {
         label: 'US-Überdosis-Tote · jährlich',
@@ -391,6 +412,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'debt-gdp',
     title: 'Staatsschulden · % des BIP',
+    source:
+      'IWF World Economic Outlook · Bruttostaatsschulden in % des BIP, Schätzwerte 2024/25.',
     draw: (f) =>
       hBarChart(f, {
         // IMF World Economic Outlook estimates (general government gross
@@ -419,6 +442,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'eu-debt-map',
     title: 'EU-Schuldenquote · % des BIP',
+    source: 'Eurostat 2024 · Schuldenquote in % des BIP.',
     draw: (f) =>
       choroplethMap(f, {
         // Europe window shaded by the debt-to-GDP RATIO, not the absolute pile:
@@ -444,6 +468,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'pop-share',
     title: 'Anteile an der Weltbevölkerung',
+    source: 'UN World Population Prospects 2024.',
     draw: (f) =>
       treemap(f, {
         // UN World Population Prospects 2024 (millions).
@@ -468,10 +493,12 @@ export const POOL: Dashboard[] = [
   trendCard('life-exp', 'Globale Lebenserwartung', 'Lebenserwartung · seit 1770', LIFE_PANEL, green, (v) => `${v.toFixed(1)}y`, 89, eraMarkers(1770, 2024, [
     // The mid-century surge on the 1770–2024 axis.
     [1945, '💊 Antibiotika'],
-  ])),
+  ]), 'Riley (2005) / Our World in Data vor 1950, danach UN World Population Prospects.'),
   {
     id: 'm2',
     title: 'Geldmenge · USA vs. Schweiz',
+    source:
+      'Fed H.6, EZB und SNB · M2 indexiert auf 2000 = 1×, gerundete Anker; Eurozone vor 1999 rückgerechnet.',
     draw: (f) =>
       lineChart(f, {
         // M2 growth indexed to 2000 = 1x — comparable across currencies.
@@ -496,10 +523,12 @@ export const POOL: Dashboard[] = [
     [1971, '⛓️‍💥 Gold-Ende 1971'],
     [2008, '🏦 QE 2008'],
     [2020, '💸 Corona 2020'],
-  ])),
+  ]), 'Federal Reserve H.6 ab 1959; davor Friedman & Schwartz — die M2-Definition verschiebt sich über das Jahrhundert leicht.'),
   {
     id: 'ai-jobs',
     title: 'KI und Berufseinstieg · USA',
+    source:
+      'NY Fed / BLS · Arbeitslosenquote junger Hochschulabsolventen vs. alle Erwerbspersonen, gerundet.',
     draw: (f) =>
       lineChart(f, {
         // Since 2023 the recent-graduate rate decouples from the overall
@@ -525,6 +554,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'youth-unemployment',
     title: 'Jugendarbeitslosigkeit international',
+    source: 'OECD / Eurostat / ILO · harmonisierte Jugendarbeitslosenquote (15–24 J.), 2024.',
     draw: (f) =>
       hBarChart(f, {
         // Youth unemployment rate (ages 15–24), OECD/Eurostat/ILO
@@ -555,6 +585,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'unemployment',
     title: 'Arbeitslosigkeit international',
+    source:
+      'OECD / Eurostat 2024 · harmonisierte Arbeitslosenquote, nicht die nationalen Meldezahlen.',
     draw: (f) =>
       hBarChart(f, {
         // Harmonised unemployment rate, all ages, OECD/Eurostat 2024
@@ -584,6 +616,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'poverty',
     title: 'Armut international',
+    source:
+      'OECD · relative Einkommensarmut: Anteil unter 50 % des Median-Nettoeinkommens, jeweils letztes verfügbares Jahr.',
     draw: (f) =>
       hBarChart(f, {
         // Relative income poverty: share living on under 50 % of the
@@ -614,6 +648,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'poorest-nations',
     title: 'Ärmste Länder der Welt',
+    source:
+      'Weltbank PIP · Anteil unter 2,15 $/Tag (KKP 2017), letztes verfügbares Jahr je Land, gerundete Schätzwerte.',
     draw: (f) =>
       hBarChart(f, {
         // Share of the population living in extreme poverty, under $2.15/day
@@ -646,10 +682,12 @@ export const POOL: Dashboard[] = [
     // to an artificial low; the rebound comes once the support ran out.
     [2009, '🏦 Finanzkrise 2009'],
     [2020, '🦠 Corona-Lockdown'],
-  ])),
+  ]), 'Creditreform · von Firmeninsolvenzen betroffene Arbeitsplätze; grobe Schätzwerte, keine exakte Reihe.'),
   {
     id: 'de-underemployment',
     title: 'Arbeitslosigkeit · offiziell vs. real',
+    source:
+      'Bundesagentur für Arbeit · Arbeitslose, Unterbeschäftigung (ohne Kurzarbeit) und Langzeitarbeitslose, Jahresdurchschnitte.',
     draw: (f) =>
       lineChart(f, {
         // The BA's own "Unterbeschäftigung" runs ~1M above the headline
@@ -675,6 +713,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'de-industry',
     title: 'Industrieproduktion · DEU vs. USA vs. China',
+    source:
+      'Destatis, Fed G.17, NBS China · Industrieproduktion, 2015 = 100, gerundet; China vor 2000 grob geschätzt, Deutschland vor 1990 nur West.',
     draw: (f) =>
       lineChart(f, {
         // Industrial production indexed to 2015 = 100; the headline
@@ -703,6 +743,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'de-exports',
     title: 'Exportweltmeister · DEU vs. China vs. USA',
+    source: 'WTO · Anteile an den Weltwarenexporten, gerundet.',
     draw: (f) =>
       lineChart(f, {
         // Share of world merchandise exports: Germany's ~10% peak around 2003
@@ -735,10 +776,11 @@ export const POOL: Dashboard[] = [
     [1990, '🧱 Aussiedler 1990'],
     [2015, '🏴 Asyl 2015'],
     [2014, '🇺🇦 Ukraine 2014'],
-  ])),
+  ]), 'Destatis Mikrozensus · Bevölkerung mit Migrationshintergrund; das Konzept existiert erst seit 2005, frühere Werte grob rückgeschätzt.'),
   {
     id: 'de-migration-flows',
     title: 'Ein- und Auswanderung · Deutschland',
+    source: 'Destatis Wanderungsstatistik · Zu- und Fortzüge über die Grenze, gerundet.',
     draw: (f) =>
       lineChart(f, {
         // Gross flows across the border; the gap between the two lines is the
@@ -768,10 +810,12 @@ export const POOL: Dashboard[] = [
     [1990, '🇩🇪 Wiedervereinigung 1990'],
     [2015, '📈 Zuwanderung 2015'],
     [2022, '🇺🇦 Vollinvasion 2022'],
-  ])),
+  ]), 'Destatis · Bevölkerungsstand in heutigen Grenzen; vor 1990 beide deutsche Staaten summiert, gerundet.'),
   {
     id: 'de-crime-foreign',
     title: 'Nichtdeutsche Tatverdächtige · gegen Bevölkerungsanteil',
+    source:
+      'BKA · PKS (nichtdeutsche Tatverdächtige, ohne ausländerrechtliche Delikte) gegen den Destatis-Ausländeranteil. Tatverdächtige, keine Verurteilten; nicht alters- oder sozialbereinigt.',
     draw: (f) =>
       lineChart(f, {
         // Suspect share read against the foreign population share: most of the
@@ -798,10 +842,123 @@ export const POOL: Dashboard[] = [
     // year, then climbed back to that old high by 2023.
     [2007, '📈 Höchststand 2000er'],
     [2021, '🦠 Corona-Tief'],
-  ])),
+  ]), 'BKA · PKS, Schlüssel 2220 (gefährliche und schwere Körperverletzung), erfasste Fälle pro Jahr, gerundet.'),
   // NRW, not Germany: no honest nationwide knife-violence time series exists
   // before the 2024 PKS, so this shows NRW's LKA public-space knife report.
-  trendCard('de-knife-attacks', 'Messergewalt · NRW', 'Messergewalt · NRW · öffentl. Raum', DE_KNIFE_ATTACKS_PANEL, red, deInt, 313),
+  trendCard('de-knife-attacks', 'Messergewalt · NRW', 'Messergewalt · NRW · öffentl. Raum', DE_KNIFE_ATTACKS_PANEL, red, deInt, 313, undefined, 'LKA NRW · Lagebild „Gewalt im öffentlichen Raum", Tatmittel Messer. Keine ehrliche Bundesreihe vor der PKS 2024; 2022 aus der gemeldeten Steigerungsrate abgeleitet.'),
+  {
+    id: 'de-tvbz-violence',
+    title: 'Gewaltkriminalität · TVBZ nach Staatsangehörigkeit',
+    source:
+      'BKA · PKS 2024, TVBZ via Bundestags-Drucksache 21/145. Tatverdächtige, keine Verurteilten; je 100k der jeweiligen Wohnbevölkerung (Zensus 2022). Nicht alters- oder sozialbereinigt — siehe die Alterskarte.',
+    draw: (f) =>
+      hBarChart(f, {
+        // Suspect rate for violent crime (PKS sum key 892000), males, per
+        // 100k of each nationality's resident population in Germany — PKS
+        // 2024 via BT-Drs. 21/145 (population: Census 2022, 31 Dec 2023).
+        // Suspects, not convictions. The BKA cautions that small resident
+        // denominators make single-nationality rates noisy and that asylum
+        // populations carry multiple risk factors (age, poverty, war) —
+        // see the age-band card for how much age structure explains.
+        label: 'Gewaltkriminalität · Tatverdächtige Männer je 100k · 2024',
+        value: 3388,
+        fmt: deInt,
+        rowFmt: deInt,
+        delta: null,
+        color: red,
+        unit: '',
+        rows: [
+          { name: '🇲🇦 Marokko', v: 3388 },
+          { name: '🇸🇾 Syrien', v: 2608 },
+          { name: '🇮🇶 Irak', v: 2479 },
+          { name: '🇦🇫 Afghanistan', v: 2409 },
+          { name: '🇧🇬 Bulgarien', v: 1353 },
+          { name: '🇷🇸 Serbien', v: 1246 },
+          { name: '🇷🇴 Rumänien', v: 908 },
+          { name: '🇹🇷 Türkei', v: 904 },
+          { name: '🇩🇪 Deutschland · Referenz', v: 272 },
+        ],
+      }),
+  },
+  {
+    id: 'de-tvbz-age',
+    title: 'Gewaltkriminalität · Deutsche vs. Afghanen nach Alter',
+    source:
+      'BKA · PKS 2024, TVBZ via Bundestags-Drucksache 21/145. Altersgleich schrumpft der rohe 8,9×-Abstand bei 18–21 auf ~4×, bleibt ab 21 aber ~9,5×. Tatverdächtige, keine Verurteilten.',
+    draw: (f) =>
+      lineChart(f, {
+        // Same metric split by age band (see DE_TVBZ_AGE_COMPARE for the
+        // source discussion): the honest "adjusted" view of the raw gap.
+        label: 'Gewalt-Tatverdächtige · Männer je 100k · nach Alter · 2024',
+        value: 3972,
+        unit: '',
+        fmt: deInt,
+        delta: null,
+        seed: 337,
+        series: [
+          { name: 'Afghanen', color: red, data: DE_TVBZ_AGE_COMPARE.rows[0].data },
+          { name: 'Deutsche', color: blue, data: DE_TVBZ_AGE_COMPARE.rows[1].data },
+        ],
+        ticks: DE_TVBZ_AGE_COMPARE.ticks,
+        xLabels: ['8–14 J.', '14–18 J.', '18–21 J.', 'ab 21 J.'],
+      }),
+  },
+  {
+    id: 'de-tvbz-rape',
+    title: 'Vergewaltigung · TVBZ nach Staatsangehörigkeit',
+    source:
+      'BKA · PKS 2024 (Schlüssel 111000: Vergewaltigung & schwere sexuelle Übergriffe), TVBZ via Bundestags-Drucksache 21/145. Tatverdächtige, keine Verurteilten; kleine Bevölkerungsnenner machen einzelne Werte instabil.',
+    draw: (f) =>
+      hBarChart(f, {
+        // Suspect rate for rape and serious sexual assault (PKS key 111000),
+        // males, per 100k — same source and caveats as the violence card.
+        label: 'Vergewaltigung & schwere Übergriffe · Männer je 100k · 2024',
+        value: 209,
+        fmt: deInt,
+        rowFmt: deInt,
+        delta: null,
+        color: red,
+        unit: '',
+        rows: [
+          { name: '🇦🇫 Afghanistan', v: 209 },
+          { name: '🇮🇶 Irak', v: 190 },
+          { name: '🇮🇷 Iran', v: 145 },
+          { name: '🇸🇾 Syrien', v: 141 },
+          { name: '🇧🇬 Bulgarien', v: 80 },
+          { name: '🇷🇸 Serbien', v: 78 },
+          { name: '🇹🇷 Türkei', v: 64 },
+          { name: '🇷🇴 Rumänien', v: 43 },
+          { name: '🇩🇪 Deutschland · Referenz', v: 20 },
+        ],
+      }),
+  },
+  {
+    id: 'ch-zurich-afghan-crime',
+    title: 'Afghanen · Kanton Zürich · Übervertretung',
+    source:
+      'Kriminalstatistik Kanton Zürich 2024, via NZZ. Beschuldigten-Anteile gegen Bevölkerungsanteil (~0,4 %). Nicht altersbereinigt: 37 % der afghanischen Asylsuchenden sind 13–24, über 4 Männer pro Frau.',
+    draw: (f) =>
+      hBarChart(f, {
+        // Canton Zurich crime statistics 2024 (reported via NZZ): Afghan
+        // nationals are ~0.4% of the canton's population but ~3.5% of
+        // sexual-offence suspects (~9×) and ~10× overrepresented in offences
+        // against life and limb. Factors vs. the rest of the population, NOT
+        // age-adjusted — 37% of Afghan asylum seekers are 13-24 with 4+ men
+        // per woman, so the same age caveat as the German cards applies.
+        label: 'Afghanen · Kanton Zürich · Übervertretung ggü. übriger Bev.',
+        value: 10,
+        fmt: (v) => `${Math.round(v)}×`,
+        rowFmt: (v) => `${Math.round(v)}×`,
+        delta: null,
+        color: orange,
+        unit: '',
+        rows: [
+          { name: '🔪 Delikte gegen Leib & Leben', v: 10 },
+          { name: '🚨 Sexualdelikte', v: 9 },
+          { name: '👥 Bevölkerungsanteil · Referenz', v: 1 },
+        ],
+      }),
+  },
   trendCard('de-tax-quota', 'Steuer- & Abgabenquote Deutschland', 'Steuer- & Abgabenquote · 🇩🇪 · % des BIP', DE_TAX_QUOTA_PANEL, yellow, (v) => `${v.toFixed(1)}%`, 259, eraMarkers(1965, 2023, [
     // Taxes plus social contributions as a share of GDP — the state's take hit
     // a historical high of ~39% in the early 2020s.
@@ -813,7 +970,7 @@ export const POOL: Dashboard[] = [
     // base rate to 15%) took effect Jan 2005, plus a weak economy.
     [2005, '✂️ Steuerreform 2005'],
     [2021, '📈 Rekord ~39%'],
-  ])),
+  ]), 'OECD Revenue Statistics · Steuern plus Sozialabgaben in % des BIP, gerundet; vor 1990 Westdeutschland.'),
   trendCard('de-power-prices', 'Strompreis Deutschland', 'Strompreis · 🇩🇪 · Haushalte · ct/kWh', DE_POWER_PRICE_PANEL, blue, (v) => `${v.toFixed(0)} ct`, 271, eraMarkers(1991, 2025, [
     // The household price roughly tripled since 2000. The EEG renewables law
     // (2000) kicked off the green transition; the nuclear phase-out decision
@@ -821,8 +978,8 @@ export const POOL: Dashboard[] = [
     [2000, '🌱 EEG · Grüne Wende'],
     [2011, '☢️ Atomausstieg'],
     [2022, '⚡ Energiekrise'],
-  ])),
-  trendCard('berlin-warrants', 'Offene Haftbefehle · Berlin', 'Offene Haftbefehle · Berlin', BERLIN_WARRANTS_PANEL, red, (v) => `${(v / 1000).toFixed(0)}k`, 283),
+  ]), 'BDEW / Destatis / Eurostat · Haushaltsstrompreis inkl. Steuern und Umlagen, ct/kWh, gerundet.'),
+  trendCard('berlin-warrants', 'Offene Haftbefehle · Berlin', 'Offene Haftbefehle · Berlin', BERLIN_WARRANTS_PANEL, red, (v) => `${(v / 1000).toFixed(0)}k`, 283, undefined, 'Senatsverwaltung für Justiz Berlin (parlamentarische Anfragen) und Presseberichte. Definitionen variieren — Größenordnung, frühe Werte grob geschätzt.'),
   trendCard('de-state-quota', 'Staatsquote Deutschland', 'Staatsquote · 🇩🇪 · Staatsausgaben % des BIP', DE_STATE_QUOTA_PANEL, orange, (v) => `${v.toFixed(1)}%`, 227, eraMarkers(1880, 2024, [
     // Government spending as a share of GDP on the 1880–2024 axis: the secular
     // rise from ~10% in the Kaiserreich, the 1929 Depression, the 1975 oil
@@ -831,10 +988,12 @@ export const POOL: Dashboard[] = [
     [1975, '🛢️ Ölkrise'],
     [1990, '🧱 Wiedervereinigung'],
     [2020, '💸 Corona'],
-  ])),
+  ]), 'Destatis / BMF / Eurostat · Staatsausgaben in % des BIP; vor 1950 historische Schätzungen, Kriegsjahre ausgespart, vor 1990 Westdeutschland.'),
   {
     id: 'de-old-age-ratio',
     title: 'Altenquotient Deutschland · die Rentnerlast',
+    source:
+      'Destatis · 65+ je 100 im Alter 20–64; ab 2024 15. koordinierte Bevölkerungsvorausberechnung (moderate Variante) — Prognose, keine Messung.',
     draw: (f) =>
       areaChart(f, {
         // Old-age dependency ratio, 65+ per 100 of working age (20-64). The
@@ -861,6 +1020,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'de-aging-nations',
     title: 'Alterung international · Rentnerlast',
+    source: 'UN World Population Prospects 2024 · 65+ je 100 im Erwerbsalter (20–64), gerundet.',
     draw: (f) =>
       hBarChart(f, {
         // Old-age dependency ratio, people 65+ per 100 of working age (20-64),
@@ -891,6 +1051,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'internet-shutdowns',
     title: 'Internet-Shutdowns · Top-Länder',
+    source: 'Access Now · #KeepItOn-Report 2024.',
     draw: (f) =>
       hBarChart(f, {
         // Access Now / #KeepItOn 2024: 296 staatlich verhängte Netzsperren in
@@ -917,6 +1078,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'press-freedom-nations',
     title: 'Pressefreiheit · Ländervergleich',
+    source:
+      'Reporter ohne Grenzen · World Press Freedom Index, Länder-Scores 0–100; Werte für 2025 näherungsweise.',
     draw: (f) =>
       lineChart(f, {
         // RSF country scores (0–100, higher = freer). Germany stays high, the
@@ -944,7 +1107,7 @@ export const POOL: Dashboard[] = [
   },
   trendCard('book-bans', 'Buchverbote an US-Schulen', 'Buchverbote · 🇺🇸 · Fälle/Schuljahr', BOOK_BANS_PANEL, orange, (v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`), 179, eraMarkers(2021, 2024, [
     [2023, '📚 Höhepunkt 23/24'],
-  ])),
+  ]), 'PEN America · Index of School Book Bans, dokumentierte Fälle je Schuljahr.'),
   trendCard('jailed-journalists', 'Inhaftierte Journalisten', 'Inhaftierte Journalisten · 🌍', JAILED_JOURNALISTS_PANEL, red, deInt, 181, eraMarkers(1992, 2024, [
     // The crackdowns that step the curve up on the 1992–2024 axis: Egypt after
     // the 2013 coup, Turkey's mass jailings after the 2016 coup attempt, Belarus
@@ -954,10 +1117,12 @@ export const POOL: Dashboard[] = [
     [2016, '🇹🇷 Türkei 2016'],
     [2020, '🇧🇾 Belarus 2020'],
     [2023, '🇮🇱 Israel 2023'],
-  ])),
+  ]), 'CPJ · jährlicher Gefängnis-Zensus (Stichtag 1. Dezember); frühe Jahre näherungsweise.'),
   {
     id: 'asset-correlation',
     title: 'BTC · Gold · S&P 500 · M2 · seit 1915',
+    source:
+      'Fed H.6 (M2), historische Jahreswerte für Gold, S&P 500 und Bitcoin; näherungsweise, im Log-Raum interpoliert.',
     draw: (f) =>
       lineChart(f, {
         // Shared log dollar axis over 110 years: the absolute levels differ,
@@ -989,22 +1154,24 @@ export const POOL: Dashboard[] = [
     { at: 0.03, label: '🌐 WWW frei' },
     { at: 0.5, label: '📱 Smartphone' },
     { at: 0.82, label: '🌍 Halbe Menschheit' },
-  ]),
+  ], 'ITU · Internetnutzer weltweit.'),
   trendCard('world-hunger', 'Welthunger · Unterernährte', 'Unterernährte weltweit · SDG 2', HUNGER_PANEL, red, (v) => `${Math.round(v)} Mio`, 71, eraMarkers(2005, 2023, [
     [2017, '📉 Tiefpunkt'],
     [2020, '🦠 Pandemie'],
-  ])),
+  ]), 'FAO · The State of Food Security and Nutrition (2024). Methodik mehrfach revidiert — Größenordnungen.'),
   trendCard('extreme-poverty', 'Extreme Armut weltweit', 'Extreme Armut · < $2,15/Tag · SDG 1', EXTREME_POVERTY_PANEL, yellow, (v) => `${v.toFixed(1)}%`, 73, eraMarkers(1990, 2024, [
     [2020, '🦠 Pandemie · 1. Anstieg seit Jahrzehnten'],
-  ])),
+  ]), 'Weltbank PIP · Anteil der Weltbevölkerung unter 2,15 $/Tag (KKP 2017).'),
   trendCard('nuke-tests', 'Atomtests pro Jahr', 'Atomtests · seit 1945', NUKE_TESTS_PANEL, red, deInt, 107, eraMarkers(1945, 2024, [
     [1963, '☢️ Teststopp 1963'],
     [1996, '✍️ CTBT 1996'],
     [2017, '🇰🇵 Nordkorea'],
-  ])),
+  ]), 'Arms Control Association · Atomtests pro Jahr.'),
   {
     id: 'fertility',
     title: 'Geburtenrate der Kontinente',
+    source:
+      'UN World Population Prospects 2024; vor 1950 Gapminder-/Our-World-in-Data-Schätzungen (gröber).',
     draw: (f) =>
       lineChart(f, {
         label: 'Geburten pro Frau',
@@ -1029,10 +1196,12 @@ export const POOL: Dashboard[] = [
     // which the decline steepens, on the 1913–2024 axis.
     [1913, '🏦 Fed 1913'],
     [1971, '⛓️‍💥 Gold-Ende 1971'],
-  ])),
+  ]), 'BLS · Verbraucherpreisindex (CPI): Restkaufkraft eines Dollars von 1913.'),
   {
     id: 'real-wages',
     title: 'Nominal- vs. Reallohn · Deutschland',
+    source:
+      'Destatis · Nominal- und Reallohnindex (2015 = 100); frühere Jahre aus der Verdienststatistik rückgerechnet.',
     draw: (f) =>
       lineChart(f, {
         // The gap between the two lines is the purchasing-power story: nominal
@@ -1055,6 +1224,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'homeownership',
     title: 'Wohneigentumsquote · Europa',
+    source: 'Eurostat 2023 · Wohneigentumsquote der Haushalte, gerundet.',
     draw: (f) =>
       hBarChart(f, {
         // Owner-occupancy rate, share of households living in their own home
@@ -1086,6 +1256,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'cb-balance',
     title: 'Zentralbankbilanzen · Fed vs. EZB',
+    source:
+      'Fed H.4.1 und EZB-Wochenausweis · Bilanzsummen in Billionen US-$ bzw. Euro, gerundet.',
     draw: (f) =>
       lineChart(f, {
         // Near-flat until 2008, then two vertical legs — QE and the 2020
@@ -1111,6 +1283,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'wealth-divergence',
     title: 'Vermögen: Milliardäre vs. Löhne',
+    source:
+      'Forbes (Milliardärsvermögen weltweit) und Destatis-Reallohnindex, beide auf 2010 = 1× indexiert.',
     draw: (f) =>
       lineChart(f, {
         // Total billionaire net worth (Forbes) against Germany's real wage,
@@ -1134,6 +1308,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'food-fertilizer',
     title: 'Nahrungs- & Düngemittelpreise',
+    source:
+      'FAO Food Price Index (2014–16 = 100) und Weltbank-Düngemittelindex, auf dasselbe Basisfenster umgerechnet.',
     draw: (f) =>
       lineChart(f, {
         // Fertilizer swings harder than food and drags it along: natural gas
@@ -1161,11 +1337,12 @@ export const POOL: Dashboard[] = [
     // The legislated 48% floor holds only through 2039; projections then slide.
     [2025, '⚖️ Haltelinie 48%'],
     [2039, '📉 danach ~45%'],
-  ])),
-  trendCard('rent-burden', 'Mietbelastung · Großstädte Deutschland', 'Mietbelastung · Neuvermietung · 🇩🇪 Top-7-Städte · % des Einkommens', DE_RENT_BURDEN_PANEL, red, (v) => `${v.toFixed(0)}%`, 257),
+  ]), 'Rentenversicherungsbericht · Sicherungsniveau vor Steuern; die Werte nach ~2024 sind amtliche Projektion.'),
+  trendCard('rent-burden', 'Mietbelastung · Großstädte Deutschland', 'Mietbelastung · Neuvermietung · 🇩🇪 Top-7-Städte · % des Einkommens', DE_RENT_BURDEN_PANEL, red, (v) => `${v.toFixed(0)}%`, 257, undefined, 'empirica / IW-Schätzungen · Median-Angebotsmiete zu Median-Nettoeinkommen, Top-7-Städte, gerundet.'),
   {
     id: 'armies',
     title: 'Größte Armeen · aktive Soldaten',
+    source: 'IISS Military Balance 2024 · aktive Soldaten.',
     draw: (f) =>
       hBarChart(f, {
         // IISS Military Balance 2024, active-duty personnel.
@@ -1191,6 +1368,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'military-per-soldier',
     title: 'Militärausgaben je Soldat',
+    source:
+      'SIPRI 2024 (Budgets) geteilt durch aktive Soldaten (IISS Military Balance 2024), gerundet.',
     draw: (f) =>
       hBarChart(f, {
         // Budget (SIPRI 2024) divided by active personnel (IISS 2024): how
@@ -1217,6 +1396,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'military-gdp',
     title: 'Militärlast · % des BIP',
+    source: 'SIPRI 2024 · Militärausgaben in % des BIP.',
     draw: (f) =>
       hBarChart(f, {
         // Military burden: spending as a share of GDP (SIPRI 2024). War and
@@ -1245,6 +1425,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'wealth',
     title: 'Globale Vermögensverteilung',
+    source: 'UBS Global Wealth Report 2024 · Anteile am globalen Nettovermögen.',
     draw: (f) =>
       wealthSplit(f, {
         // UBS Global Wealth Report 2024 — share of global net wealth per
@@ -1266,6 +1447,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'incarceration',
     title: 'Gefängnisquote international',
+    source: 'World Prison Brief · Gefangene je 100k Einwohner, Stand 2023–25.',
     draw: (f) =>
       hBarChart(f, {
         // World Prison Brief (2023–25 figures), prisoners per 100k
@@ -1295,6 +1477,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'obesity-nations',
     title: 'Adipositas international',
+    source: 'WHO / NCD-RisC 2022 · Adipositas-Prävalenz Erwachsener (BMI ≥ 30), Schätzwerte.',
     draw: (f) =>
       hBarChart(f, {
         // Adult obesity prevalence (BMI >= 30), WHO / NCD-RisC 2022
@@ -1324,6 +1507,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'life-exp-nations',
     title: 'Lebenserwartung international',
+    source: 'UN World Population Prospects 2024 / Our World in Data, gerundet.',
     draw: (f) =>
       hBarChart(f, {
         // Life expectancy at birth, both sexes (UN WPP 2024 / OWID,
@@ -1353,6 +1537,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'tax-burden',
     title: 'Steuer- und Abgabenlast',
+    source:
+      'OECD Taxing Wages 2024 · Abgabenkeil für Alleinstehende ohne Kinder, in % der Arbeitskosten.',
     draw: (f) =>
       hBarChart(f, {
         // OECD tax wedge 2024: income tax plus employee and employer
@@ -1383,6 +1569,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'power-prices',
     title: 'Strompreise für Haushalte',
+    source:
+      'Eurostat / GlobalPetrolPrices · Haushaltsstrompreise inkl. Steuern, gerundete 2024er-Werte.',
     draw: (f) =>
       hBarChart(f, {
         // Household electricity prices incl. taxes, euro cents per kWh,
@@ -1412,6 +1600,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'corruption',
     title: 'Korruption weltweit',
+    source:
+      'Transparency International · Corruption Perceptions Index 2024, invertiert dargestellt (100 − Score).',
     draw: (f) =>
       choroplethMap(f, {
         // Transparency International CPI 2024, inverted (100 - score) so
@@ -1436,6 +1626,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'modern-slavery',
     title: 'Moderne Sklaverei · Länder',
+    source:
+      'Walk Free · Global Slavery Index 2023; Weltwert ~50 Mio nach ILO/Walk Free 2021. Schätzwerte.',
     draw: (f) =>
       hBarChart(f, {
         // Global Slavery Index 2023 (Walk Free) — people living in modern
@@ -1466,6 +1658,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'us-bases',
     title: 'US-Militärstützpunkte weltweit',
+    source: 'US-Verteidigungsministerium (DMDC / Base Structure Report), via SIPER.',
     draw: (f) =>
       choroplethMap(f, {
         // US troops on foreign soil by host country (DoD DMDC, via SIPER).
@@ -1490,6 +1683,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'us-wars',
     title: 'Kriege der USA · seit 1945',
+    source:
+      'Zusammenstellung nach Daniele Ganser („Imperium USA"). Totenzahlen sind Mittelwerte gängiger Schätzungen, teils stark umstritten — Größenordnungen, keine exakten Zahlen.',
     draw: (f) =>
       timelineChart(f, {
         // US wars and interventions as catalogued by Daniele Ganser
@@ -1525,6 +1720,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'recent-wars',
     title: 'Tote der jüngsten Kriege',
+    source:
+      'Mittelwerte gängiger Schätzungen (SOHR, UN, AU, Costs of War); teils inkl. indirekter Opfer, die Spannen sind groß.',
     draw: (f) =>
       hBarChart(f, {
         // Mittelwerte gängiger Schätzungen (SOHR, UN, AU, Costs of War);
@@ -1549,6 +1746,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'teen-mde',
     title: 'Depression bei US-Jugendlichen',
+    source:
+      'SAMHSA · National Survey on Drug Use and Health: depressive Episode im Jahr, 12–17 J.',
     draw: (f) =>
       lineChart(f, {
         // SAMHSA NSDUH: past-year major depressive episode, ages 12–17. Flat
@@ -1569,10 +1768,12 @@ export const POOL: Dashboard[] = [
     // One belegbarer milestone: from 1958 married women no longer needed the
     // husband's consent to take a job (Gleichberechtigungsgesetz).
     [1958, '⚖️ Gleichberechtigung 1958'],
-  ])),
+  ]), 'Volkszählungen / Destatis; Definitionen wechseln, vor 1990 nur Westdeutschland — frühe Werte grob und nur begrenzt vergleichbar.'),
   {
     id: 'teen-screen',
     title: 'Bildschirmzeit US-Teenager',
+    source:
+      'Nielsen / Kaiser Family Foundation (TV-Ära) und Common Sense Media Census — grob zusammengefügt, Definitionen wechseln; die Form ist die Aussage.',
     draw: (f) =>
       areaChart(f, {
         label: 'Unterhaltungsmedien · 🇺🇸 · 13–18 J. · Std./Tag',
@@ -1597,10 +1798,12 @@ export const POOL: Dashboard[] = [
     // on the 1970–2022 axis. The 2012 line is the correlation, not proof.
     [1988, '💊 Prozac 1988'],
     [2012, '📱 Soziale Medien'],
-  ])),
+  ]), 'IQVIA / CDC ab 2010; frühere Werte grob geschätzt — jugendspezifische Verordnungsdaten sind weit zurück spärlich.'),
   {
     id: 'de-energy-mix',
     title: 'Deutscher Strommix · Kohle, Kernkraft, Erneuerbare',
+    source:
+      'BNetzA / Fraunhofer ISE · installierte Netto-Leistung in GW; Nennleistung, nicht gesicherte Leistung.',
     draw: (f) =>
       lineChart(f, {
         // BNetzA/Fraunhofer installed capacity: nuclear to zero (2023), coal
@@ -1624,6 +1827,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'obesity-fastfood',
     title: 'Adipositas USA & die Fast-Food-Ära',
+    source:
+      'NHANES ab 1962; frühere Werte grobe Schätzungen aus frühen Versicherungs- und Vermessungsdaten.',
     draw: (f) =>
       lineChart(f, {
         // NHANES adult obesity; the shaded band marks the fast-food era —
@@ -1643,6 +1848,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'surveillance',
     title: 'Am meisten überwachte Städte',
+    source:
+      'Comparitech · „Most surveilled cities"; gerundete Schätzwerte, je nach Quelle abweichend.',
     draw: (f) =>
       hBarChart(f, {
         // Public CCTV cameras per city (Comparitech "Most surveilled cities",
@@ -1674,10 +1881,12 @@ export const POOL: Dashboard[] = [
   trendCard('cameras-world', 'Überwachungskameras weltweit', 'Installierte CCTV-Kameras', CAMERAS_PANEL, aqua, (v) => `${(v / 1e9).toFixed(2)} Mrd`, 183, eraMarkers(2000, 2025, [
     [2008, '🏅 Peking · Ausbaustart China'],
     [2021, '🎥 1 Mrd weltweit'],
-  ])),
+  ]), 'IHS Markit / Marktschätzungen · installierte Überwachungskameras weltweit; vor 2010 grob rückgeschätzt.'),
   {
     id: 'gov-requests-country',
     title: 'Behördenanfragen an Big Tech · Top-Länder',
+    source:
+      'Transparenzberichte von Meta, Google und Apple · Behördenanfragen zu Nutzerdaten pro Jahr, näherungsweise.',
     draw: (f) =>
       hBarChart(f, {
         // Government requests for user data, per year (Meta + Google/Apple
@@ -1705,6 +1914,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'youtube-removals',
     title: 'Regierungs-Löschanfragen an Google/YouTube',
+    source: 'Google Transparency Report · behördliche Löschanfragen pro Jahr, näherungsweise.',
     draw: (f) =>
       hBarChart(f, {
         // Government requests to remove content, per year (Google Transparency
@@ -1729,6 +1939,7 @@ export const POOL: Dashboard[] = [
   {
     id: '5g-stations',
     title: '5G-Ausbau · führende Länder',
+    source: 'Betreiber- und Regulierungsbehörden-Angaben, gerundete Schätzwerte.',
     draw: (f) =>
       hBarChart(f, {
         // Installed 5G base stations per country (operator/regulator figures,
@@ -1756,6 +1967,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'inflation',
     title: 'Höchste Inflation weltweit',
+    source:
+      'IWF / nationale Statistiken, Jahresraten ≈ 2024, gerundet; Krisenwerte schwanken stark — Größenordnungen.',
     draw: (f) =>
       hBarChart(f, {
         // Annual consumer-price inflation, ~2024 (IMF/national estimates,
@@ -1786,6 +1999,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'un-resolutions',
     title: 'UN-Resolutionen gegen einzelne Länder',
+    source:
+      'UN Watch · länderspezifische Resolutionen der UN-Generalversammlung seit 2015, gerundet.',
     draw: (f) =>
       hBarChart(f, {
         // UN General Assembly country-specific resolutions, cumulative since
@@ -1813,6 +2028,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'de-family',
     title: 'Heiraten vs. Scheidungen · Deutschland',
+    source:
+      'Destatis / historische Statistik · Eheschließungen und Scheidungen je 1.000 Einwohner; frühe Jahre gerundet.',
     draw: (f) =>
       lineChart(f, {
         // Destatis: marriages halve across the century, divorces peak ~2004
@@ -1838,10 +2055,11 @@ export const POOL: Dashboard[] = [
     // population together.
     [1961, '💊 Pille'],
     [1977, '⚖️ Scheidungsreform'],
-  ])),
+  ]), 'Destatis · Anteil der Einpersonenhaushalte; vor 1950 Schätzungen.'),
   {
     id: 'digital-id',
     title: 'Digitale ID · Bevölkerungsabdeckung',
+    source: 'Weltbank ID4D / nationale Programme, gerundete Schätzwerte.',
     draw: (f) =>
       hBarChart(f, {
         // Share of the population with a usable national digital ID (World
@@ -1881,10 +2099,12 @@ export const POOL: Dashboard[] = [
       [2023, 'Louisiana'],
       [2025, 'Supreme Court'],
     ]),
+    'Free Speech Coalition / Age-Verification-Tracker · US-Staaten mit Alterskontroll-Gesetz, gerundet.',
   ),
   {
     id: 'alcohol-nations',
     title: 'Alkoholkonsum international',
+    source: 'WHO 2019 · registrierter Alkoholkonsum, Liter Reinalkohol pro Kopf (15+).',
     draw: (f) =>
       hBarChart(f, {
         // Recorded alcohol per capita, litres of pure alcohol, adults 15+
@@ -1914,6 +2134,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'alcohol-deaths',
     title: 'US-Alkoholtote pro Jahr',
+    source:
+      'CDC WONDER · alkoholbedingte Todesfälle (Lebererkrankungen, Vergiftungen; ohne Verkehrstote).',
     draw: (f) =>
       areaChart(f, {
         // CDC: alcohol-induced deaths rose steadily, then spiked ~40% in the
@@ -1932,6 +2154,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'c40-cities',
     title: 'Größte C40-Städte',
+    source: 'C40-Mitgliederliste; Metro-Einwohnerzahlen nach UN-Schätzungen, gerundet.',
     draw: (f) =>
       hBarChart(f, {
         // C40 is a ~100-city climate network (Bloomberg-funded). Many members
@@ -1960,6 +2183,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'covid-stringency',
     title: 'Corona-Maßnahmen · Härte im Schnitt',
+    source:
+      'Oxford COVID-19 Government Response Tracker (OxCGRT) via Our World in Data · Stringency-Index, Ø 2020–22, näherungsweise. Misst die Härte, nicht die Wirkung.',
     draw: (f) =>
       hBarChart(f, {
         // Oxford COVID-19 Government Response Tracker (OxCGRT) stringency
@@ -1993,6 +2218,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'covid-lockdowns',
     title: 'Längste Corona-Lockdowns · Städte',
+    source:
+      'Presseberichte 2020–21, gerundete Schätzwerte; was als „Lockdown" zählt, variiert je Quelle.',
     draw: (f) =>
       hBarChart(f, {
         // Cumulative days under hard stay-at-home lockdown by city, as widely
@@ -2026,6 +2253,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'covid-vax-percapita',
     title: 'Corona-Impfungen · Dosen pro Kopf',
+    source:
+      'Our World in Data · verabreichte Impfdosen je 100 Einwohner, kumuliert 2020–23, näherungsweise.',
     draw: (f) =>
       hBarChart(f, {
         // COVID-19 vaccine doses administered per 100 people (Our World in
@@ -2057,6 +2286,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'cashless',
     title: 'Bargeld im Rückzug',
+    source:
+      'EZB-SPACE-Studie, Riksbank, FIS/Worldpay Global Payments Report, Bank of Russia · Bargeldanteil am Point of Sale, gerundete Schätzwerte.',
     draw: (f) =>
       lineChart(f, {
         // Cash share of point-of-sale transactions: Sweden, South Korea, China
@@ -2086,6 +2317,8 @@ export const POOL: Dashboard[] = [
   {
     id: 'fiat-lifespan',
     title: 'Fiat-Währungen · Lebensdauer',
+    source:
+      'Dokumentierte Einzelfälle bis Hyperinflation oder Währungsreform — bewusst nicht die vom FT widerlegte „Ø 27 Jahre"-Zahl.',
     draw: (f) =>
       hBarChart(f, {
         // Years a paper/fiat currency lasted before hyperinflation or a
@@ -2124,10 +2357,12 @@ export const POOL: Dashboard[] = [
     [2024, '🇨🇳 e-CNY'],
     [2024, '🇨🇭 Digitaler Franken'],
     [2025, '🇺🇸 CBDC-Verbot'],
-  ])),
+  ]), 'Atlantic Council · CBDC Tracker.'),
   {
     id: 'freedom-decline',
     title: 'Freiheit weltweit · 20 Jahre Rückgang',
+    source:
+      'Freedom House · „Freedom in the World": Länder mit verschlechtertem vs. verbessertem Score pro Berichtsjahr.',
     draw: (f) =>
       lineChart(f, {
         // Freedom House annual score changes: the red line (countries getting
@@ -2151,6 +2386,7 @@ export const POOL: Dashboard[] = [
   {
     id: 'covid-rights',
     title: 'Corona · Grundrechtseingriffe weltweit',
+    source: 'ICNL/ECNL · COVID-19 Civic Freedom Tracker, Länder mit Grundrechtseingriffen 2020–22.',
     draw: (f) =>
       hBarChart(f, {
         // ICNL/ECNL COVID-19 Civic Freedom Tracker: how many of ~198 countries
@@ -2176,16 +2412,18 @@ export const POOL: Dashboard[] = [
     // §188 was expanded in 2021: insults against politicians became a
     // separate ex-officio offence — prosecutions tripled within two years.
     [2022, '⚖️ §188 verschärft 2021'],
-  ])),
+  ]), 'Bundestags- und Landesjustizangaben · Verfahren nach §188 StGB; Wert für 2023 interpoliert.'),
   trendCard('uk-speech-arrests', 'Verhaftet für Posts · England', 'Festnahmen wegen Online-Posts · 🇬🇧 · pro Jahr', UK_SPEECH_ARRESTS_PANEL, orange, deInt, 269, eraMarkers(2017, 2023, [
     // The Australian reference case sits on the same axis: Zoe Buhler,
     // arrested (handcuffed, pregnant, at home) for a Facebook protest event
     // during Victoria's 2020 lockdown.
     [2020, '🇦🇺 Zoe Buhler · Facebook-Post'],
-  ])),
+  ]), 'Polizei-FOI-Daten via The Times (2025) · Festnahmen nach s.127 Communications Act / s.1 Malicious Communications Act. Unter 10 % der 2023 Festgenommenen wurden verurteilt.'),
   {
     id: 'young-homeownership',
     title: '„You\'ll own nothing" · Wohneigentum U35',
+    source:
+      'English Housing Survey / IFS und US Census (Housing Vacancy Survey), gerundete Survey-Werte.',
     draw: (f) =>
       lineChart(f, {
         // Homeownership among young households: two-thirds of English 25–34s
@@ -2209,25 +2447,25 @@ export const POOL: Dashboard[] = [
   trendCard('lez-zones', 'Zufahrtsverbotszonen · Europa', 'Umwelt- & Null-Emissions-Zonen', LEZ_PANEL, green, deInt, 277, eraMarkers(1996, 2025, [
     [2008, '🇩🇪 Umweltzonen-Welle'],
     [2023, '🇬🇧 ULEZ ganz London'],
-  ])),
+  ]), 'Clean Cities Campaign / urbanaccessregulations.eu; frühe Jahre näherungsweise.'),
   trendCard('shutdowns-per-year', 'Internet-Abschaltungen pro Jahr', 'Staatliche Netzsperren', SHUTDOWN_PANEL, red, deInt, 281, eraMarkers(2016, 2024, [
     // Shutdowns are the standard response to protest movements — Iran 2019
     // went dark nationwide for a week; 2023/24 are all-time records.
     [2019, '🇮🇷 Iran offline'],
     [2023, '📈 Rekord'],
-  ])),
+  ]), 'Access Now · #KeepItOn, staatlich verhängte Netzsperren pro Jahr.'),
   trendCard('gene-therapies', 'Gentherapien · zugelassen', 'Gen- & Zelltherapien · kumuliert', GENE_THERAPY_PANEL, magenta, deInt, 283, eraMarkers(2017, 2025, [
     [2017, '🧬 Erste CAR-T'],
     [2023, '✂️ Erste CRISPR-Therapie'],
-  ])),
+  ]), 'FDA CBER · zugelassene Gen- und Zelltherapien, kumuliert.'),
   trendCard('autocracy-share', 'Menschheit unter Autokratie', 'Weltbevölkerung in Autokratien', AUTOCRACY_SHARE_PANEL, red, (v) => `${v.toFixed(0)}%`, 307, eraMarkers(2013, 2024, [
     [2016, '🇹🇷 Türkei: Ausnahmezustand'],
     [2020, '🇮🇳 Indien: Wahlautokratie'],
     [2021, '🇲🇲 Myanmar: Militärputsch'],
-  ])),
+  ]), 'V-Dem Democracy Reports · Anteil der Weltbevölkerung in Wahl- und geschlossenen Autokratien.'),
   trendCard('smartphone-leash', 'Smartphones · die freiwillige Fußfessel', 'Smartphone-Nutzer · 🌍 · Ø 4h37m/Tag', SMARTPHONE_PANEL, aqua, (v) => `${(v / 1e9).toFixed(1)} Mrd`, 293, eraMarkers(2007, 2025, [
     [2007, '📱 iPhone'],
     [2008, '🤖 Android'],
     [2016, '🌍 Jeder Dritte'],
-  ])),
+  ]), 'Statista / DataReportal · Smartphone-Nutzer weltweit, gerundete Schätzwerte.'),
 ];

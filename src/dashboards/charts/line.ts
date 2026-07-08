@@ -2,6 +2,7 @@
 // and a single-series gradient area.
 
 import {
+  drawCompareHeader,
   drawGrid,
   drawGridLabels,
   drawHeader,
@@ -95,8 +96,14 @@ export interface LineCfg {
 export function lineChart(f: Frame, cfg: LineCfg): void {
   const { ctx, u, t } = f;
   drawSurface(f);
+  // Comparison cards (2+ series) have no single headline value — a big figure
+  // would be ambiguous (7.0 Bio. of whom?), so the title stands alone and the
+  // plot takes the freed height. Single-series cards keep the standard header.
   const fmt = cfg.fmt ?? ((v: number) => fmtCompact(v, cfg.unit));
-  const top = drawHeader(f, cfg.label, cfg.value, fmt, cfg.delta);
+  const top =
+    cfg.series.length > 1
+      ? drawCompareHeader(f, cfg.label)
+      : drawHeader(f, cfg.label, cfg.value, fmt, cfg.delta);
   const r = plotRect(f, top + 26 * u);
 
   // Shaded bands (behind grid + series): contiguous true-runs of the mask.

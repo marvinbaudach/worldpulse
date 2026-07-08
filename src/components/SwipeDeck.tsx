@@ -30,7 +30,12 @@ const Card = styled.div`
   touch-action: none;
   will-change: transform, opacity;
   transform: translate(-50%, -50%);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  /* Bright rim + wide soft glow: the canvas surface is nearly as dark as the
+     page background, so the edge needs to carry the separation. */
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 0 40px rgba(120, 160, 255, 0.08),
+    0 24px 60px rgba(0, 0, 0, 0.55);
 `;
 
 const CENTER = 'translate(-50%, -50%)';

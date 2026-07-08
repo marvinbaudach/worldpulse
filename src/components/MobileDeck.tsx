@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { ALL_DASHBOARDS, TAGS } from '../dashboards';
-import { CARD_SOURCES } from '../dashboards/cardSources';
 import { useTagFilter } from '../hooks/useTagFilter';
 import { SwipeDeck } from './SwipeDeck';
 import { glassSurface } from './glass';
@@ -40,29 +39,6 @@ const Counter = styled.div`
   letter-spacing: 0.14em;
 `;
 
-// Source of the card currently on top of the deck, linking to the source.
-// Pinned bottom-centre, above the swipe hint and the safe area.
-const SourceTag = styled.a`
-  position: fixed;
-  left: 50%;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 62px);
-  transform: translateX(-50%);
-  z-index: 12;
-  max-width: 90vw;
-  padding: 8px 15px;
-  border: none;
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.7);
-  font: 600 11px/1.2 inherit;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-decoration: none;
-  cursor: pointer;
-  ${glassSurface}
-`;
-
 // One-time swipe cue: the pager is a native horizontal scroll, so nothing
 // signals it is swipeable until you try. Fades out on the first swipe.
 const Hint = styled.div<{ $gone: boolean }>`
@@ -80,6 +56,38 @@ const Hint = styled.div<{ $gone: boolean }>`
   pointer-events: none;
   opacity: ${(p) => (p.$gone ? 0 : 1)};
   transition: opacity 0.4s ease;
+  ${glassSurface}
+`;
+
+// Small round glass "i" bottom-left; only rendered when the active card
+// declares a source. Sits below the swipe hint's pill (which is centered).
+const InfoButton = styled.button`
+  position: fixed;
+  left: 16px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  z-index: 12;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 999px;
+  color: #cfe4ff;
+  font: 600 17px/1 inherit;
+  font-style: italic;
+  font-family: Georgia, serif;
+  cursor: pointer;
+  ${glassSurface}
+`;
+
+const SourceNote = styled.div`
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+  z-index: 12;
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  font: 400 13px/1.5 inherit;
   ${glassSurface}
 `;
 
@@ -152,17 +160,26 @@ export function MobileDeck() {
 
   const [active, setActive] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [swiped, setSwiped] = useState(() => localStorage.getItem('worldpulse-swiped') === '1');
 
+  // Guard against same-index re-fires: SwipeDeck's snap effect re-runs on
+  // every parent render (onIndex is a fresh closure), and an unguarded reset
+  // here would close the source note the instant its own toggle re-renders us.
+  const lastIndex = useRef(0);
   const onIndex = (i: number) => {
     setActive(i);
+    if (i !== lastIndex.current) {
+      lastIndex.current = i;
+      setInfoOpen(false); // the note belongs to the card it was opened on
+    }
     if (i > 0 && !swiped) {
       setSwiped(true);
       localStorage.setItem('worldpulse-swiped', '1');
     }
   };
 
-  const activeSource = CARD_SOURCES[dashboards[active]?.id ?? ''];
+  const source = dashboards[Math.min(active, dashboards.length - 1)]?.source;
   const currentLabel = tag ? (TAGS.find((t) => t.id === tag)?.label ?? 'ALLE') : 'ALLE';
   const pick = (next: string | null) => {
     setTag(next);
@@ -183,18 +200,16 @@ export function MobileDeck() {
 
       <SwipeDeck key={tag ?? 'all'} dashboards={dashboards} onIndex={onIndex} />
 
-      {activeSource && (
-        <SourceTag
-          as={activeSource.url ? 'a' : 'span'}
-          href={activeSource.url}
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          Quelle: {activeSource.name}
-        </SourceTag>
-      )}
-
       {!swiped && dashboards.length > 1 && <Hint $gone={false}>← wischen zum Blättern →</Hint>}
+
+      {source && (
+        <InfoButton aria-label="Quelle anzeigen" onClick={() => setInfoOpen((o) => !o)}>
+          i
+        </InfoButton>
+      )}
+      {infoOpen && source && (
+        <SourceNote onClick={() => setInfoOpen(false)}>Quelle: {source}</SourceNote>
+      )}
 
       {menuOpen && (
         <>

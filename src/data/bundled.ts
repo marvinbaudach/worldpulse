@@ -534,6 +534,28 @@ export const DE_KNIFE_ATTACKS_PANEL: TrendSeries = trend(
   ['2022', '2023', '2024', 'heute'],
 );
 
+// Suspect rate (TVBZ) for violent crime by age band, males, Germans vs.
+// Afghan nationals — suspects per 100k of the respective resident group,
+// PKS 2024 via BT-Drs. 21/145 (population: Census 2022, 31 Dec 2023).
+// The classic age-crime curve: the raw 8.9× gap between all men (272 vs.
+// 2,409) halves to ~4.1× when same-age 18-21-year-olds are compared — but
+// stays ~9.5× among adults 21+, so age structure explains the youth gap,
+// not everything. Suspects, not convictions; small resident denominators
+// make single cells noisy (BKA caveat in the same document).
+export const DE_TVBZ_AGE_COMPARE = (() => {
+  const afghan = [1_617, 5_748, 3_972, 1_885];
+  const german = [331, 1_148, 979, 199];
+  const fmt = (v: number) => (v >= 1000 ? `${v / 1000}k` : `${v}`);
+  const s = niceScale(0, Math.max(...afghan), fmt);
+  return {
+    rows: [
+      { name: 'Afghanen', data: norm(afghan, s.lo, s.hi) },
+      { name: 'Deutsche', data: norm(german, s.lo, s.hi) },
+    ],
+    ticks: s.ticks,
+  };
+})();
+
 // Germany's tax-and-contribution ratio: taxes plus compulsory social
 // security contributions as a share of GDP (OECD Revenue Statistics,
 // "tax-to-GDP", rounded). Climbed from ~32% in the 1960s to a record

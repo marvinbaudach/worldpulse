@@ -92,6 +92,38 @@ export function drawSurface({ ctx, w, h }: Frame): void {
   ctx.fillRect(0, 0, w, h * 0.18);
 }
 
+/** Tracked eyebrow label, wrapped onto a second line when it would overflow
+    the panel. Returns the extra y-shift (0 or one line) for content below. */
+function drawEyebrow({ ctx, u, w }: Frame, label: string): number {
+  const pad = 36 * u;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = MUTED;
+  ctx.font = `600 ${17 * u}px ${FONT}`;
+  const tracking = 2.4 * u;
+  const upper = label.toUpperCase();
+  const maxW = w - 2 * pad;
+  if (trackedWidth(ctx, upper, tracking) > maxW) {
+    const [l1, l2] = wrapTwo(ctx, upper, tracking, maxW);
+    drawTracked(ctx, l1, pad, pad + 14 * u, tracking);
+    drawTracked(ctx, l2, pad, pad + 34 * u, tracking);
+    return 22 * u;
+  }
+  drawTracked(ctx, upper, pad, pad + 16 * u, tracking);
+  return 0;
+}
+
+/**
+ * Eyebrow-only header for comparison cards: multi-series panels have no
+ * single headline value, so the title stands alone and the chart gets the
+ * vertical room the big figure would have taken.
+ * Returns the y where the chart area begins.
+ */
+export function drawCompareHeader(f: Frame, label: string): number {
+  const shift = drawEyebrow(f, label);
+  return 36 * f.u + 34 * f.u + shift;
+}
+
 /**
  * Standard header: eyebrow label, big animated figure, delta chip.
  * Returns the y where the chart area begins.
@@ -104,30 +136,11 @@ export function drawHeader(
   deltaPct: number | null,
   sub?: string,
 ): number {
-  const { ctx, u, t, w } = f;
+  const { ctx, u, t } = f;
   const pad = 36 * u;
   const p = easeOut(t / 0.9);
 
-  ctx.textBaseline = 'alphabetic';
-  ctx.textAlign = 'left';
-
-  ctx.fillStyle = MUTED;
-  ctx.font = `600 ${17 * u}px ${FONT}`;
-  // Wrap the (letter-spaced) title onto a second line when it would overflow
-  // the panel, so a long label reads in full instead of being clipped
-  // mid-word. Short titles keep the original single-line layout untouched.
-  const tracking = 2.4 * u;
-  const upper = label.toUpperCase();
-  const maxW = w - 2 * pad;
-  let shift = 0;
-  if (trackedWidth(ctx, upper, tracking) > maxW) {
-    const [l1, l2] = wrapTwo(ctx, upper, tracking, maxW);
-    drawTracked(ctx, l1, pad, pad + 14 * u, tracking);
-    drawTracked(ctx, l2, pad, pad + 34 * u, tracking);
-    shift = 22 * u;
-  } else {
-    drawTracked(ctx, upper, pad, pad + 16 * u, tracking);
-  }
+  const shift = drawEyebrow(f, label);
 
   ctx.fillStyle = INK;
   ctx.font = `700 ${54 * u}px ${FONT}`;

@@ -21,10 +21,12 @@ export function trendCard(
   fmt: (v: number) => string,
   seed: number,
   markers?: { at: number; label: string }[],
+  source?: string,
 ): Dashboard {
   return {
     id,
     title,
+    source,
     draw: (f) =>
       areaChart(f, {
         label,
