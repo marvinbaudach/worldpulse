@@ -17,12 +17,16 @@ const INTRO_S = 2;
 
 interface CardCanvasProps {
   dashboard: Dashboard;
-  /** Only the card in view animates; the rest render settled (cheap, static). */
+  /** Only the card in view animates; the rest render a single static frame. */
   animate: boolean;
+  /** Static frame for non-animating cards: waiting neighbours hold the intro's
+      start frame (t=0) so the finished chart is never spoiled before its
+      fly-in plays on landing; under reduced motion they hold SETTLED_T. */
+  restT?: number;
 }
 
 /** One dashboard rendered into a 2D canvas for the mobile deck. */
-export function CardCanvas({ dashboard, animate }: CardCanvasProps) {
+export function CardCanvas({ dashboard, animate, restT = SETTLED_T }: CardCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -60,28 +64,31 @@ export function CardCanvas({ dashboard, animate }: CardCanvasProps) {
       };
       raf = requestAnimationFrame(tick);
     } else {
-      draw(SETTLED_T);
+      draw(restT);
     }
 
     // Live cards keep counting (the once-a-second tick) and dynamic cards
     // repaint when a dataset lands — the same triggers the WebGL ring uses.
-    // Guarded on `settled` so an update never interrupts the intro replay.
+    // Guarded on `settled` so an update never interrupts the intro replay;
+    // waiting neighbours (restT 0) are excluded too — they hold their empty
+    // start frame until they land and play the intro themselves.
+    const settledUpdates = animate || restT === SETTLED_T;
     const offLive =
-      dashboard.live || dashboard.dynamic
+      (dashboard.live || dashboard.dynamic) && settledUpdates
         ? onLiveUpdate((kind) => {
             if (!settled) return;
             if (kind === 'tick' ? dashboard.live : dashboard.dynamic) draw(SETTLED_T);
           })
         : undefined;
 
-    const onResize = () => draw(SETTLED_T);
+    const onResize = () => draw(animate ? SETTLED_T : restT);
     window.addEventListener('resize', onResize);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', onResize);
       offLive?.();
     };
-  }, [dashboard, animate]);
+  }, [dashboard, animate, restT]);
 
   // pan-x so a horizontal swipe still scrolls the pager: the global canvas
   // rule sets touch-action:none for the 3D drag, which would otherwise trap

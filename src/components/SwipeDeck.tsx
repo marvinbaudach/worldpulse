@@ -297,14 +297,18 @@ export function SwipeDeck({ dashboards, onIndex, onRefresh }: SwipeDeckProps) {
 
   return (
     <Stack>
+      {/* Neighbours hold the intro's empty start frame (restT 0), not the
+          settled chart — otherwise a peek during the drag spoils the finished
+          result the landing fly-in is about to build. Under reduced motion
+          there is no fly-in, so they hold the settled frame instead. */}
       {prev && (
         <Card key={prev.id} ref={prevRef} style={{ zIndex: 2, opacity: 0, transform: BEHIND }}>
-          <CardCanvas dashboard={prev} animate={false} />
+          <CardCanvas dashboard={prev} animate={false} restT={reducedMotion ? undefined : 0} />
         </Card>
       )}
       {next && (
         <Card key={next.id} ref={nextRef} style={{ zIndex: 1, transform: BEHIND }}>
-          <CardCanvas dashboard={next} animate={false} />
+          <CardCanvas dashboard={next} animate={false} restT={reducedMotion ? undefined : 0} />
         </Card>
       )}
       <Card
