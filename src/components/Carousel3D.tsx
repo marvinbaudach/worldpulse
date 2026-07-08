@@ -19,6 +19,7 @@ import { Afterglow } from './Afterglow';
 import { Aurora } from './Aurora';
 import { Dust } from './Dust';
 import { HeroCard, type HeroStart } from './HeroCard';
+import { FavStar } from './FavStar';
 import { HandGestures } from './HandGestures';
 import { HandControls } from './HandControls';
 import { LayoutControls } from './LayoutControls';
@@ -76,6 +77,7 @@ const HeroInfoButton = styled.button`
 // favorites stack. Gold when active — the same SERIES slot the FAVORITEN
 // chip carries.
 const HeroFavButton = styled.button<{ $active: boolean }>`
+  position: relative;
   width: 34px;
   height: 34px;
   border: none;
@@ -749,7 +751,7 @@ export function Carousel3D() {
           title={tr(heroFav ? 'Favorit entfernen' : 'Zu Favoriten')}
           onClick={() => toggleFavorite(selectedDashboard.id)}
         >
-          <span aria-hidden>{heroFav ? '★' : '☆'}</span>
+          <FavStar id={selectedDashboard.id} active={heroFav} />
         </HeroFavButton>
         <HeroExportButton
           aria-label="Als PNG speichern"

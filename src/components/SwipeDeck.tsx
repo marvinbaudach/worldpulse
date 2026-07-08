@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { CardCanvas } from './CardCanvas';
+import { FavStar } from './FavStar';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useFavorites } from '../hooks/useFavorites';
 import { toggleFavorite } from '../favorites';
@@ -363,7 +364,7 @@ export function SwipeDeck({ dashboards, onIndex, onRefresh, onColor }: SwipeDeck
             toggleFavorite(cur.id);
           }}
         >
-          <span aria-hidden>{curFav ? '★' : '☆'}</span>
+          <FavStar id={cur.id} active={curFav} />
         </FavButton>
       </Card>
     </Stack>
