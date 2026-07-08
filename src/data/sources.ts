@@ -14,6 +14,11 @@ import { WORLD } from './world';
 
 const MIN = 60_000;
 
+// World Bank date ranges are built from the current year so the queries keep
+// returning fresh vintages no matter when the app is opened — a fixed upper
+// bound would silently freeze a panel at its last hardcoded year.
+const THIS_YEAR = new Date().getFullYear();
+
 // ---------------------------------------------------------------------------
 // Open-Meteo forecast — Zurich: 7-day forecast for the symbol panel plus the
 // current temperature.
@@ -144,7 +149,7 @@ async function loadMilitary(): Promise<void> {
   const data = await cached('military', 24 * 60 * MIN, async () => {
     const res = await fetchJson<[unknown, WorldBankRow[]]>(
       `https://api.worldbank.org/v2/country/${MIL_CANDIDATES}` +
-        '/indicator/MS.MIL.XPND.CD?format=json&date=2022:2025&per_page=200',
+        `/indicator/MS.MIL.XPND.CD?format=json&date=${THIS_YEAR - 3}:${THIS_YEAR}&per_page=200`,
     );
     const latest = new Map<string, { name: string; v: number; year: string }>();
     for (const row of res[1] ?? []) {
@@ -214,7 +219,7 @@ async function loadPopulation(): Promise<void> {
   const points = await cached('population', 24 * 60 * MIN, async () => {
     const res = await fetchJson<[unknown, WorldBankRow[]]>(
       'https://api.worldbank.org/v2/country/CHE;WLD/indicator/SP.POP.TOTL' +
-        '?format=json&date=1960:2026&per_page=200',
+        `?format=json&date=1960:${THIS_YEAR + 1}&per_page=200`,
     );
     const pick = (code: string): [number, number][] =>
       (res[1] ?? [])
@@ -244,15 +249,16 @@ async function loadHomicide(): Promise<void> {
     const [world, trio, pop] = await Promise.all([
       fetchJson<[unknown, WorldBankRow[]]>(
         'https://api.worldbank.org/v2/country/all/indicator/VC.IHR.PSRC.P5' +
-          '?format=json&date=2016:2024&per_page=3000',
+          `?format=json&date=${THIS_YEAR - 8}:${THIS_YEAR}&per_page=3000`,
       ),
       fetchJson<[unknown, WorldBankRow[]]>(
         'https://api.worldbank.org/v2/country/CHE;DEU;USA;RUS;BRA;JPN/indicator/VC.IHR.PSRC.P5' +
-          '?format=json&date=1990:2024&per_page=400',
+          `?format=json&date=1990:${THIS_YEAR}&per_page=400`,
       ),
       fetchJson<[unknown, WorldBankRow[]]>(
         'https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL' +
-          '?format=json&date=2023&per_page=400',
+          // mrv=1 → most recent non-null value per country, whenever that is.
+          '?format=json&mrv=1&per_page=400',
       ),
     ]);
     // Micro-states dominate a raw per-capita ranking (three murders on an
