@@ -337,13 +337,20 @@ export function Carousel3D() {
   const exiting = tag !== stageTag;
   // One choreography per switch, drawn fresh each time (see CarouselItem's
   // `move`): the whole set moves as one, but every switch looks different.
+  // Helix and sphere favor their signature move (corkscrew / vortex) half of
+  // the time; the other half draws from the four generic ones.
   const [switchMove, setSwitchMove] = useState(0);
   useEffect(() => {
     if (tag === stageTag) return;
-    setSwitchMove(Math.floor(Math.random() * 4));
+    const signature = layout === 'helix' ? 4 : layout === 'sphere' ? 5 : null;
+    setSwitchMove(
+      signature !== null && Math.random() < 0.5
+        ? signature
+        : Math.floor(Math.random() * 4),
+    );
     const id = window.setTimeout(() => setStageTag(tag), EXIT_MS);
     return () => window.clearTimeout(id);
-  }, [tag, stageTag]);
+  }, [tag, stageTag, layout]);
   // Capped, per-load rotated selection (see RING_BY_TAG) — the full theme
   // pool would overcrowd the ring.
   const dashboards = useMemo(() => RING_BY_TAG[stageTag] ?? [], [stageTag]);

@@ -41,7 +41,10 @@ interface CarouselItemProps {
       card): the whole set leaves and arrives in one coherent motion, but each
       switch looks different. 0 supernova (implode/erupt center), 1 waterfall
       (drop out / rain in from above), 2 breath (scatter out / dive in from
-      outside), 3 fountain (lift out / rise in from below). */
+      outside), 3 fountain (lift out / rise in from below), 4 corkscrew
+      (screw down and out / screw in from above — the helix's signature),
+      5 vortex (spin up and drain into the core / spin out of it — the
+      sphere's signature). */
   move: number;
   /** False while a hero is open, so panels stop absorbing click-away taps. */
   interactive: boolean;
@@ -285,6 +288,29 @@ export function CarouselItem({
           group.position.set(f.x, f.y + 4.5 * e, f.z);
           group.rotation.z = -0.3 * e * snap.spin;
           break;
+        case 4: {
+          // corkscrew: the whole set screws down and out around the Y axis —
+          // uniform twist direction, so the helix unwinds as one thread.
+          const a = e * 1.6;
+          const c = Math.cos(a);
+          const sn = Math.sin(a);
+          group.position.set(f.x * c + f.z * sn, f.y - 4 * e, -f.x * sn + f.z * c);
+          break;
+        }
+        case 5: {
+          // vortex: the formation spins up while draining into the core,
+          // like water down a plughole.
+          const a = e * 3.2;
+          const c = Math.cos(a);
+          const sn = Math.sin(a);
+          const drain = 1 - e * 0.9;
+          group.position.set(
+            (f.x * c + f.z * sn) * drain,
+            f.y * (1 - e),
+            (-f.x * sn + f.z * c) * drain,
+          );
+          break;
+        }
         default: // supernova: implode into the center
           group.position.copy(f).multiplyScalar(1 - e);
       }
@@ -317,7 +343,7 @@ export function CarouselItem({
           case 3: // fountain: rise in from below
             o.set(target.x, target.y - 6, target.z);
             break;
-          default: // supernova: erupt from the center
+          default: // supernova / corkscrew / vortex: from the center
             o.set(0, 0, 0);
         }
       }
@@ -329,12 +355,36 @@ export function CarouselItem({
     );
     if (p < 1) {
       const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
-      const o = entranceOrigin.current;
-      group.position.set(
-        o.x + (target.x - o.x) * e,
-        o.y + (target.y - o.y) * e,
-        o.z + (target.z - o.z) * e,
-      );
+      if (varied && move === 4) {
+        // Corkscrew in: screw down from above onto the slot, unwinding the
+        // same uniform twist the previous set left with.
+        const a = (1 - e) * 1.6;
+        const c = Math.cos(a);
+        const sn = Math.sin(a);
+        group.position.set(
+          target.x * c + target.z * sn,
+          target.y + 4 * (1 - e),
+          -target.x * sn + target.z * c,
+        );
+      } else if (varied && move === 5) {
+        // Vortex out: spin out of the core onto the slot, the exit reversed.
+        const a = (1 - e) * 3.2;
+        const c = Math.cos(a);
+        const sn = Math.sin(a);
+        const grow = 0.1 + 0.9 * e;
+        group.position.set(
+          (target.x * c + target.z * sn) * grow,
+          target.y * e,
+          (-target.x * sn + target.z * c) * grow,
+        );
+      } else {
+        const o = entranceOrigin.current;
+        group.position.set(
+          o.x + (target.x - o.x) * e,
+          o.y + (target.y - o.y) * e,
+          o.z + (target.z - o.z) * e,
+        );
+      }
       group.rotation.x = target.rotX;
       group.rotation.y = target.rotY;
       const s = (0.5 + 0.5 * e) * focus;
