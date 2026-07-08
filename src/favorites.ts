@@ -2,7 +2,8 @@
 // localStorage with a silent in-memory fallback (private-mode Safari), and a
 // tiny pub/sub in the same shape as data/store.ts. Ids of cards that have
 // since left the pool are dropped on load.
-import { ALL_DASHBOARDS } from './dashboards';
+import { ALL_DASHBOARDS, DASHBOARDS_BY_ID } from './dashboards';
+import type { Dashboard } from './dashboards';
 
 const KEY = 'worldpulse-favorites';
 const KNOWN = new Set(ALL_DASHBOARDS.map((d) => d.id));
@@ -46,4 +47,16 @@ export function toggleFavorite(id: string): void {
 export function onFavoritesChange(fn: () => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
+}
+
+/**
+ * Snapshot of the starred cards as dashboards, in starring order. Both views
+ * assemble their FAVORITEN deck from this at stage time — a snapshot, not a
+ * live binding, so un-starring while browsing never restructures the deck.
+ */
+export function favoriteDashboards(limit = Infinity): Dashboard[] {
+  return favorites
+    .slice(0, limit)
+    .map((id) => DASHBOARDS_BY_ID[id])
+    .filter((d): d is Dashboard => d !== undefined);
 }

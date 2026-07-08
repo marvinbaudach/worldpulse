@@ -213,6 +213,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'who-funding': ['gesundheit', 'welt', 'geld'],
   'excess-mortality': ['gesundheit', 'welt'],
   'cb-gold': ['geld', 'maerkte', 'welt'],
+  'gold-reserves': ['geld', 'maerkte', 'welt'],
   'farm-decline': ['deutschland', 'soziales', 'geld'],
   'pisa': ['deutschland', 'soziales'],
   'media-trust': ['deutschland', 'freiheit', 'soziales'],
@@ -382,6 +383,7 @@ const ADDED_BY_ID: Record<string, string> = {
   'who-funding': '2026-07-09T03:00:00+02:00',
   'excess-mortality': '2026-07-09T03:00:00+02:00',
   'cb-gold': '2026-07-09T03:00:00+02:00',
+  'gold-reserves': '2026-07-08T21:30:00+02:00',
   'farm-decline': '2026-07-09T03:00:00+02:00',
   'pisa': '2026-07-09T03:00:00+02:00',
   'media-trust': '2026-07-09T03:00:00+02:00',
@@ -438,7 +440,7 @@ const FEATURED = new Set([
   'us-card-debt', 'auto-delinquency', 'office-vacancy', 'dollar-reserves', 'zombie-firms',
   'ai-compute', 'ai-investment', 'ai-datacenter-power', 'ai-users',
   'gender-language', 'gender-divide', 'self-id-laws', 'rainbow-camps', 'lgbt-criminal-map', 'executions-map', 'genocides', 'trans-youth',
-  'sdg-progress', 'who-funding', 'excess-mortality', 'cb-gold', 'farm-decline', 'pisa', 'free-speech-feeling', 'birth-collapse', 'big-three',
+  'sdg-progress', 'who-funding', 'excess-mortality', 'cb-gold', 'gold-reserves', 'farm-decline', 'pisa', 'free-speech-feeling', 'birth-collapse', 'big-three',
 ]);
 
 /**

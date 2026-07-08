@@ -2,7 +2,23 @@
 // rotation-symmetric around the Y axis, so the drag/auto-spin, the fog and
 // the depth dimming keep working unchanged in every mode.
 
+import { RING_MAX } from './dashboards';
+
 export type LayoutMode = 'ring' | 'helix' | 'sphere';
+
+// Panel dimensions in world units (4:5 aspect ratio).
+export const PANEL_W = 2.4;
+export const PANEL_H = 3.0;
+// Per-panel pitch as a multiple of the panel width: the bare 1.0 packs the
+// panels edge-to-edge, so at any grazing viewing angle (the arc curving away
+// on a wide screen) they visibly overlap. The extra headroom leaves a real gap
+// between neighbours so the ring reads as separate plates, not a smeared strip.
+const PANEL_PITCH = 1.4;
+// Radius chosen so the panels do not overlap on the ring; grows with the
+// panel count, and CameraRig dollies the camera along smoothly.
+export const radiusFor = (count: number) =>
+  (PANEL_W * PANEL_PITCH * count) / (2 * Math.PI) + 0.6;
+export const DEFAULT_RADIUS = radiusFor(RING_MAX);
 
 export const LAYOUT_MODES: { id: LayoutMode; label: string }[] = [
   { id: 'ring', label: 'RING' },

@@ -12,7 +12,7 @@ interface HotkeyPanelProps {
   hidden: boolean;
 }
 
-// Bottom-right corner: HandControls owns top-left, PerfHud top-right, the
+// Bottom-right corner: PerfHud owns the top-right, the
 // theme chips sit bottom-center.
 const Wrap = styled.div<{ $hidden: boolean }>`
   position: fixed;

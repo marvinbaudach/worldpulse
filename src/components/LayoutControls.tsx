@@ -1,12 +1,14 @@
 import styled from 'styled-components';
 import { t as tr } from '../i18n';
-import { TAGS } from '../dashboards';
-import { useFavorites } from '../hooks/useFavorites';
+import type { TAGS } from '../dashboards';
 import { glassSurface } from './glass';
 
 interface LayoutControlsProps {
   /** Active theme filter — one chip is always selected. */
   tag: string;
+  /** Chips to render (useThemeFilter's visibleTags — FAVORITEN only exists
+      once something is starred). */
+  tags: typeof TAGS;
   onTagChange: (tag: string) => void;
   /** True while a hero is open — the bar slips away so nothing competes
       with the fullscreen card. */
@@ -74,14 +76,11 @@ const Chip = styled.button<{ $active: boolean }>`
  * Theme-filter chips: each narrows the stage to the tagged cards. The
  * formation switcher moved into the HotkeyPanel (bottom-right).
  */
-export function LayoutControls({ tag, onTagChange, hidden }: LayoutControlsProps) {
-  // The FAVORITEN chip only exists once something is starred.
-  const favoriteIds = useFavorites();
-  const visibleTags = TAGS.filter((t) => t.id !== 'favoriten' || favoriteIds.length > 0);
+export function LayoutControls({ tag, tags, onTagChange, hidden }: LayoutControlsProps) {
   return (
     <Wrap $hidden={hidden}>
       <Bar>
-        {visibleTags.map((t) => (
+        {tags.map((t) => (
           <Chip key={t.id} $active={tag === t.id} onClick={() => onTagChange(t.id)}>
             {tr(t.label)}
           </Chip>

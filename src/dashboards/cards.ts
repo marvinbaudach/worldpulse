@@ -3299,6 +3299,35 @@ export const POOL: Dashboard[] = [
     [2008, '🏦 Finanzkrise'],
     [2022, '❄️ Russlands Reserven eingefroren'],
   ]), 'World Gold Council · Gold Demand Trends, Netto-Käufe der Zentralbanken pro Jahr; in den 2000ern Netto-Verkäufer, seit 2022 über bzw. nahe 1.000 t — De-Dollarisierung der Reserven.'),
+  {
+    id: 'gold-reserves',
+    title: 'Goldreserven · Top 10',
+    source:
+      'IWF IFS / World Gold Council · offizielle Goldreserven der Zentralbanken in Tonnen, Stand 2025. Die USA halten fast so viel wie die drei nächsten zusammen; China kauft seit 2022 fast jeden Monat zu.',
+    draw: (f) =>
+      hBarChart(f, {
+        // IMF IFS via WGC, ~Q3 2025. China's official figure is widely seen
+        // as a floor — the PBoC reports purchases selectively.
+        label: 'Goldreserven · Tonnen · 2025',
+        value: 8133,
+        delta: null,
+        color: yellow,
+        unit: '',
+        rowFmt: (v) => `${localeNum(v, 0)} t`,
+        rows: [
+          { name: 'USA', v: 8133 },
+          { name: 'Deutschland', v: 3350 },
+          { name: 'Italien', v: 2452 },
+          { name: 'Frankreich', v: 2437 },
+          { name: 'Russland', v: 2333 },
+          { name: 'China', v: 2304 },
+          { name: 'Schweiz', v: 1040 },
+          { name: 'Indien', v: 880 },
+          { name: 'Japan', v: 846 },
+          { name: 'Niederlande', v: 612 },
+        ],
+      }),
+  },
   trendCard('farm-decline', 'Höfesterben · Deutschland', 'Landwirtschaftliche Betriebe · 🇩🇪 · Tausend', DE_FARMS_PANEL, green, (v) => `${localeNum(v, 0)}k`, 449, eraMarkers(1950, 2024, [
     [1962, '🇪🇺 EWG-Agrarmarkt'],
     [1990, 'Wiedervereinigung'],

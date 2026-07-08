@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
+
 import { useFrame } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
 import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
@@ -28,11 +29,6 @@ interface HeroCardProps {
   /** Mount already front-and-center (progress 1) instead of flying in —
       used for the outgoing card of an arrow-key switch. */
   startOpen?: boolean;
-  /** While non-null the flight progress follows this value (0..1) instead of
-      running on time — this is how a hand gesture drags the card along its
-      flight path. Back to null, the time-driven open/close takes over from
-      wherever the scrub left the card. */
-  scrub?: RefObject<number | null>;
   /** Live poses of all ring panels, written every frame while a hero is
       open. Used instead of `start` when available, so the fly-back lands on
       the slot's current position even after a formation or count change. */
@@ -148,7 +144,6 @@ export function HeroCard({
   closing,
   onClosed,
   startOpen,
-  scrub,
   poses,
 }: HeroCardProps) {
   const pivotRef = useRef<Group>(null);
@@ -193,19 +188,12 @@ export function HeroCard({
       lastDrawAt.current = now;
     }
 
-    const scrubT = scrub?.current ?? null;
-    if (scrubT !== null) {
-      // Gesture drag: chase the hand's pull with critically-damped smoothing
-      // so the card feels attached without transmitting tracking jitter.
-      progress.current = MathUtils.damp(progress.current, scrubT, 10, delta);
-    } else {
-      const dir = closing ? -1 : 1;
-      progress.current = MathUtils.clamp(
-        progress.current + (dir * delta) / (closing ? CLOSE_TIME : OPEN_TIME),
-        0,
-        1,
-      );
-    }
+    const dir = closing ? -1 : 1;
+    progress.current = MathUtils.clamp(
+      progress.current + (dir * delta) / (closing ? CLOSE_TIME : OPEN_TIME),
+      0,
+      1,
+    );
     // Ring-side end of the flight. Opening: launch from the pose captured at
     // click (fixed), so the fly-in is independent of the ring — the card flies
     // straight to center while the ring rotates the emptied slot to the front

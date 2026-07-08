@@ -1,35 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { ALL_DASHBOARDS, DASHBOARDS_BY_ID, NEWEST, TAGS } from '../dashboards';
-import type { Dashboard } from '../dashboards';
-import { getFavorites } from '../favorites';
-import { useFavorites } from '../hooks/useFavorites';
+import { ALL_DASHBOARDS, NEWEST } from '../dashboards';
+import { favoriteDashboards } from '../favorites';
 import { refreshLiveData } from '../data/refresh';
-import { canShareFiles, shareCard } from '../exportCard';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
+import { useDismissOnOutsideTap } from '../hooks/useDismissOnOutsideTap';
+import { useMotionPermission } from '../hooks/useMotionPermission';
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import { useTagFilter } from '../hooks/useTagFilter';
-import { LOCALE, LOCALES, setLocale, t as trans } from '../i18n';
+import { useThemeFilter } from '../hooks/useThemeFilter';
+import { t as trans } from '../i18n';
+import { DeckActionMenu } from './DeckActionMenu';
+import { Dots, DotsDock } from './DeckPager';
 import { MobileAurora, hasWebGL } from './MobileAurora';
 import { MobileBackground } from './MobileBackground';
 import { SwipeDeck } from './SwipeDeck';
+import { ThemeSheet } from './ThemeSheet';
 import { glassSurface } from './glass';
-
-// iOS gates deviceorientation behind a user-gesture permission prompt;
-// everywhere else the event just fires. The user's choice persists so the
-// opt-in chip shows only until answered.
-type DOEWithPermission = typeof DeviceOrientationEvent & {
-  requestPermission?: () => Promise<'granted' | 'denied'>;
-};
-
-const MOTION_KEY = 'worldpulse-motion';
-
-function motionPermissionNeeded(): boolean {
-  return (
-    typeof DeviceOrientationEvent !== 'undefined' &&
-    typeof (DeviceOrientationEvent as DOEWithPermission).requestPermission === 'function'
-  );
-}
 
 const Deck = styled.div`
   position: fixed;
@@ -61,55 +47,6 @@ const FilterButton = styled.button`
   cursor: pointer;
   ${glassSurface}
 `;
-
-const DotsRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-// The pager reads as a property of the deck, not the header: centered under
-// the cards (iOS-pager style) instead of squeezed next to the filter button —
-// top-center is out, the wider theme labels (DEUTSCHLAND) would collide.
-const DotsDock = styled.div`
-  position: fixed;
-  left: 50%;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 26px);
-  transform: translateX(-50%);
-  z-index: 12;
-  pointer-events: none;
-`;
-
-const Dot = styled.div<{ $active: boolean; $small: boolean }>`
-  width: ${(p) => (p.$active ? 18 : 6)}px;
-  height: 6px;
-  border-radius: 999px;
-  background: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.28)')};
-  transform: scale(${(p) => (p.$small ? 0.6 : 1)});
-  transition: width 0.25s ease, background 0.25s ease, transform 0.25s ease;
-`;
-
-// iOS-pager style dots: with many cards only a sliding window of dots shows,
-// and the window-edge dots shrink to signal "more beyond".
-const MAX_DOTS = 9;
-
-function Dots({ count, active }: { count: number; active: number }) {
-  if (count <= 1) return null;
-  const visible = Math.min(count, MAX_DOTS);
-  const start = Math.max(0, Math.min(active - Math.floor(MAX_DOTS / 2), count - visible));
-  return (
-    // The dots are purely visual; the row announces the position textually.
-    <DotsRow role="status" aria-label={`${active + 1} / ${count}`}>
-      {Array.from({ length: visible }, (_, j) => {
-        const i = start + j;
-        const edge =
-          count > MAX_DOTS &&
-          ((j === 0 && start > 0) || (j === visible - 1 && start + visible < count));
-        return <Dot key={i} aria-hidden $active={i === active} $small={edge} />;
-      })}
-    </DotsRow>
-  );
-}
 
 // One-time swipe cue: the pager is a native horizontal scroll, so nothing
 // signals it is swipeable until you try. Fades out on the first swipe.
@@ -147,81 +84,6 @@ const RefreshPill = styled.div`
   ${glassSurface}
 `;
 
-// One "⋯" context button gathers the card actions (share, source, motion
-// opt-in): separate pills crowded the bottom edge and fought the swipe hint
-// on small phones.
-const MenuButton = styled.button`
-  position: fixed;
-  right: 16px;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
-  z-index: 12;
-  width: 42px;
-  height: 42px;
-  border: none;
-  border-radius: 999px;
-  color: #cfe4ff;
-  font: 700 20px/1 inherit;
-  cursor: pointer;
-  ${glassSurface}
-`;
-
-// Small glass action menu unfolding above the context button.
-const ActionMenu = styled.div`
-  position: fixed;
-  right: 16px;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 68px);
-  z-index: 13;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border-radius: 16px;
-  animation: menu-up 0.18s ease;
-  ${glassSurface}
-
-  @keyframes menu-up {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-`;
-
-const ActionItem = styled.button`
-  padding: 13px 16px;
-  border: none;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.85);
-  font: 600 13px/1 inherit;
-  letter-spacing: 0.06em;
-  text-align: left;
-  cursor: pointer;
-`;
-
-// Language switcher row at the bottom of the action menu — the mobile
-// counterpart of the desktop settings panel's SPRACHE fold.
-const LangRow = styled.div`
-  display: flex;
-  gap: 6px;
-`;
-
-const LangButton = styled.button<{ $active: boolean }>`
-  flex: 1;
-  padding: 11px 0;
-  border: none;
-  border-radius: 10px;
-  background: ${(p) => (p.$active ? 'rgba(57, 135, 229, 0.28)' : 'rgba(255, 255, 255, 0.05)')};
-  color: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.7)')};
-  font: 600 12px/1 inherit;
-  letter-spacing: 0.08em;
-  cursor: pointer;
-`;
-
 const TiltFrame = styled.div`
   flex: 1;
   display: flex;
@@ -247,99 +109,23 @@ const SourceNote = styled.div`
   ${glassSurface}
 `;
 
-const Backdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background: rgba(3, 5, 9, 0.5);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  animation: backdrop-in 0.28s ease;
-
-  @keyframes backdrop-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-`;
-
-const Sheet = styled.div`
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 31;
-  padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 14px);
-  border-radius: 22px 22px 0 0;
-  ${glassSurface}
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  animation: sheet-up 0.28s ease;
-
-  @keyframes sheet-up {
-    from {
-      transform: translateY(100%);
-    }
-    to {
-      transform: translateY(0);
-    }
-  }
-`;
-
-const Handle = styled.div`
-  grid-column: 1 / -1;
-  justify-self: center;
-  width: 40px;
-  height: 4px;
-  margin: 2px 0 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.25);
-`;
-
-const Option = styled.button<{ $active: boolean }>`
-  padding: 14px 12px;
-  border: none;
-  border-radius: 12px;
-  background: ${(p) => (p.$active ? 'rgba(57, 135, 229, 0.28)' : 'rgba(255, 255, 255, 0.05)')};
-  color: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.75)')};
-  font: 600 13px/1 inherit;
-  letter-spacing: 0.1em;
-  text-align: left;
-  cursor: pointer;
-`;
-
 /**
  * Mobile view: no 3D ring at all — a filter plus a swipeable deck of cards,
  * each drawn straight to a 2D canvas. Far lighter than the WebGL carousel.
  */
 export function MobileDeck() {
   // One theme is always active (the full 110-card pool is gone); like the 3D
-  // view, the filter persists via URL param and localStorage.
-  const [tag, setTag] = useTagFilter(TAGS[0].id);
+  // view, the filter persists via URL param and localStorage (shared
+  // view-model, including the FAVORITEN fallback when the last star goes).
+  const { tag, setTag, visibleTags } = useThemeFilter();
 
   // FAVORITEN is a snapshot taken when the chip is picked: un-starring while
   // browsing must not yank cards out from under the swipe. NEU shows the whole
   // pool newest-first; every other chip filters the clustered deck as usual.
   const dashboards = useMemo(() => {
-    if (tag === 'favoriten') {
-      return getFavorites()
-        .map((id) => DASHBOARDS_BY_ID[id])
-        .filter((d): d is Dashboard => d !== undefined);
-    }
+    if (tag === 'favoriten') return favoriteDashboards();
     return tag === 'neu' ? NEWEST : ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag));
   }, [tag]);
-
-  // The FAVORITEN chip only exists once something is starred; if the active
-  // filter empties out (last favorite removed), fall back to the default theme.
-  const favoriteIds = useFavorites();
-  const visibleTags = TAGS.filter((t) => t.id !== 'favoriten' || favoriteIds.length > 0);
-  useEffect(() => {
-    if (tag === 'favoriten' && favoriteIds.length === 0) setTag(TAGS[0].id);
-  }, [tag, favoriteIds, setTag]);
 
   const reducedMotion = useReducedMotion();
   const tiltRef = useRef<HTMLDivElement>(null);
@@ -361,36 +147,8 @@ export function MobileDeck() {
   // until then (and for ink-less cards) the theme accent carries the mood.
   const [cardTint, setCardTint] = useState<string | null>(null);
   const onCardColor = useCallback((c: string | null) => setCardTint(c), []);
-  // Non-iOS grants implicitly.
-  const [motion, setMotion] = useState<'granted' | 'ask' | 'denied'>(() => {
-    if (!motionPermissionNeeded()) return 'granted';
-    const stored = localStorage.getItem(MOTION_KEY);
-    return stored === 'granted' || stored === 'denied' ? stored : 'ask';
-  });
 
-  const askMotion = async () => {
-    try {
-      const res = await (DeviceOrientationEvent as DOEWithPermission).requestPermission?.();
-      const next = res === 'granted' ? 'granted' : 'denied';
-      localStorage.setItem(MOTION_KEY, next);
-      setMotion(next);
-    } catch {
-      localStorage.setItem(MOTION_KEY, 'denied');
-      setMotion('denied');
-    }
-  };
-
-  // A previously granted iOS permission still needs a per-session
-  // requestPermission() call, but it resolves silently — piggyback on the
-  // first tap anywhere in the deck.
-  useEffect(() => {
-    if (!motionPermissionNeeded() || motion !== 'granted') return;
-    const arm = () => void askMotion();
-    window.addEventListener('pointerdown', arm, { once: true });
-    return () => window.removeEventListener('pointerdown', arm);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  const { motion, askMotion } = useMotionPermission();
   useDeviceTilt(motion === 'granted' && !reducedMotion, tiltRef, bgRef);
 
   const [active, setActive] = useState(0);
@@ -400,22 +158,11 @@ export function MobileDeck() {
 
   // Tooltip behavior for the source note and the action menu: any tap outside
   // the element (or the button that owns it) dismisses it.
-  useEffect(() => {
-    if (!infoOpen) return;
-    const close = (e: PointerEvent) => {
-      if (!(e.target as Element | null)?.closest?.('[data-source-ui]')) setInfoOpen(false);
-    };
-    window.addEventListener('pointerdown', close);
-    return () => window.removeEventListener('pointerdown', close);
-  }, [infoOpen]);
-  useEffect(() => {
-    if (!actionsOpen) return;
-    const close = (e: PointerEvent) => {
-      if (!(e.target as Element | null)?.closest?.('[data-actions-ui]')) setActionsOpen(false);
-    };
-    window.addEventListener('pointerdown', close);
-    return () => window.removeEventListener('pointerdown', close);
-  }, [actionsOpen]);
+  const closeInfo = useCallback(() => setInfoOpen(false), []);
+  const closeActions = useCallback(() => setActionsOpen(false), []);
+  useDismissOnOutsideTap(infoOpen, 'data-source-ui', closeInfo);
+  useDismissOnOutsideTap(actionsOpen, 'data-actions-ui', closeActions);
+
   const [swiped, setSwiped] = useState(() => localStorage.getItem('worldpulse-swiped') === '1');
   const [refreshing, setRefreshing] = useState(false);
   // Stable identity: SwipeDeck holds this in a prop, and a fresh closure per
@@ -453,8 +200,7 @@ export function MobileDeck() {
 
   const current = dashboards[Math.min(active, dashboards.length - 1)];
   const source = current?.source;
-  const activeTag = TAGS.find((t) => t.id === tag) ?? TAGS[0];
-  const currentLabel = trans(activeTag.label);
+  const activeTag = visibleTags.find((t) => t.id === tag) ?? visibleTags[0];
   const pick = (next: string) => {
     setTag(next);
     setCardTint(null); // new theme, new deck — fall back to its accent
@@ -470,7 +216,7 @@ export function MobileDeck() {
       )}
       <TopBar>
         <FilterButton onClick={() => setMenuOpen(true)}>
-          {currentLabel}
+          {trans(activeTag.label)}
           <span aria-hidden>▾</span>
         </FilterButton>
       </TopBar>
@@ -493,80 +239,30 @@ export function MobileDeck() {
 
       {!swiped && dashboards.length > 1 && <Hint $gone={false}>{trans('← wischen zum Blättern →')}</Hint>}
 
-      <MenuButton
-        data-actions-ui
-        aria-label={trans('Aktionen')}
-        aria-expanded={actionsOpen}
-        onClick={() => {
+      <DeckActionMenu
+        open={actionsOpen}
+        onToggle={() => {
           setInfoOpen(false);
           setActionsOpen((o) => !o);
         }}
-      >
-        <span aria-hidden>⋯</span>
-      </MenuButton>
-      {actionsOpen && (
-        <ActionMenu data-actions-ui>
-          {current && (
-            <ActionItem
-              onClick={() => {
-                setActionsOpen(false);
-                void shareCard(current);
-              }}
-            >
-              {trans(canShareFiles() ? 'Teilen' : 'Bild speichern')}
-            </ActionItem>
-          )}
-          {source && (
-            <ActionItem
-              onClick={() => {
-                setActionsOpen(false);
-                setInfoOpen(true);
-              }}
-            >
-              {trans('Quelle anzeigen')}
-            </ActionItem>
-          )}
-          {/* The click that picks this entry is the user gesture iOS needs
-              for DeviceOrientationEvent.requestPermission(). */}
-          {motion === 'ask' && (
-            <ActionItem
-              onClick={() => {
-                setActionsOpen(false);
-                void askMotion();
-              }}
-            >
-              {trans('Bewegungseffekte aktivieren')}
-            </ActionItem>
-          )}
-          {/* Locale switch remounts the deck via App's key={locale}, which
-              also closes this menu. */}
-          <LangRow role="group" aria-label={trans('SPRACHE')}>
-            {LOCALES.map((l) => (
-              <LangButton key={l} $active={LOCALE === l} onClick={() => setLocale(l)}>
-                {l.toUpperCase()}
-              </LangButton>
-            ))}
-          </LangRow>
-        </ActionMenu>
-      )}
+        onClose={closeActions}
+        current={current}
+        onShowSource={() => setInfoOpen(true)}
+        onAskMotion={motion === 'ask' ? () => void askMotion() : null}
+      />
       {infoOpen && source && (
-        <SourceNote data-source-ui onClick={() => setInfoOpen(false)}>
+        <SourceNote data-source-ui onClick={closeInfo}>
           {trans('Quelle')}: {trans(source)}
         </SourceNote>
       )}
 
       {menuOpen && (
-        <>
-          <Backdrop onClick={() => setMenuOpen(false)} />
-          <Sheet>
-            <Handle />
-            {visibleTags.map((t) => (
-              <Option key={t.id} $active={tag === t.id} onClick={() => pick(t.id)}>
-                {trans(t.label)}
-              </Option>
-            ))}
-          </Sheet>
-        </>
+        <ThemeSheet
+          tags={visibleTags}
+          active={tag}
+          onPick={pick}
+          onClose={() => setMenuOpen(false)}
+        />
       )}
     </Deck>
   );
