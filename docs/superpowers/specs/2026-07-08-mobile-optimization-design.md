@@ -55,6 +55,14 @@ Two user-facing improvements, in this order:
   horizontal card swipe): re-triggers the live-data fetchers with a small
   glow/spinner affordance at the top. Cards marked `dynamic` redraw when data
   lands (existing behavior).
+- **Chart animation on every card.** Today only the very first card plays the
+  fly-in; afterwards `CardCanvas` locks the settled frame. Change: each card
+  replays its intro when it lands in front after a swipe (not while peeking
+  behind — the stack stays calm). The replay starts together with the landing
+  animation so the settled→restart flash reads as part of the transition.
+  Cards with `live: true` (e.g. the debt clock) additionally keep a continuous
+  rAF loop while they are the front card instead of freezing. Both respect
+  `prefers-reduced-motion` (settled frame, no replay).
 
 ## 4. Living background
 
