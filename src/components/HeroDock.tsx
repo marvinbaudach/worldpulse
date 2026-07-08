@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { FavStar } from './FavStar';
 import { downloadCard } from '../exportCard';
 import { toggleFavorite } from '../favorites';
 import { useFavorites } from '../hooks/useFavorites';
@@ -33,8 +34,10 @@ const InfoButton = styled.button`
 `;
 
 // Star toggle: adds/removes the open card from the favorites stack. Gold when
-// active — the same SERIES slot the FAVORITEN chip carries.
+// active — the same SERIES slot the FAVORITEN chip carries. position:relative
+// anchors FavStar's expanding ping ring.
 const FavButton = styled.button<{ $active: boolean }>`
+  position: relative;
   width: 34px;
   height: 34px;
   border: none;
@@ -110,7 +113,7 @@ export function HeroDock({ dashboard }: { dashboard: Dashboard }) {
         title={favLabel}
         onClick={() => toggleFavorite(dashboard.id)}
       >
-        <span aria-hidden>{fav ? '★' : '☆'}</span>
+        <FavStar id={dashboard.id} active={fav} />
       </FavButton>
       <ExportButton
         aria-label={exportLabel}
