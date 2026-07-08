@@ -466,6 +466,23 @@ export const DE_MIGRATION_FLOWS = compareSeries(
   { inLatest: 1.93 },
 );
 
+// Migration between Germany and Poland, all persons, thousands per year
+// (BiB/Destatis Wanderungsstatistik 1974–2024; pre-1991 former West Germany,
+// method break from 2016). Full annual series — the crossings carry the
+// story: the Aussiedler waves peaking 1988/89, the EU-accession (2004) and
+// Freizügigkeit (2011) boom with arrivals near 200k/yr, then a steady slide —
+// and in 2024 departures exceed arrivals for the first time since 1993
+// (83.9k in vs 95.1k out, saldo −11.2k).
+export const PL_MIGRATION_COMPARE = compareSeries(
+  [
+    { name: '→ 🇩🇪 Zuzüge', pts: [[1974, 12.8], [1975, 20.5], [1976, 45.1], [1977, 51.2], [1978, 58.3], [1979, 63.2], [1980, 67.9], [1981, 135.3], [1982, 58.8], [1983, 55.5], [1984, 82.4], [1985, 89.7], [1986, 105.4], [1987, 158.2], [1988, 313.8], [1989, 455.1], [1990, 300.7], [1991, 145.7], [1992, 143.7], [1993, 81.7], [1994, 88.1], [1995, 99.7], [1996, 91.3], [1997, 85.6], [1998, 82.0], [1999, 90.2], [2000, 94.1], [2001, 100.5], [2002, 101.0], [2003, 104.9], [2004, 139.8], [2005, 159.2], [2006, 163.6], [2007, 153.6], [2008, 131.3], [2009, 122.8], [2010, 125.9], [2011, 172.7], [2012, 184.3], [2013, 197.0], [2014, 197.9], [2015, 195.7], [2016, 163.8], [2017, 152.5], [2018, 146.2], [2019, 130.7], [2020, 103.5], [2021, 96.0], [2022, 107.1], [2023, 106.2], [2024, 83.9]] },
+    { name: '→ 🇵🇱 Fortzüge', pts: [[1974, 9.4], [1975, 13.0], [1976, 13.9], [1977, 16.2], [1978, 18.0], [1979, 20.7], [1980, 28.6], [1981, 50.0], [1982, 33.6], [1983, 35.5], [1984, 52.8], [1985, 58.1], [1986, 62.8], [1987, 71.5], [1988, 101.4], [1989, 145.9], [1990, 162.1], [1991, 118.0], [1992, 112.1], [1993, 104.8], [1994, 70.3], [1995, 77.0], [1996, 78.9], [1997, 79.1], [1998, 70.6], [1999, 69.5], [2000, 71.4], [2001, 76.0], [2002, 78.7], [2003, 82.9], [2004, 104.5], [2005, 105.5], [2006, 112.5], [2007, 120.8], [2008, 132.4], [2009, 122.6], [2010, 103.2], [2011, 106.5], [2012, 114.4], [2013, 125.4], [2014, 138.7], [2015, 132.4], [2016, 137.2], [2017, 119.1], [2018, 127.0], [2019, 130.4], [2020, 98.2], [2021, 92.2], [2022, 89.4], [2023, 91.4], [2024, 95.1]] },
+  ],
+  (v) => `${Math.round(v)}k`,
+  /** Latest arrivals figure (2024 Zuzüge, thousands), for the config. */
+  { inLatest: 83.9 },
+);
+
 // German resident population, millions, present-territory boundaries (Destatis;
 // pre-1990 figures sum both German states, rounded). Near-flat for decades —
 // low birth rates mean the population only grows when net migration is strong

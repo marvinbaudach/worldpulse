@@ -59,6 +59,7 @@ import {
   M2_COMPARE,
   M2_PANEL,
   NUKE_TESTS_PANEL,
+  PL_MIGRATION_COMPARE,
   PRESS_FREEDOM_COMPARE,
   BOOK_BANS_PANEL,
   JAILED_JOURNALISTS_PANEL,
@@ -806,6 +807,37 @@ export const POOL: Dashboard[] = [
           [1992, '🧱 Balkan/Aussiedler'],
           [2015, '📈 Zuwanderung 2015'],
           [2022, '🇺🇦 Vollinvasion 2022'],
+        ]),
+      }),
+  },
+  {
+    id: 'pl-migration',
+    title: 'Wanderungen Polen ↔ Deutschland',
+    source:
+      'BiB/Destatis · Wanderungsstatistik; ab 2016 Methodenbruch, Werte nur bedingt vergleichbar.',
+    draw: (f) =>
+      lineChart(f, {
+        // Fifty years of Poland↔Germany migration: the Aussiedler waves
+        // peaking 1988/89, the EU-accession/Freizügigkeit boom with arrivals
+        // near 200k/yr — and since 2016 the quiet reversal. 2024 is the first
+        // year since 1993 with more departures than arrivals.
+        label: 'Wanderungen · 🇵🇱 ↔ 🇩🇪 · Tsd. pro Jahr',
+        value: PL_MIGRATION_COMPARE.inLatest,
+        unit: '',
+        fmt: (v) => `${Math.round(v)}k`,
+        delta: null,
+        seed: 263,
+        series: [
+          { name: '→ 🇩🇪 Zuzüge', color: blue, data: PL_MIGRATION_COMPARE.rows[0].data },
+          { name: '→ 🇵🇱 Fortzüge', color: red, data: PL_MIGRATION_COMPARE.rows[1].data },
+        ],
+        ticks: PL_MIGRATION_COMPARE.ticks,
+        xLabels: ['1974', '1991', '2007', 'heute'],
+        markers: eraMarkers(1974, 2024, [
+          [1988, '🧳 Aussiedler'],
+          [2004, '🇪🇺 EU-Beitritt'],
+          [2011, '🛠️ Freizügigkeit'],
+          [2024, '↩️ Saldo kippt'],
         ]),
       }),
   },
