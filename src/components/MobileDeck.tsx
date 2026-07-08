@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { ALL_DASHBOARDS, TAGS } from '../dashboards';
 import { refreshLiveData } from '../data/refresh';
@@ -308,7 +308,9 @@ export function MobileDeck() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [swiped, setSwiped] = useState(() => localStorage.getItem('worldpulse-swiped') === '1');
   const [refreshing, setRefreshing] = useState(false);
-  const refresh = async () => {
+  // Stable identity: SwipeDeck holds this in a prop, and a fresh closure per
+  // render would churn its internals for no reason.
+  const refresh = useCallback(async () => {
     if (refreshing) return;
     setRefreshing(true);
     try {
@@ -317,23 +319,27 @@ export function MobileDeck() {
       // Always drop the pill — a throw must not leave it stuck on screen.
       setRefreshing(false);
     }
-  };
+  }, [refreshing]);
 
-  // Guard against same-index re-fires: SwipeDeck's snap effect re-runs on
-  // every parent render (onIndex is a fresh closure), and an unguarded reset
-  // here would close the source note the instant its own toggle re-renders us.
+  // Guard against same-index re-fires, and keep the identity stable via
+  // useCallback: SwipeDeck's snap effect depends on onIndex, and a fresh
+  // closure per parent render (e.g. the refresh pill toggling) would re-run
+  // it with transition:'none' — killing the pull spring-back mid-flight.
   const lastIndex = useRef(0);
-  const onIndex = (i: number) => {
-    setActive(i);
-    if (i !== lastIndex.current) {
-      lastIndex.current = i;
-      setInfoOpen(false); // the note belongs to the card it was opened on
-    }
-    if (i > 0 && !swiped) {
-      setSwiped(true);
-      localStorage.setItem('worldpulse-swiped', '1');
-    }
-  };
+  const onIndex = useCallback(
+    (i: number) => {
+      setActive(i);
+      if (i !== lastIndex.current) {
+        lastIndex.current = i;
+        setInfoOpen(false); // the note belongs to the card it was opened on
+      }
+      if (i > 0 && !swiped) {
+        setSwiped(true);
+        localStorage.setItem('worldpulse-swiped', '1');
+      }
+    },
+    [swiped],
+  );
 
   const source = dashboards[Math.min(active, dashboards.length - 1)]?.source;
   const activeTag = TAGS.find((t) => t.id === tag) ?? TAGS[0];
@@ -373,7 +379,9 @@ export function MobileDeck() {
         <SourceNote onClick={() => setInfoOpen(false)}>{trans('Quelle')}: {trans(source)}</SourceNote>
       )}
 
-      {motion === 'ask' && (
+      {/* The swipe hint owns the bottom edge until the first swipe — showing
+          both at once overlaps on narrow phones. */}
+      {motion === 'ask' && (swiped || dashboards.length <= 1) && (
         <MotionChip onClick={askMotion}>{trans('Bewegungseffekte aktivieren')}</MotionChip>
       )}
 

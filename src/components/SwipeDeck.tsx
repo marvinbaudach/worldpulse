@@ -189,6 +189,9 @@ export function SwipeDeck({ dashboards, onIndex, onRefresh }: SwipeDeckProps) {
     if (d.axis === null && Math.hypot(d.dx, d.dy) > 12) {
       d.axis = d.dy > 0 && d.dy > Math.abs(d.dx) * 1.5 ? 'y' : 'x';
     }
+    // Still inside the dead zone: don't run either path yet, or a pure
+    // downward pull would flash the neighbours before the lock lands.
+    if (d.axis === null) return;
     // Mostly-vertical downward drag = pull-to-refresh: the card follows the
     // finger down with resistance instead of arming the horizontal throw.
     if (d.axis === 'y') {
@@ -224,11 +227,14 @@ export function SwipeDeck({ dashboards, onIndex, onRefresh }: SwipeDeckProps) {
     const d = drag.current;
     if (!d.active) return;
     d.active = false;
-    // Committed pull: trigger the refresh and spring everything back to rest
-    // (neighbours too, in case an earlier horizontal phase raised one).
-    if (d.axis === 'y' && d.dy > 110) {
-      navigator.vibrate?.(8);
-      onRefresh?.();
+    // A y-locked gesture never reaches the horizontal throw logic: it either
+    // commits the pull or springs everything back to rest (neighbours too).
+    if (d.axis === 'y') {
+      if (d.dy > 110) {
+        // Committed pull: trigger the refresh, then spring back.
+        navigator.vibrate?.(8);
+        onRefresh?.();
+      }
       setCur(CENTER, SPRING);
       for (const r of [nextRef.current, prevRef.current]) {
         if (r) {
