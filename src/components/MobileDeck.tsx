@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { ALL_DASHBOARDS, TAGS } from '../dashboards';
 import { useTagFilter } from '../hooks/useTagFilter';
 import { t as trans } from '../i18n';
+import { MobileBackground } from './MobileBackground';
 import { SwipeDeck } from './SwipeDeck';
 import { glassSurface } from './glass';
 
@@ -224,7 +225,8 @@ export function MobileDeck() {
   };
 
   const source = dashboards[Math.min(active, dashboards.length - 1)]?.source;
-  const currentLabel = trans(TAGS.find((t) => t.id === tag)?.label ?? TAGS[0].label);
+  const activeTag = TAGS.find((t) => t.id === tag) ?? TAGS[0];
+  const currentLabel = trans(activeTag.label);
   const pick = (next: string) => {
     setTag(next);
     setMenuOpen(false);
@@ -232,6 +234,7 @@ export function MobileDeck() {
 
   return (
     <Deck>
+      <MobileBackground accent={activeTag.accent} />
       <TopBar>
         <FilterButton onClick={() => setMenuOpen(true)}>
           {currentLabel}
