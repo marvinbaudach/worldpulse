@@ -1,6 +1,7 @@
 // Vertical and horizontal bar charts, both sharing the magnitude ramp so a
 // bar's length and its color both encode the value.
 
+import { t as tr } from '../../i18n';
 import {
   drawGrid,
   drawGridLabels,
@@ -66,7 +67,7 @@ export function barChart(f: Frame, cfg: BarCfg): void {
     ctx.fillStyle = MUTED;
     ctx.font = `400 ${13 * u}px ${FONT}`;
     ctx.textAlign = 'center';
-    ctx.fillText(labels[i] ?? '', x + bw / 2, r.y1 + 22 * u);
+    ctx.fillText(tr(labels[i] ?? ''), x + bw / 2, r.y1 + 22 * u);
     ctx.textAlign = 'left';
   });
   drawGridLabels(f, r.y0, r.y1, cfg.ticks);

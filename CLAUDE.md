@@ -66,7 +66,14 @@ Year-axis era markers: use `eraMarkers()`.
   Y-axis rotation-symmetric. Ring radius/camera/fog scale with panel count.
 - Deterministic PRNG (`rng`/`makeSeries` in `draw.ts`) so demo data is stable
   across visits.
-- UI copy is **German**; code, comments and commit messages are **English**.
+- UI copy is authored in **German**; code, comments and commit messages are
+  **English**. i18n (`src/i18n/`): `t()` maps the German source string to the
+  browser language (de/en/fr/it, fallback en) via dictionaries keyed by the
+  exact German text. Translation happens centrally in the renderers
+  (`drawEyebrow`, `drawSource`, `drawLegend`, `withFlag`, era markers…) — card
+  definitions stay German and untouched. When adding/changing German copy, add
+  the same key to `src/i18n/{en,fr,it}.ts`; missing keys fall through to
+  German, composed `A · B` labels translate per segment.
 - React: type props, infer return type, no `React.FC`.
 - `import/no-cycle` is an error — mind the `dashboards` ↔ `data` boundary.
 

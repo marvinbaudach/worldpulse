@@ -1,11 +1,12 @@
 import styled from 'styled-components';
+import { t as tr } from '../i18n';
 import { TAGS } from '../dashboards';
 import { glassSurface } from './glass';
 
 interface LayoutControlsProps {
-  /** Active theme filter (null = the full pool). */
-  tag: string | null;
-  onTagChange: (tag: string | null) => void;
+  /** Active theme filter — one chip is always selected. */
+  tag: string;
+  onTagChange: (tag: string) => void;
   /** True while a hero is open — the bar slips away so nothing competes
       with the fullscreen card. */
   hidden: boolean;
@@ -76,16 +77,9 @@ export function LayoutControls({ tag, onTagChange, hidden }: LayoutControlsProps
   return (
     <Wrap $hidden={hidden}>
       <Bar>
-        <Chip $active={tag === null} onClick={() => onTagChange(null)}>
-          ALLE
-        </Chip>
         {TAGS.map((t) => (
-          <Chip
-            key={t.id}
-            $active={tag === t.id}
-            onClick={() => onTagChange(tag === t.id ? null : t.id)}
-          >
-            {t.label}
+          <Chip key={t.id} $active={tag === t.id} onClick={() => onTagChange(t.id)}>
+            {tr(t.label)}
           </Chip>
         ))}
       </Bar>

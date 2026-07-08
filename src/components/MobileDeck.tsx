@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { ALL_DASHBOARDS, TAGS } from '../dashboards';
 import { useTagFilter } from '../hooks/useTagFilter';
+import { t as trans } from '../i18n';
 import { SwipeDeck } from './SwipeDeck';
 import { glassSurface } from './glass';
 
@@ -149,12 +150,12 @@ const Option = styled.button<{ $active: boolean }>`
  * each drawn straight to a 2D canvas. Far lighter than the WebGL carousel.
  */
 export function MobileDeck() {
-  // Always open on the full deck (ALLE); the filter lives in state for the
-  // session only, so it never inherits the 3D view's saved filter.
-  const [tag, setTag] = useTagFilter(null);
+  // One theme is always active (the full 110-card pool is gone); like the 3D
+  // view, the filter persists via URL param and localStorage.
+  const [tag, setTag] = useTagFilter(TAGS[0].id);
 
   const dashboards = useMemo(
-    () => (tag ? ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag)) : ALL_DASHBOARDS),
+    () => ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag)),
     [tag],
   );
 
@@ -180,8 +181,8 @@ export function MobileDeck() {
   };
 
   const source = dashboards[Math.min(active, dashboards.length - 1)]?.source;
-  const currentLabel = tag ? (TAGS.find((t) => t.id === tag)?.label ?? 'ALLE') : 'ALLE';
-  const pick = (next: string | null) => {
+  const currentLabel = trans(TAGS.find((t) => t.id === tag)?.label ?? TAGS[0].label);
+  const pick = (next: string) => {
     setTag(next);
     setMenuOpen(false);
   };
@@ -198,17 +199,17 @@ export function MobileDeck() {
         </Counter>
       </TopBar>
 
-      <SwipeDeck key={tag ?? 'all'} dashboards={dashboards} onIndex={onIndex} />
+      <SwipeDeck key={tag} dashboards={dashboards} onIndex={onIndex} />
 
-      {!swiped && dashboards.length > 1 && <Hint $gone={false}>← wischen zum Blättern →</Hint>}
+      {!swiped && dashboards.length > 1 && <Hint $gone={false}>{trans('← wischen zum Blättern →')}</Hint>}
 
       {source && (
-        <InfoButton aria-label="Quelle anzeigen" onClick={() => setInfoOpen((o) => !o)}>
+        <InfoButton aria-label={trans('Quelle anzeigen')} onClick={() => setInfoOpen((o) => !o)}>
           i
         </InfoButton>
       )}
       {infoOpen && source && (
-        <SourceNote onClick={() => setInfoOpen(false)}>Quelle: {source}</SourceNote>
+        <SourceNote onClick={() => setInfoOpen(false)}>{trans('Quelle')}: {trans(source)}</SourceNote>
       )}
 
       {menuOpen && (
@@ -216,12 +217,9 @@ export function MobileDeck() {
           <Backdrop onClick={() => setMenuOpen(false)} />
           <Sheet>
             <Handle />
-            <Option $active={tag === null} onClick={() => pick(null)}>
-              ALLE
-            </Option>
             {TAGS.map((t) => (
               <Option key={t.id} $active={tag === t.id} onClick={() => pick(t.id)}>
-                {t.label}
+                {trans(t.label)}
               </Option>
             ))}
           </Sheet>

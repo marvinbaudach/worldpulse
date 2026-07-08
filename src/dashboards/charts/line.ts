@@ -1,6 +1,7 @@
 // Line and area charts: a two-series line with draw-in and endpoint pulse,
 // and a single-series gradient area.
 
+import { t as tr } from '../../i18n';
 import {
   drawCompareHeader,
   drawGrid,
@@ -38,6 +39,7 @@ export function drawEraMarkers(
   const rowSpans: { x0: number; x1: number }[][] = [];
   const gap = 6 * u;
   for (const m of marks) {
+    const label = tr(m.label);
     const mx = r.x0 + (r.x1 - r.x0) * Math.min(1, Math.max(0, m.at));
     ctx.save();
     ctx.strokeStyle = 'rgba(224,156,96,0.8)';
@@ -48,7 +50,7 @@ export function drawEraMarkers(
     ctx.lineTo(mx, r.y1);
     ctx.stroke();
     ctx.restore();
-    const labelW = ctx.measureText(m.label).width;
+    const labelW = ctx.measureText(label).width;
     const rightFits = mx + gap + labelW <= r.x1;
     const lx = mx + (rightFits ? gap : -gap);
     const x0 = rightFits ? lx : lx - labelW;
@@ -71,7 +73,7 @@ export function drawEraMarkers(
     ctx.fill();
     ctx.fillStyle = 'rgba(236,182,132,0.9)';
     ctx.textAlign = rightFits ? 'left' : 'right';
-    ctx.fillText(m.label, lx, ly);
+    ctx.fillText(label, lx, ly);
   }
 }
 
@@ -135,9 +137,10 @@ export function lineChart(f: Frame, cfg: LineCfg): void {
     ctx.fillStyle = 'rgba(150,190,235,0.85)';
     ctx.font = `500 ${13 * u}px ${FONT}`;
     ctx.textAlign = 'left';
-    const labelW = ctx.measureText(cfg.shade.label).width;
+    const shadeLabel = tr(cfg.shade.label);
+    const labelW = ctx.measureText(shadeLabel).width;
     const lx = Math.min(bandStartX + 6 * u, r.x1 - labelW - 6 * u);
-    ctx.fillText(cfg.shade.label, Math.max(r.x0 + 6 * u, lx), r.y0 + 16 * u);
+    ctx.fillText(shadeLabel, Math.max(r.x0 + 6 * u, lx), r.y0 + 16 * u);
   }
 
   drawGrid(f, r.y0, r.y1, cfg.ticks.length);

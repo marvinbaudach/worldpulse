@@ -31,6 +31,9 @@ import { useTagFilter } from '../hooks/useTagFilter';
 import {
   ALL_DASHBOARDS,
   MIN_COUNT,
+  RING_BY_TAG,
+  RING_MAX,
+  TAGS,
   type Dashboard,
 } from '../dashboards';
 import { glassSurface } from './glass';
@@ -136,7 +139,7 @@ const PANEL_PITCH = 1.4;
 // panel count, and CameraRig dollies the camera along smoothly.
 const radiusFor = (count: number) =>
   (PANEL_W * PANEL_PITCH * count) / (2 * Math.PI) + 0.6;
-const DEFAULT_RADIUS = radiusFor(ALL_DASHBOARDS.length);
+const DEFAULT_RADIUS = radiusFor(RING_MAX);
 
 // Zoom bounds and hold-to-zoom rate (factor per second) for the +/- dolly:
 // tap for a small nudge, hold to glide all the way in or out.
@@ -146,11 +149,10 @@ const ZOOM_RATE = 2.0;
 
 // localStorage keys for the persisted theme filter and formation.
 const LAYOUT_KEY = 'worldpulse-layout';
-// Theme filter a fresh visitor lands on; null means the unfiltered "ALLE" pool
-// ('all' is its stored sentinel, so an explicit ALLE also survives a reload).
-// Default is the full pool now that country tags are reserved for country-
-// focused cards (Switzerland alone would otherwise show a single card).
-const DEFAULT_TAG: string | null = null;
+// Theme filter a fresh visitor lands on. The unfiltered "ALLE" pool is gone —
+// 110 cards were simply too many for one stage — so one theme is always
+// active; first-time visitors start on the first chip.
+const DEFAULT_TAG: string = TAGS[0].id;
 
 // How many ring panels are admitted per frame while the set mounts in.
 const MOUNT_BATCH = 3;
@@ -291,15 +293,14 @@ export function Carousel3D() {
   useEffect(() => {
     localStorage.setItem(LAYOUT_KEY, layout);
   }, [layout]);
-  // Theme filter: a chip narrows the stage to the tagged cards; without one
-  // the full pool is on stage. Kept in the URL (?filter=…) so a shared link
-  // restores the view, and mirrored to localStorage; a fresh visitor lands on
+  // Theme filter: exactly one chip is always active and narrows the stage to
+  // its tagged cards. Kept in the URL (?filter=…) so a shared link restores
+  // the view, and mirrored to localStorage; a fresh visitor lands on
   // DEFAULT_TAG.
   const [tag, setTag] = useTagFilter(DEFAULT_TAG);
-  const dashboards = useMemo(
-    () => (tag ? ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag)) : ALL_DASHBOARDS),
-    [tag],
-  );
+  // Capped, per-load rotated selection (see RING_BY_TAG) — the full theme
+  // pool would overcrowd the ring.
+  const dashboards = useMemo(() => RING_BY_TAG[tag] ?? [], [tag]);
   const radius = radiusFor(Math.max(dashboards.length, MIN_COUNT));
   const fogNear = radius + 2;
   const fogFar = radius * 2 + 8;

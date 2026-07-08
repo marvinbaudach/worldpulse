@@ -4,6 +4,7 @@
 // produce. These also back the fallbacks for the panels that do fetch, so the
 // ring keeps its true curves even with every API unreachable.
 
+import { t as tr } from '../i18n';
 import type { TrendSeries } from './store';
 import {
   compareSeries,
@@ -656,7 +657,7 @@ export const DE_UNDEREMPLOYMENT_COMPARE = compareSeries(
     { name: 'Arbeitslose (offiziell)', pts: [[2009, 3.42], [2011, 2.98], [2013, 2.95], [2015, 2.79], [2017, 2.53], [2019, 2.27], [2020, 2.70], [2022, 2.42], [2023, 2.61], [2024, 2.79]] },
     { name: 'Langzeitarbeitslose', pts: [[2009, 1.13], [2011, 1.06], [2013, 1.07], [2015, 1.04], [2017, 0.90], [2019, 0.72], [2020, 0.82], [2021, 1.00], [2022, 0.93], [2024, 1.03]] },
   ],
-  (v) => `${v.toFixed(1)} Mio`,
+  (v) => `${v.toFixed(1)} ${tr('Mio')}`,
   /** Latest underemployment figure, for the headline. */
   { underLatest: 3.58 },
 );
@@ -784,7 +785,7 @@ export const HUNGER_PANEL: TrendSeries = trend(
     [2005, 810], [2010, 640], [2015, 589], [2017, 572], [2019, 581],
     [2020, 638], [2021, 745], [2022, 735], [2023, 733],
   ],
-  (v) => `${Math.round(v)} Mio`,
+  (v) => `${Math.round(v)} ${tr('Mio')}`,
   ['2005', '2011', '2017', 'heute'],
 );
 

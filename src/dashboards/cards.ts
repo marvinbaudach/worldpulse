@@ -2,6 +2,7 @@
 // it picks up live data on the next frame and otherwise falls back to a seeded
 // or bundled series. Tagging, ordering and the public registry live in index.ts.
 
+import { t as tr } from '../i18n';
 import {
   areaChart,
   choroplethMap,
@@ -697,7 +698,7 @@ export const POOL: Dashboard[] = [
         label: 'Arbeitslosigkeit · 🇩🇪 · Mio',
         value: DE_UNDEREMPLOYMENT_COMPARE.underLatest,
         unit: '',
-        fmt: (v) => `${v.toFixed(1)} Mio`,
+        fmt: (v) => `${v.toFixed(1)} ${tr('Mio')}`,
         delta: null,
         seed: 269,
         series: [
@@ -804,7 +805,7 @@ export const POOL: Dashboard[] = [
         ]),
       }),
   },
-  trendCard('de-population', 'Bevölkerung Deutschland · seit 1950', 'Bevölkerung · 🇩🇪 · Jahresende', DE_POPULATION_PANEL, blue, (v) => `${v.toFixed(1)} Mio.`, 319, eraMarkers(1950, 2024, [
+  trendCard('de-population', 'Bevölkerung Deutschland · seit 1950', 'Bevölkerung · 🇩🇪 · Jahresende', DE_POPULATION_PANEL, blue, (v) => `${v.toFixed(1)} ${tr('Mio.')}`, 319, eraMarkers(1950, 2024, [
     // The population only moves on migration: near-flat for decades, a record
     // ~84m after the 2015 and 2022 waves, since births stay below deaths.
     [1990, '🇩🇪 Wiedervereinigung 1990'],
@@ -1155,7 +1156,7 @@ export const POOL: Dashboard[] = [
     { at: 0.5, label: '📱 Smartphone' },
     { at: 0.82, label: '🌍 Halbe Menschheit' },
   ], 'ITU · Internetnutzer weltweit.'),
-  trendCard('world-hunger', 'Welthunger · Unterernährte', 'Unterernährte weltweit · SDG 2', HUNGER_PANEL, red, (v) => `${Math.round(v)} Mio`, 71, eraMarkers(2005, 2023, [
+  trendCard('world-hunger', 'Welthunger · Unterernährte', 'Unterernährte weltweit · SDG 2', HUNGER_PANEL, red, (v) => `${Math.round(v)} ${tr('Mio')}`, 71, eraMarkers(2005, 2023, [
     [2017, '📉 Tiefpunkt'],
     [2020, '🦠 Pandemie'],
   ]), 'FAO · The State of Food Security and Nutrition (2024). Methodik mehrfach revidiert — Größenordnungen.'),
@@ -1455,7 +1456,7 @@ export const POOL: Dashboard[] = [
         // Germany and Japan anchor the low end for contrast.
         label: 'Inhaftierte · Anteil der Bevölkerung',
         value: 11.5e6,
-        fmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
+        fmt: (v) => `${(v / 1e6).toFixed(1)} ${tr('Mio')}`,
         rowFmt: (v) => `${(v / 1000).toFixed(2)} %`,
         delta: null,
         color: violet,
@@ -1485,7 +1486,7 @@ export const POOL: Dashboard[] = [
         // anchor the low end for contrast.
         label: 'Adipositas · Anteil der Erwachsenen',
         value: 8.9e8,
-        fmt: (v) => `${(v / 1e6).toFixed(0)} Mio`,
+        fmt: (v) => `${(v / 1e6).toFixed(0)} ${tr('Mio')}`,
         rowFmt: (v) => `${v.toFixed(0)} %`,
         delta: null,
         color: orange,
@@ -1636,8 +1637,8 @@ export const POOL: Dashboard[] = [
         // counts are highest in the most populous countries.
         label: 'Moderne Sklaverei · Menschen',
         value: 50e6,
-        fmt: (v) => `${(v / 1e6).toFixed(0)} Mio`,
-        rowFmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
+        fmt: (v) => `${(v / 1e6).toFixed(0)} ${tr('Mio')}`,
+        rowFmt: (v) => `${(v / 1e6).toFixed(1)} ${tr('Mio')}`,
         delta: null,
         color: red,
         unit: '',
@@ -1666,7 +1667,7 @@ export const POOL: Dashboard[] = [
         // the map shades each host by troop count, darkest where most sit.
         label: 'US-Truppen im Ausland · ≥ 42 Länder',
         value: 42,
-        fmt: (v) => `${v} Länder`,
+        fmt: (v) => `${v} ${tr('Länder')}`,
         valueByIso: US_TROOPS_ABROAD,
         world: live.worldMap,
         rows: [
@@ -1676,7 +1677,7 @@ export const POOL: Dashboard[] = [
           { name: 'Kuwait', v: 13500 },
           { name: 'Italien', v: 12500 },
         ],
-        rowFmt: (v) => `${Math.round(v / 1000)}k Soldaten`,
+        rowFmt: (v) => `${Math.round(v / 1000)}k ${tr('Soldaten')}`,
         source: 'DoD DMDC / Base Structure Report · via SIPER',
       }),
   },
@@ -1695,7 +1696,7 @@ export const POOL: Dashboard[] = [
         // left out so the timeline stays a war chart, not a regime-change list.
         label: 'US-Kriege · Tote seit 1945',
         value: 7.156e6,
-        fmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
+        fmt: (v) => `${(v / 1e6).toFixed(1)} ${tr('Mio')}`,
         color: red,
         yearStart: 1946,
         yearEnd: 2026,
@@ -1857,8 +1858,8 @@ export const POOL: Dashboard[] = [
         // non-Chinese outliers. Counts are estimates and vary by source.
         label: 'CCTV-Kameras je Stadt',
         value: 4.6e6,
-        fmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
-        rowFmt: (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(2)} Mio` : `${Math.round(v / 1000)}k`),
+        fmt: (v) => `${(v / 1e6).toFixed(1)} ${tr('Mio')}`,
+        rowFmt: (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(2)} ${tr('Mio')}` : `${Math.round(v / 1000)}k`),
         delta: null,
         color: aqua,
         unit: '',
@@ -1947,8 +1948,8 @@ export const POOL: Dashboard[] = [
         // dwarfs everyone — well over half the world's total.
         label: '5G-Basisstationen · Schätzwerte',
         value: 5.1e6,
-        fmt: (v) => `${(v / 1e6).toFixed(1)} Mio`,
-        rowFmt: (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(2)} Mio` : `${Math.round(v / 1000)}k`),
+        fmt: (v) => `${(v / 1e6).toFixed(1)} ${tr('Mio')}`,
+        rowFmt: (v) => (v >= 1e6 ? `${(v / 1e6).toFixed(2)} ${tr('Mio')}` : `${Math.round(v / 1000)}k`),
         delta: null,
         color: violet,
         unit: '',
@@ -2161,8 +2162,8 @@ export const POOL: Dashboard[] = [
         // are among the world's largest urban agglomerations (UN metro pops).
         label: 'Größte C40-Städte · Einwohner (Metro)',
         value: 37,
-        fmt: (v) => `${Math.round(v)} Mio`,
-        rowFmt: (v) => `${Math.round(v)} Mio`,
+        fmt: (v) => `${Math.round(v)} ${tr('Mio')}`,
+        rowFmt: (v) => `${Math.round(v)} ${tr('Mio')}`,
         delta: null,
         color: blue,
         unit: '',
@@ -2228,7 +2229,7 @@ export const POOL: Dashboard[] = [
         // Rounded estimates — definitions of "lockdown" vary by source.
         label: 'Tage im Lockdown · Städte · 2020–21',
         value: 262,
-        fmt: (v) => `${Math.round(v)} Tage`,
+        fmt: (v) => `${Math.round(v)} ${tr('Tage')}`,
         rowFmt: (v) => `${Math.round(v)} T.`,
         delta: null,
         color: orange,
@@ -2395,7 +2396,7 @@ export const POOL: Dashboard[] = [
         // world locked down the right to protest at once.
         label: 'Länder mit Eingriffen · 2020–22',
         value: 156,
-        fmt: (v) => `${Math.round(v)} Länder`,
+        fmt: (v) => `${Math.round(v)} ${tr('Länder')}`,
         rowFmt: deInt,
         delta: null,
         color: red,

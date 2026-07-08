@@ -189,5 +189,20 @@ export const ALL_DASHBOARDS: Dashboard[] = [
   ...clustered(POOL.filter((d) => !d.tags?.length)),
 ];
 
+/**
+ * Hard cap for the desktop ring: at most RING_MAX cards per theme. Featured
+ * cards fill the ring first; both halves are shuffled once per load, so the
+ * overflow rotates across visits instead of the same cards always being cut.
+ * Mobile keeps the full per-theme pool — a swipe deck has no crowding problem.
+ */
+export const RING_MAX = 20;
+
+export const RING_BY_TAG: Record<string, Dashboard[]> = Object.fromEntries(
+  TAGS.map((t) => [
+    t.id,
+    clustered(POOL.filter((d) => d.tags?.includes(t.id))).slice(0, RING_MAX),
+  ]),
+);
+
 /** Floor for the ring radius, so a small filtered set still spaces out well. */
 export const MIN_COUNT = 5;

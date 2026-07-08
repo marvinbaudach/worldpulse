@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
+import { t as tr } from '../i18n';
 import styled from 'styled-components';
 import type { HandState, HandTrackingStatus } from '../hooks/useHandTracking';
 import { glassSurface } from './glass';
@@ -212,7 +213,7 @@ export function HandControls({ status, onToggle, hand, scrub }: HandControlsProp
     <>
       <Bar>
         <Toggle type="button" onClick={onToggle}>
-          {LABEL[status]}
+          {tr(LABEL[status])}
         </Toggle>
         {status === 'running' && (
           <>
@@ -234,22 +235,22 @@ export function HandControls({ status, onToggle, hand, scrub }: HandControlsProp
             <Hint>
               <HintIcon>🖐️</HintIcon>
               <HintText>
-                <b>Wischen</b>
-                Offene Hand schnell zur Seite bewegen, um den Ring zu drehen
+                <b>{tr('Wischen')}</b>
+                {tr('Offene Hand schnell zur Seite bewegen, um den Ring zu drehen')}
               </HintText>
             </Hint>
             <Hint>
               <HintIcon>🤏</HintIcon>
               <HintText>
-                <b>Kneifen</b>
-                Kurzes Kneifen auf einem Panel öffnet es — erneut kneifen legt es zurück
+                <b>{tr('Kneifen')}</b>
+                {tr('Kurzes Kneifen auf einem Panel öffnet es — erneut kneifen legt es zurück')}
               </HintText>
             </Hint>
             <Hint>
               <HintIcon>🧲</HintIcon>
               <HintText>
-                <b>Halten &amp; ziehen</b>
-                Kneifgriff halten und die Hand heranziehen oder wegschieben
+                <b>{tr('Halten & ziehen')}</b>
+                {tr('Kneifgriff halten und die Hand heranziehen oder wegschieben')}
               </HintText>
             </Hint>
           </Hints>

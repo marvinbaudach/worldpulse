@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { t as tr } from '../i18n';
 import styled from 'styled-components';
 import { LAYOUT_MODES, type LayoutMode } from '../layouts';
 import { glassSurface } from './glass';
@@ -179,9 +180,9 @@ export function HotkeyPanel({ layout, onChange, hidden }: HotkeyPanelProps) {
 
   return (
     <Wrap $hidden={hidden}>
-      <Panel $open={open} role="region" aria-label="Tastenkürzel">
+      <Panel $open={open} role="region" aria-label={tr('Tastenkürzel')}>
         <Group>
-          <GroupTitle>FORMATION</GroupTitle>
+          <GroupTitle>{tr('FORMATION')}</GroupTitle>
           {LAYOUT_MODES.map((mode, i) => (
             <Row
               key={mode.id}
@@ -190,16 +191,16 @@ export function HotkeyPanel({ layout, onChange, hidden }: HotkeyPanelProps) {
               onClick={() => onChange(mode.id)}
             >
               <Keycap $active={layout === mode.id}>{i + 1}</Keycap>
-              <Label>{mode.label}</Label>
+              <Label>{tr(mode.label)}</Label>
             </Row>
           ))}
         </Group>
         <Group>
-          <GroupTitle>STEUERUNG</GroupTitle>
+          <GroupTitle>{tr('STEUERUNG')}</GroupTitle>
           {HINTS.map((h) => (
             <Row key={h.label} as="div" $static>
               <Keycap>{h.keys}</Keycap>
-              <Label>{h.label}</Label>
+              <Label>{tr(h.label)}</Label>
             </Row>
           ))}
         </Group>
@@ -210,7 +211,7 @@ export function HotkeyPanel({ layout, onChange, hidden }: HotkeyPanelProps) {
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
       >
-        ⌨ Tasten
+        ⌨ {tr('Tasten')}
       </Toggle>
     </Wrap>
   );

@@ -4,6 +4,7 @@
 
 import { roundRect, stagger, type Frame } from '../draw';
 import { FONT, GRID, INK, INK_SECONDARY, MUTED } from '../theme';
+import { t as tr } from '../../i18n';
 
 /** Hex color (#rrggbb) at the given opacity. */
 export function withAlpha(hex: string, a: number): string {
@@ -59,7 +60,7 @@ export function xAxisLabels(f: Frame, labels: string[], x0: number, x1: number, 
   ctx.font = `400 ${14 * u}px ${FONT}`;
   ctx.textAlign = 'center';
   labels.forEach((l, i) => {
-    ctx.fillText(l, x0 + ((x1 - x0) * i) / (labels.length - 1), y + 24 * u);
+    ctx.fillText(tr(l), x0 + ((x1 - x0) * i) / (labels.length - 1), y + 24 * u);
   });
   ctx.textAlign = 'left';
 }
@@ -70,7 +71,7 @@ export function drawSource(f: Frame, source: string): void {
   ctx.fillStyle = MUTED;
   ctx.font = `400 ${13 * u}px ${FONT}`;
   ctx.textAlign = 'left';
-  ctx.fillText(source, 36 * u, h - 22 * u);
+  ctx.fillText(tr(source), 36 * u, h - 22 * u);
 }
 
 /**
@@ -110,10 +111,12 @@ const HAS_FLAG = /\p{Regional_Indicator}/u;
     yet. Trailing descriptors ("· seit 2011", "(Stadt)") are ignored for the
     lookup, so "Syrien · seit 2011" still resolves to the Syrian flag. */
 export function withFlag(name: string): string {
-  if (HAS_FLAG.test(name)) return name;
+  // The flag is looked up on the German (or World Bank English) source name
+  // before translation, then appended to the translated label.
+  if (HAS_FLAG.test(name)) return tr(name);
   const key = name.replace(/\s*[·(].*$/u, '').trim();
   const flag = COUNTRY_FLAGS[key];
-  return flag ? `${name} ${flag}` : name;
+  return flag ? `${tr(name)} ${flag}` : tr(name);
 }
 
 export function drawRankedList(

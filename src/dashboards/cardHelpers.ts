@@ -2,14 +2,16 @@
 // and the two factories the card definitions lean on.
 
 import { areaChart } from './charts';
+import { localeInt } from '../i18n';
 import { SERIES } from './theme';
 import type { Dashboard } from './types';
 import type { TrendSeries } from '../data/store';
 
 export const [blue, aqua, yellow, green, violet, red, magenta, orange] = SERIES;
 
-/** Rounded integer with German thousands separators (12183 → "12.183"). */
-export const deInt = (v: number): string => Math.round(v).toLocaleString('de-DE');
+/** Rounded integer with locale-aware thousands separators (12183 → "12.183"
+    in German, "12,183" in English). The name is historical. */
+export const deInt = localeInt;
 
 /** Compact factory for the bundled single-series trend panels. */
 export function trendCard(

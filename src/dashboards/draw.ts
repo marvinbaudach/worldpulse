@@ -14,6 +14,7 @@ import {
   SURFACE,
   SURFACE_DEEP,
 } from './theme';
+import { t as tr } from '../i18n';
 
 /** Deterministic PRNG so every panel shows the same data on every visit. */
 function rng(seed: number): () => number {
@@ -101,7 +102,9 @@ function drawEyebrow({ ctx, u, w }: Frame, label: string): number {
   ctx.fillStyle = MUTED;
   ctx.font = `600 ${17 * u}px ${FONT}`;
   const tracking = 2.4 * u;
-  const upper = label.toUpperCase();
+  // All panel labels arrive in German; translation happens at this single
+  // choke point so the card definitions stay untouched.
+  const upper = tr(label).toUpperCase();
   const maxW = w - 2 * pad;
   if (trackedWidth(ctx, upper, tracking) > maxW) {
     const [l1, l2] = wrapTwo(ctx, upper, tracking, maxW);
@@ -162,7 +165,7 @@ export function drawHeader(
     if (sub) {
       ctx.fillStyle = MUTED;
       ctx.font = `400 ${17 * u}px ${FONT}`;
-      ctx.fillText(sub, cx + tw + 24 * u, cy + 2 * u);
+      ctx.fillText(tr(sub), cx + tw + 24 * u, cy + 2 * u);
     }
   }
 
@@ -277,9 +280,10 @@ export function drawLegend(
   let x = w - 36 * u;
   for (let i = entries.length - 1; i >= 0; i--) {
     const e = entries[i];
+    const name = tr(e.name);
     ctx.fillStyle = INK_SECONDARY;
-    ctx.fillText(e.name, x, y);
-    x -= ctx.measureText(e.name).width + 12 * u;
+    ctx.fillText(name, x, y);
+    x -= ctx.measureText(name).width + 12 * u;
     ctx.fillStyle = e.color;
     ctx.beginPath();
     ctx.arc(x, y - 5 * u, 4.5 * u, 0, Math.PI * 2);

@@ -2,6 +2,7 @@
 // conflict timeline, the running debt clock, the weekly weather forecast and
 // the strip treemap.
 
+import { t as tr } from '../../i18n';
 import {
   drawGrid,
   drawGridLabels,
@@ -62,8 +63,8 @@ export function wealthSplit(f: Frame, cfg: WealthSplitCfg): void {
 
   ctx.font = `600 ${13 * u}px ${FONT}`;
   ctx.fillStyle = MUTED;
-  ctx.fillText(cfg.axisTop.toUpperCase(), x0, yPop - 12 * u);
-  ctx.fillText(cfg.axisBottom.toUpperCase(), x0, yWealth + bh + 26 * u);
+  ctx.fillText(tr(cfg.axisTop).toUpperCase(), x0, yPop - 12 * u);
+  ctx.fillText(tr(cfg.axisBottom).toUpperCase(), x0, yWealth + bh + 26 * u);
 
   let px = x0;
   let wx = x0;
@@ -118,7 +119,7 @@ export function wealthSplit(f: Frame, cfg: WealthSplitCfg): void {
     ctx.fill();
     ctx.fillStyle = INK_SECONDARY;
     ctx.font = `500 ${16 * u}px ${FONT}`;
-    ctx.fillText(g.name, x0 + 18 * u, y);
+    ctx.fillText(tr(g.name), x0 + 18 * u, y);
     ctx.fillStyle = INK;
     ctx.font = `600 ${16 * u}px ${FONT}`;
     ctx.textAlign = 'right';
@@ -201,7 +202,8 @@ export function timelineChart(f: Frame, cfg: TimelineCfg): void {
     // otherwise flipped to the left (events near the axis end).
     const dead = fmtCompact(e.deaths);
     ctx.font = `500 ${15 * u}px ${FONT}`;
-    const nameW = ctx.measureText(`${e.name}  `).width;
+    const eName = tr(e.name);
+    const nameW = ctx.measureText(`${eName}  `).width;
     ctx.font = `600 ${15 * u}px ${FONT}`;
     const deadW = ctx.measureText(dead).width;
     const bx1 = bx0 + full;
@@ -209,7 +211,7 @@ export function timelineChart(f: Frame, cfg: TimelineCfg): void {
     const ty = cy + 5 * u;
     ctx.fillStyle = INK_SECONDARY;
     ctx.font = `500 ${15 * u}px ${FONT}`;
-    ctx.fillText(e.name, tx, ty);
+    ctx.fillText(eName, tx, ty);
     ctx.fillStyle = INK;
     ctx.font = `600 ${15 * u}px ${FONT}`;
     ctx.fillText(dead, tx + nameW, ty);
@@ -249,7 +251,7 @@ export function debtClock(f: Frame, cfg: DebtClockCfg): void {
   ctx.textAlign = 'left';
   ctx.fillStyle = MUTED;
   ctx.font = `600 ${17 * u}px ${FONT}`;
-  drawTracked(ctx, cfg.label.toUpperCase(), pad, pad + 16 * u, 2.4 * u);
+  drawTracked(ctx, tr(cfg.label).toUpperCase(), pad, pad + 16 * u, 2.4 * u);
 
   // The running figure, auto-fitted so all 17 digits stay inside the panel.
   const now = cfg.latest + Math.max(0, Date.now() - cfg.latestMs) * cfg.ratePerMs;
@@ -280,7 +282,7 @@ export function debtClock(f: Frame, cfg: DebtClockCfg): void {
   ctx.fillStyle = MUTED;
   ctx.font = `400 ${17 * u}px ${FONT}`;
   ctx.fillText(
-    `${perSec >= 0 ? '+' : '−'}$${Math.abs(Math.round(perSec)).toLocaleString('de-CH')} / Sekunde`,
+    `${perSec >= 0 ? '+' : '−'}$${Math.abs(Math.round(perSec)).toLocaleString('de-CH')} / ${tr('Sekunde')}`,
     pad + cw + 32 * u,
     cy + 2 * u,
   );
@@ -462,7 +464,7 @@ export function weatherForecast(f: Frame, cfg: ForecastCfg): void {
 
     ctx.fillStyle = i === 0 ? INK : INK_SECONDARY;
     ctx.font = `${i === 0 ? 600 : 500} ${17 * u}px ${FONT}`;
-    ctx.fillText(d.day, pad, y + 6 * u);
+    ctx.fillText(tr(d.day), pad, y + 6 * u);
 
     drawWeatherIcon(ctx, iconFor(d.code), pad + 92 * u, y, 17 * u);
 
@@ -568,13 +570,13 @@ export function treemap(f: Frame, cfg: TreemapCfg): void {
       if (bw > 78 * u && sh > 44 * u) {
         ctx.fillStyle = r.muted ? INK_SECONDARY : INK;
         ctx.font = `500 ${13 * u}px ${FONT}`;
-        ctx.fillText(r.name, x + 10 * u, y + 22 * u, bw - 20 * u);
+        ctx.fillText(tr(r.name), x + 10 * u, y + 22 * u, bw - 20 * u);
         ctx.font = `700 ${16 * u}px ${FONT}`;
         ctx.fillText(pct, x + 10 * u, y + 42 * u, bw - 20 * u);
       } else if (bw > 30 * u && sh > 40 * u) {
         ctx.fillStyle = r.muted ? INK_SECONDARY : INK;
         ctx.font = `500 ${12 * u}px ${FONT}`;
-        ctx.fillText(r.short ?? r.name, x + 7 * u, y + 19 * u, bw - 14 * u);
+        ctx.fillText(tr(r.short ?? r.name), x + 7 * u, y + 19 * u, bw - 14 * u);
         ctx.font = `700 ${12 * u}px ${FONT}`;
         ctx.fillText(pct, x + 7 * u, y + 36 * u, bw - 14 * u);
       }
