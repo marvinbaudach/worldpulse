@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { ALL_DASHBOARDS, TAGS } from '../dashboards';
 import { refreshLiveData } from '../data/refresh';
+import { shareCard } from '../exportCard';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useTagFilter } from '../hooks/useTagFilter';
@@ -131,11 +132,11 @@ const RefreshPill = styled.div`
   ${glassSurface}
 `;
 
-// Small round glass "i" bottom-left; only rendered when the active card
-// declares a source. Sits below the swipe hint's pill (which is centered).
+// Small round glass "i" next to the share button; only rendered when the
+// active card declares a source. Sits below the swipe hint's pill (centered).
 const InfoButton = styled.button`
   position: fixed;
-  left: 16px;
+  left: 68px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
   z-index: 12;
   width: 42px;
@@ -146,6 +147,24 @@ const InfoButton = styled.button`
   font: 600 17px/1 inherit;
   font-style: italic;
   font-family: Georgia, serif;
+  cursor: pointer;
+  ${glassSurface}
+`;
+
+// Round glass share button anchoring the bottom-left cluster (it is always
+// available, while the "i" only shows when the card declares a source).
+// Web Share sheet where available, PNG download otherwise.
+const ShareButton = styled.button`
+  position: fixed;
+  left: 16px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  z-index: 12;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 999px;
+  color: #cfe4ff;
+  font: 600 18px/1 inherit;
   cursor: pointer;
   ${glassSurface}
 `;
@@ -324,6 +343,17 @@ export function MobileDeck() {
   const [active, setActive] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+
+  // Tooltip behavior for the source note: any tap outside the note or its
+  // "i" button (both carry data-source-ui) dismisses it.
+  useEffect(() => {
+    if (!infoOpen) return;
+    const close = (e: PointerEvent) => {
+      if (!(e.target as Element | null)?.closest?.('[data-source-ui]')) setInfoOpen(false);
+    };
+    window.addEventListener('pointerdown', close);
+    return () => window.removeEventListener('pointerdown', close);
+  }, [infoOpen]);
   const [swiped, setSwiped] = useState(() => localStorage.getItem('worldpulse-swiped') === '1');
   const [refreshing, setRefreshing] = useState(false);
   // Stable identity: SwipeDeck holds this in a prop, and a fresh closure per
@@ -359,7 +389,8 @@ export function MobileDeck() {
     [swiped],
   );
 
-  const source = dashboards[Math.min(active, dashboards.length - 1)]?.source;
+  const current = dashboards[Math.min(active, dashboards.length - 1)];
+  const source = current?.source;
   const activeTag = TAGS.find((t) => t.id === tag) ?? TAGS[0];
   const currentLabel = trans(activeTag.label);
   const pick = (next: string) => {
@@ -393,13 +424,24 @@ export function MobileDeck() {
 
       {!swiped && dashboards.length > 1 && <Hint $gone={false}>{trans('← wischen zum Blättern →')}</Hint>}
 
+      {current && (
+        <ShareButton aria-label={trans('Karte teilen')} onClick={() => void shareCard(current)}>
+          <span aria-hidden>⤴</span>
+        </ShareButton>
+      )}
       {source && (
-        <InfoButton aria-label={trans('Quelle anzeigen')} onClick={() => setInfoOpen((o) => !o)}>
+        <InfoButton
+          data-source-ui
+          aria-label={trans('Quelle anzeigen')}
+          onClick={() => setInfoOpen((o) => !o)}
+        >
           i
         </InfoButton>
       )}
       {infoOpen && source && (
-        <SourceNote onClick={() => setInfoOpen(false)}>{trans('Quelle')}: {trans(source)}</SourceNote>
+        <SourceNote data-source-ui onClick={() => setInfoOpen(false)}>
+          {trans('Quelle')}: {trans(source)}
+        </SourceNote>
       )}
 
       {/* The swipe hint owns the bottom edge until the first swipe — showing

@@ -25,6 +25,7 @@ import { LayoutControls } from './LayoutControls';
 import { HotkeyPanel } from './HotkeyPanel';
 import { LAYOUT_MODES, layoutSlots, type LayoutMode } from '../layouts';
 import { useCarouselRotation } from '../hooks/useCarouselRotation';
+import { downloadCard } from '../exportCard';
 import { useHandTracking, type HandState } from '../hooks/useHandTracking';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useTagFilter } from '../hooks/useTagFilter';
@@ -52,6 +53,7 @@ const HeroSourceDock = styled.div`
   z-index: 20;
   display: flex;
   justify-content: center;
+  gap: 8px;
 `;
 
 const HeroInfoButton = styled.button`
@@ -62,6 +64,19 @@ const HeroInfoButton = styled.button`
   color: rgba(255, 255, 255, 0.8);
   font: italic 600 15px/1 Georgia, serif;
   cursor: help;
+  ${glassSurface}
+`;
+
+// PNG export of the open hero, next to the "i": one settled offscreen draw
+// at poster size (see exportCard.ts), saved as a download.
+const HeroExportButton = styled.button`
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.8);
+  font: 600 15px/1 inherit;
+  cursor: pointer;
   ${glassSurface}
 `;
 
@@ -682,10 +697,21 @@ export function Carousel3D() {
 
     <HotkeyPanel hidden={heroOpen} layout={layout} onChange={setLayout} />
 
-    {heroOpen && !closing && selectedDashboard?.source && (
+    {heroOpen && !closing && selectedDashboard && (
       <HeroSourceDock>
-        <HeroSourceNote role="tooltip">Quelle: {selectedDashboard.source}</HeroSourceNote>
-        <HeroInfoButton aria-label={`Quelle: ${selectedDashboard.source}`}>i</HeroInfoButton>
+        {selectedDashboard.source && (
+          <>
+            <HeroSourceNote role="tooltip">Quelle: {selectedDashboard.source}</HeroSourceNote>
+            <HeroInfoButton aria-label={`Quelle: ${selectedDashboard.source}`}>i</HeroInfoButton>
+          </>
+        )}
+        <HeroExportButton
+          aria-label="Als PNG speichern"
+          title="Als PNG speichern"
+          onClick={() => void downloadCard(selectedDashboard)}
+        >
+          <span aria-hidden>⤓</span>
+        </HeroExportButton>
       </HeroSourceDock>
     )}
 
