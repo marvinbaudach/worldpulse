@@ -285,6 +285,10 @@ export function MobileDeck() {
   // slot back to the blobs instead of leaving a dead canvas.
   const [aurora, setAurora] = useState(hasWebGL);
   const disableAurora = useCallback(() => setAurora(false), []);
+  // The background follows the front card's own chart color once it settles;
+  // until then (and for ink-less cards) the theme accent carries the mood.
+  const [cardTint, setCardTint] = useState<string | null>(null);
+  const onCardColor = useCallback((c: string | null) => setCardTint(c), []);
   // Non-iOS grants implicitly.
   const [motion, setMotion] = useState<'granted' | 'ask' | 'denied'>(() => {
     if (!motionPermissionNeeded()) return 'granted';
@@ -360,15 +364,16 @@ export function MobileDeck() {
   const currentLabel = trans(activeTag.label);
   const pick = (next: string) => {
     setTag(next);
+    setCardTint(null); // new theme, new deck — fall back to its accent
     setMenuOpen(false);
   };
 
   return (
     <Deck>
       {aurora && !reducedMotion ? (
-        <MobileAurora ref={setBgRef} accent={activeTag.accent} onFail={disableAurora} />
+        <MobileAurora ref={setBgRef} accent={cardTint ?? activeTag.accent} onFail={disableAurora} />
       ) : (
-        <MobileBackground ref={setBgRef} accent={activeTag.accent} />
+        <MobileBackground ref={setBgRef} accent={cardTint ?? activeTag.accent} />
       )}
       <TopBar>
         <FilterButton onClick={() => setMenuOpen(true)}>
@@ -380,7 +385,7 @@ export function MobileDeck() {
 
       <TiltFrame>
         <TiltLayer ref={tiltRef}>
-          <SwipeDeck key={tag} dashboards={dashboards} onIndex={onIndex} onRefresh={refresh} />
+          <SwipeDeck key={tag} dashboards={dashboards} onIndex={onIndex} onRefresh={refresh} onColor={onCardColor} />
         </TiltLayer>
       </TiltFrame>
 

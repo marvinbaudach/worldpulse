@@ -54,9 +54,11 @@ interface SwipeDeckProps {
   onIndex: (i: number) => void;
   /** Fired when the user pulls the deck down far enough (pull-to-refresh). */
   onRefresh?: () => void;
+  /** Dominant chart color of the settled front card (background tinting). */
+  onColor?: (color: string | null) => void;
 }
 
-export function SwipeDeck({ dashboards, onIndex, onRefresh }: SwipeDeckProps) {
+export function SwipeDeck({ dashboards, onIndex, onRefresh, onColor }: SwipeDeckProps) {
   const [index, setIndex] = useState(0);
   const curRef = useRef<HTMLDivElement>(null);
   const prevRef = useRef<HTMLDivElement>(null);
@@ -324,7 +326,7 @@ export function SwipeDeck({ dashboards, onIndex, onRefresh }: SwipeDeckProps) {
             advances — the neighbour that becomes current re-renders into this
             same slot rather than mounting fresh. So `animate` flipping
             false -> true here is what replays CardCanvas's fly-in on landing. */}
-        <CardCanvas dashboard={cur} animate={!reducedMotion} />
+        <CardCanvas dashboard={cur} animate={!reducedMotion} onColor={onColor} />
       </Card>
     </Stack>
   );

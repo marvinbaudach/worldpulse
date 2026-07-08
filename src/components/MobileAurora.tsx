@@ -62,7 +62,9 @@ const FRAG = `
   void main() {
     vec2 uv = vUv;
     uv.x *= uAspect;
-    float t = uTime * 0.06;
+    // Faster than the desktop aurora (0.06): on a phone the backdrop is the
+    // only ambient motion, so it has to visibly live.
+    float t = uTime * 0.1;
 
     vec2 q = vec2(
       fbm(uv * 1.5 + vec2(t * 0.6, t)),
@@ -81,9 +83,24 @@ const FRAG = `
     col += violet * smoothstep(0.55, 1.05, n2) * 0.40;
     col += teal * smoothstep(0.6, 1.0, n * n2) * 0.25;
 
-    // Calm center so the card stays readable; glow toward the edges.
+    // Light shafts: two soft diagonal beams panning at different speeds.
+    // Multiplied by the nebula density so they read as light through haze,
+    // not as flat stripes painted on top.
+    float diag = uv.x * 0.7 + uv.y * 0.75;
+    float haze = smoothstep(0.3, 0.9, n);
+    float beamA = smoothstep(0.86, 1.0, sin(diag * 2.6 - uTime * 0.22));
+    float beamB = smoothstep(0.9, 1.0, sin(diag * 4.2 + uTime * 0.15 + 1.7));
+    col += (blue + uTint * 0.5) * (beamA * 0.4 + beamB * 0.3) * haze;
+
+    // Wandering glints: sparse bright knots where both noise fields peak,
+    // drifting with the flow — small "city lights" inside the nebula.
+    float glint = smoothstep(0.78, 0.98, n * n2 * (1.4 + 0.6 * sin(uTime * 0.6)));
+    col += (uTint + vec3(0.25)) * glint * 0.35;
+
+    // Calm center so the card stays readable; the edge glow breathes slowly.
     float d = distance(vUv, vec2(0.5));
-    col *= mix(0.7, 1.15, smoothstep(0.1, 0.75, d));
+    float breath = 1.14 + 0.1 * sin(uTime * 0.45);
+    col *= mix(0.7, breath, smoothstep(0.1, 0.75, d));
 
     gl_FragColor = vec4(col, 1.0);
   }
