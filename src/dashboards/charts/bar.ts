@@ -7,14 +7,15 @@ import {
   drawGridLabels,
   drawHeader,
   drawSurface,
+  easeOut,
   fmtCompact,
   makeSeries,
   roundRect,
   stagger,
   type Frame,
 } from '../draw';
-import { FONT, GRID, INK, INK_SECONDARY } from '../theme';
-import { MONTHS, barGradient, ellipsize, lighten, plotRect, withAlpha, withFlag } from './shared';
+import { BASELINE, FONT, GRID, INK, INK_SECONDARY, MUTED } from '../theme';
+import { MONTHS, barGradient, drawSource, ellipsize, lighten, plotRect, withAlpha, withFlag } from './shared';
 
 export interface BarCfg {
   label: string;
@@ -168,4 +169,142 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
     roundRect(ctx, pad, y + 20 * u, Math.max(bw, 10 * u), 10 * u, 5 * u);
     ctx.fill();
   });
+}
+
+// ---------------------------------------------------------------------------
+// Opposed-losses chart: two sides mirrored across a central axis, each with a
+// solid "documented floor" bar and a fainter "estimate" ghost extending past
+// it — so the reader sees the hard lower bound and the uncertainty in one
+// mark. Neutral context rows (civilians, an earlier phase) sit full-width
+// below. Built for the Ukraine death-toll card; the point is the honesty of
+// floor-vs-estimate, not a single fake total.
+
+export interface WarLossesCfg {
+  label: string;
+  /** Small caption under the header, e.g. "Soldaten · belegt / Schätzung". */
+  caption: string;
+  left: { name: string; doc: number; est: number; color: string };
+  right: { name: string; doc: number; est: number; color: string };
+  /** Full-width neutral context rows below the opposed bars. */
+  rows: { name: string; v: number }[];
+  fmt: (v: number) => string;
+  /** [documented-label, estimate-label] for the legend. */
+  legend: [string, string];
+  source: string;
+}
+
+export function warLosses(f: Frame, cfg: WarLossesCfg): void {
+  const { ctx, u, t, w, h } = f;
+  drawSurface(f);
+  const top = drawHeader(f, cfg.label);
+  const pad = 36 * u;
+  const cx = w / 2;
+  const reveal = easeOut(t / 1.1);
+
+  const footerReserve = 74 * u;
+  const zone = h - top - footerReserve;
+
+  ctx.fillStyle = MUTED;
+  ctx.font = `700 ${13 * u}px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(withFlag(cfg.caption).toUpperCase(), cx, top + 22 * u);
+
+  // Opposed soldier bars, sat in the upper part of the panel.
+  const barH = 62 * u;
+  const yc = top + zone * 0.3;
+  ctx.font = `600 ${17 * u}px ${FONT}`;
+  ctx.fillStyle = INK_SECONDARY;
+  ctx.textAlign = 'right';
+  ctx.fillText(withFlag(cfg.left.name), cx - 14 * u, yc - barH / 2 - 16 * u);
+  ctx.textAlign = 'left';
+  ctx.fillText(withFlag(cfg.right.name), cx + 14 * u, yc - barH / 2 - 16 * u);
+
+  const maxV = Math.max(cfg.left.est, cfg.right.est, 1);
+  const scale = ((cx - pad - 76 * u) / maxV) * reveal;
+
+  const side = (s: WarLossesCfg['left'], dir: -1 | 1) => {
+    const estLen = s.est * scale;
+    const docLen = s.doc * scale;
+    const gx = dir < 0 ? cx - estLen : cx;
+    const dx = dir < 0 ? cx - docLen : cx;
+    // Estimate ghost with a faint outline, so the band beyond the documented
+    // floor reads as its own "up to" range.
+    ctx.fillStyle = withAlpha(s.color, 0.22);
+    roundRect(ctx, gx, yc - barH / 2, estLen, barH, 7 * u);
+    ctx.fill();
+    ctx.strokeStyle = withAlpha(s.color, 0.5);
+    ctx.lineWidth = 1 * u;
+    roundRect(ctx, gx, yc - barH / 2, estLen, barH, 7 * u);
+    ctx.stroke();
+    // Documented floor, solid, on top.
+    ctx.fillStyle = s.color;
+    roundRect(ctx, dx, yc - barH / 2, docLen, barH, 7 * u);
+    ctx.fill();
+    // Documented (bold) over estimate (muted) at the outer end.
+    const ox = dir < 0 ? cx - estLen - 14 * u : cx + estLen + 14 * u;
+    ctx.textAlign = dir < 0 ? 'right' : 'left';
+    ctx.fillStyle = INK;
+    ctx.font = `800 ${30 * u}px ${FONT}`;
+    ctx.fillText(cfg.fmt(s.doc), ox, yc + 2 * u);
+    ctx.fillStyle = MUTED;
+    ctx.font = `600 ${16 * u}px ${FONT}`;
+    ctx.fillText(cfg.fmt(s.est), ox, yc + 24 * u);
+  };
+  side(cfg.left, -1);
+  side(cfg.right, 1);
+
+  ctx.strokeStyle = BASELINE;
+  ctx.lineWidth = 1.5 * u;
+  ctx.beginPath();
+  ctx.moveTo(cx, yc - barH / 2 - 10 * u);
+  ctx.lineTo(cx, yc + barH / 2 + 10 * u);
+  ctx.stroke();
+
+  // Neutral full-width context rows, filling the lower half.
+  const divY = top + zone * 0.47;
+  ctx.strokeStyle = GRID;
+  ctx.lineWidth = 1 * u;
+  ctx.beginPath();
+  ctx.moveTo(pad, divY);
+  ctx.lineTo(w - pad, divY);
+  ctx.stroke();
+  const rowMax = Math.max(...cfg.rows.map((r) => r.v), 1);
+  const rowsTop = divY + 34 * u;
+  const rowH = (h - footerReserve - rowsTop) / Math.max(1, cfg.rows.length);
+  cfg.rows.forEach((r, i) => {
+    const y = rowsTop + i * rowH + rowH * 0.36;
+    ctx.fillStyle = INK_SECONDARY;
+    ctx.font = `500 ${17 * u}px ${FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(withFlag(r.name), pad, y);
+    ctx.fillStyle = INK;
+    ctx.font = `700 ${19 * u}px ${FONT}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(cfg.fmt(r.v), w - pad, y);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = GRID;
+    roundRect(ctx, pad, y + 14 * u, w - 2 * pad, 7 * u, 3.5 * u);
+    ctx.fill();
+    ctx.fillStyle = withAlpha(INK_SECONDARY, 0.45);
+    roundRect(ctx, pad, y + 14 * u, Math.max((w - 2 * pad) * (r.v / rowMax) * reveal, 7 * u), 7 * u, 3.5 * u);
+    ctx.fill();
+  });
+
+  // Legend: solid = documented floor, ghost = estimate.
+  const ly = h - 46 * u;
+  ctx.font = `500 ${12.5 * u}px ${FONT}`;
+  ctx.textAlign = 'left';
+  let lx = pad;
+  const swatch = (label: string, ghost: boolean) => {
+    ctx.fillStyle = ghost ? withAlpha(INK_SECONDARY, 0.3) : INK_SECONDARY;
+    roundRect(ctx, lx, ly - 9 * u, 16 * u, 11 * u, 3 * u);
+    ctx.fill();
+    ctx.fillStyle = MUTED;
+    ctx.fillText(tr(label), lx + 22 * u, ly);
+    lx += 22 * u + ctx.measureText(tr(label)).width + 24 * u;
+  };
+  swatch(cfg.legend[0], false);
+  swatch(cfg.legend[1], true);
+
+  drawSource(f, cfg.source);
 }

@@ -14,6 +14,7 @@ import {
   tempMap,
   timelineChart,
   treemap,
+  warLosses,
   wealthSplit,
 } from './charts';
 import {
@@ -555,27 +556,22 @@ export const POOL: Dashboard[] = [
     source:
       'OHCHR · Mediazona/BBC · UALosses, Stand Mitte 2026. Namentlich belegte Zahlen sind harte Untergrenzen; Schätzungen unsicher. Zivilistenzahl laut OHCHR deutlich unvollständig (v.a. Mariupol).',
     draw: (f) =>
-      hBarChart(f, {
-        // Deliberately shows floor vs. estimate per category instead of one
-        // fake total: named/documented counts are hard lower bounds (OHCHR,
-        // Mediazona+BBC, UALosses), the estimate bars are demographic or
-        // intelligence-based. Methodologies and as-of dates differ per row —
-        // no serious source publishes a single total.
-        label: 'Tote · Ukraine-Krieg seit 2014 · Tsd.',
-        value: 352,
-        fmt: (v) => `${deInt(v)}k`,
-        rowFmt: (v) => `${deInt(v)}k`,
-        delta: null,
-        color: red,
-        unit: '',
+      warLosses(f, {
+        // Floor vs. estimate, Russia opposed to Ukraine: the solid bar is the
+        // named/documented hard lower bound (OHCHR, Mediazona+BBC, UALosses),
+        // the ghost extends to the demographic/intelligence estimate. No fake
+        // single total — methodologies and as-of dates differ per side.
+        label: 'Tote im Ukraine-Krieg · seit 2014',
+        caption: 'Soldaten · belegt / Schätzung · Tsd.',
+        left: { name: '🇷🇺 Russland', doc: 229, est: 352, color: red },
+        right: { name: 'Ukraine 🇺🇦', doc: 97, est: 100, color: blue },
         rows: [
-          { name: '🇷🇺 Soldaten · Schätzung', v: 352 },
-          { name: '🇷🇺 Soldaten · namentlich belegt', v: 229 },
-          { name: '🇺🇦 Soldaten · Schätzung', v: 100 },
-          { name: '🇺🇦 Soldaten · namentlich belegt', v: 97 },
-          { name: '🕯️ Zivilisten · dokumentiert', v: 16 },
-          { name: '⚔️ Donbas 2014–21 · gesamt', v: 14 },
+          { name: '🕯️ Zivilisten · OHCHR', v: 16 },
+          { name: '⚔️ Donbas 2014–21', v: 14 },
         ],
+        fmt: (v) => `${deInt(v)}k`,
+        legend: ['namentlich belegt (Untergrenze)', 'Schätzung'],
+        source: 'OHCHR · Mediazona/BBC · UALosses · Stand Mitte 2026',
       }),
   },
   {

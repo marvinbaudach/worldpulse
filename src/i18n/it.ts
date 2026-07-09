@@ -1091,4 +1091,8 @@ export const IT: Record<string, string> = {
   'Schiffe/Tag': 'navi/g',
   'Raketen': 'Missili',
   'Juni 2025': 'giugno 2025',
+  'belegt / Schätzung': 'documentati / stima',
+  'namentlich belegt (Untergrenze)': 'documentati per nome (limite inferiore)',
+  '🇷🇺 Russland': '🇷🇺 Russia',
+  '🕯️ Zivilisten · OHCHR': '🕯️ Civili · OHCHR',
 };
