@@ -538,9 +538,9 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
       for (let i = 0; i < N; i++) {
         const q = project(pts[i]);
         const depth = (q.z + 1) / 2;
-        const alpha = (0.22 + depth * 0.62) * aEase * (1 - ease * 0.6);
-        ctx.fillStyle = `rgba(122, 165, 224, ${alpha})`;
-        const s = 1.4 + depth * 2.1;
+        const alpha = (0.34 + depth * 0.62) * aEase * (1 - ease * 0.6);
+        ctx.fillStyle = `rgba(142, 190, 255, ${alpha})`;
+        const s = 1.6 + depth * 2.3;
         ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
       }
 
@@ -548,9 +548,9 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
       for (const g of grid) {
         const q = project(g);
         const depth = (q.z + 1) / 2;
-        const alpha = (0.08 + depth * 0.2) * aEase * (1 - ease);
-        ctx.fillStyle = `rgba(150, 190, 240, ${alpha})`;
-        const s = 0.8 + depth * 1;
+        const alpha = (0.14 + depth * 0.3) * aEase * (1 - ease);
+        ctx.fillStyle = `rgba(175, 208, 255, ${alpha})`;
+        const s = 0.9 + depth * 1.2;
         ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
       }
 
@@ -564,12 +564,12 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
           const q = project([v[0] * lift, v[1] * lift, v[2] * lift]);
           if (q.z < -0.15) continue; // behind the globe
           const packet = Math.max(0, 1 - Math.abs(ft - head) * 14);
-          const alpha = (0.2 + packet * 0.8) * aEase * (1 - ease);
+          const alpha = (0.3 + packet * 0.7) * aEase * (1 - ease);
           ctx.fillStyle =
             packet > 0.25
-              ? `rgba(144, 133, 233, ${alpha})`
-              : `rgba(57, 135, 229, ${alpha})`;
-          const s = 2 + packet * 3.4;
+              ? `rgba(168, 158, 255, ${alpha})`
+              : `rgba(88, 162, 255, ${alpha})`;
+          const s = 2.2 + packet * 3.6;
           ctx.fillRect(q.x - s / 2, q.y - s / 2, s, s);
         }
       }
@@ -582,18 +582,18 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
         if (q.z < -0.05) return;
         const front = Math.min(1, (q.z + 0.05) / 0.6);
         const a = front * aEase * (1 - ease) * (st.hub ? 1 : 0.6);
-        const dotR = st.hub ? 4 : 2.6;
-        ctx.fillStyle = `rgba(120, 180, 255, ${a})`;
+        const dotR = st.hub ? 4.5 : 3;
+        ctx.fillStyle = `rgba(150, 200, 255, ${Math.min(1, a * 1.2)})`;
         ctx.beginPath();
         ctx.arc(q.x, q.y, dotR, 0, Math.PI * 2);
         ctx.fill();
         const ring = (t * 0.7 + i * 0.33) % 1;
-        ctx.strokeStyle = `rgba(57, 135, 229, ${(1 - ring) * 0.55 * a})`;
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = `rgba(95, 165, 255, ${(1 - ring) * 0.7 * a})`;
+        ctx.lineWidth = 1.4;
         ctx.beginPath();
         ctx.arc(q.x, q.y, dotR + ring * (st.hub ? 14 : 9), 0, Math.PI * 2);
         ctx.stroke();
-        ctx.fillStyle = `rgba(143, 184, 236, ${(st.hub ? 0.85 : 0.6) * a})`;
+        ctx.fillStyle = `rgba(170, 205, 250, ${(st.hub ? 0.95 : 0.7) * a})`;
         ctx.font = st.hub ? `600 11px ${MONO}` : `500 9px ${MONO}`;
         ctx.fillText(st.code, q.x + dotR + 5, q.y + 4);
       });
@@ -680,9 +680,9 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
       }}
       aria-hidden={leaving}
     >
-      <Glow $x="30%" $y="32%" $color="rgba(57, 135, 229, 0.28)" $delay="0s" />
-      <Glow $x="72%" $y="64%" $color="rgba(144, 133, 233, 0.22)" $delay="-3s" />
-      <Glow $x="55%" $y="45%" $color="rgba(25, 158, 112, 0.14)" $delay="-6s" />
+      <Glow $x="30%" $y="32%" $color="rgba(64, 145, 240, 0.4)" $delay="0s" />
+      <Glow $x="72%" $y="64%" $color="rgba(150, 140, 245, 0.32)" $delay="-3s" />
+      <Glow $x="55%" $y="45%" $color="rgba(28, 170, 122, 0.18)" $delay="-6s" />
 
       <StarCanvas ref={starRef} aria-hidden />
       <GlobeCanvas ref={canvasRef} aria-hidden />
