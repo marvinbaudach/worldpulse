@@ -12,8 +12,8 @@ import styled from 'styled-components';
 const RES_CAP = 480;
 // Accents are bright chart colors; scaled to nebula luminance. Runs hotter
 // than the desktop aurora — on the phone the backdrop is a narrow frame
-// around the card and has to carry the whole mood.
-const TINT_SCALE = 0.62;
+// around the card and has to carry the whole mood, so the tint stays vivid.
+const TINT_SCALE = 0.85;
 
 const VERT = `
   attribute vec2 aPos;
@@ -75,18 +75,20 @@ const FRAG = `
     float n = fbm(uv * 2.0 + q * 1.5 + vec2(t * 0.9, t * 0.3));
     float n2 = fbm(uv * 3.5 - q * 1.2 - vec2(t * 0.6, t * 0.4));
 
-    // Lifted base + layer weights, hotter than the desktop aurora: the card
-    // is dark, so the room behind it carries the light — hazy dusk, not
-    // near-black space.
-    vec3 base = vec3(0.050, 0.068, 0.118);
-    vec3 blue = mix(vec3(0.07, 0.17, 0.40), uTint, 0.6);
-    vec3 violet = vec3(0.20, 0.12, 0.38);
-    vec3 teal = mix(vec3(0.06, 0.23, 0.28), uTint, 0.45);
+    // Tint-led palette: the card's dominant hue drives the nebula. A cooler
+    // and a warmer companion (both derived from the tint) keep it from going
+    // flat-monochrome, and even the base floor is faintly tinted — so the
+    // whole frame takes the card's color instead of a fixed dark blue. Weights
+    // run brighter than before: the phone backdrop should glow, not sit dim.
+    vec3 tint = uTint;
+    vec3 cool = mix(tint, vec3(0.10, 0.24, 0.52), 0.5);
+    vec3 warm = mix(tint, vec3(0.52, 0.18, 0.42), 0.4);
+    vec3 base = tint * 0.16 + vec3(0.024, 0.032, 0.052);
 
     vec3 col = base;
-    col += blue * smoothstep(0.25, 0.9, n) * 0.95;
-    col += violet * smoothstep(0.45, 1.0, n2) * 0.65;
-    col += teal * smoothstep(0.5, 1.0, n * n2) * 0.45;
+    col += tint * smoothstep(0.20, 0.90, n) * 1.30;
+    col += cool * smoothstep(0.42, 1.00, n2) * 0.85;
+    col += warm * smoothstep(0.50, 1.00, n * n2) * 0.55;
 
     // Light shafts: two soft diagonal beams panning at different speeds.
     // Multiplied by the nebula density so they read as light through haze,
@@ -95,12 +97,12 @@ const FRAG = `
     float haze = smoothstep(0.3, 0.9, n);
     float beamA = smoothstep(0.86, 1.0, sin(diag * 2.6 - uTime * 0.22));
     float beamB = smoothstep(0.9, 1.0, sin(diag * 4.2 + uTime * 0.15 + 1.7));
-    col += (blue + uTint * 0.5) * (beamA * 0.4 + beamB * 0.3) * haze;
+    col += (tint + cool * 0.5) * (beamA * 0.45 + beamB * 0.32) * haze;
 
     // Wandering glints: sparse bright knots where both noise fields peak,
     // drifting with the flow — small "city lights" inside the nebula.
     float glint = smoothstep(0.78, 0.98, n * n2 * (1.4 + 0.6 * sin(uTime * 0.6)));
-    col += (uTint + vec3(0.25)) * glint * 0.35;
+    col += (tint + vec3(0.28)) * glint * 0.4;
 
     // No center dimming — the card covers the middle anyway. The visible
     // band around the card is only a narrow frame in portrait, so the edge

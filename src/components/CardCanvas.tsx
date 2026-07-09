@@ -15,32 +15,55 @@ const MOBILE_REF_W = 420;
 // (e.g. the temperature line's true final value) land where they should.
 const INTRO_S = 2;
 
-// Dominant saturated color of a drawn card, for tinting the background to
-// the card's own palette. Sparse pixel stride keeps this ~1ms; grays and the
-// dark surface are skipped so only chart ink (lines, bars, chips) votes.
+// Dominant *hue* of a drawn card, returned as a vivid tint for the background.
+// Averaging every saturated pixel muddies a multi-color card to gray, so we
+// instead vote colored pixels into hue bins (weighted by chroma) and emit the
+// winning hue at a fixed, lively saturation/brightness — the background takes
+// the card's actual dominant color, not a dim wash. Sparse stride keeps it
+// ~1ms; grays and the dark surface never vote.
 function dominantColor(canvas: HTMLCanvasElement): string | null {
   const ctx = canvas.getContext('2d');
   if (!ctx || !canvas.width) return null;
   const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  let count = 0;
-  for (let i = 0; i < d.length; i += 64) {
-    const cr = d[i];
-    const cg = d[i + 1];
-    const cb = d[i + 2];
-    const max = Math.max(cr, cg, cb);
-    if (max - Math.min(cr, cg, cb) > 60 && max > 90) {
-      r += cr;
-      g += cg;
-      b += cb;
-      count++;
-    }
+  const BINS = 24;
+  const weight = new Float64Array(BINS);
+  const hueSum = new Float64Array(BINS);
+  let votes = 0;
+  for (let i = 0; i < d.length; i += 32) {
+    const r = d[i];
+    const g = d[i + 1];
+    const b = d[i + 2];
+    const max = Math.max(r, g, b);
+    const chroma = max - Math.min(r, g, b);
+    if (max < 90 || chroma < 45) continue; // skip grays and the dark surface
+    let h: number;
+    if (max === r) h = ((g - b) / chroma + 6) % 6;
+    else if (max === g) h = (b - r) / chroma + 2;
+    else h = (r - g) / chroma + 4;
+    h /= 6; // [0,1)
+    const bin = Math.min(BINS - 1, (h * BINS) | 0);
+    const w = chroma / 255; // vivid pixels count more toward their hue
+    weight[bin] += w;
+    hueSum[bin] += h * w;
+    votes++;
   }
-  if (count < 20) return null; // barely any ink (e.g. a t=0 skeleton)
-  const hex = (v: number) => Math.round(v / count).toString(16).padStart(2, '0');
-  return `#${hex(r)}${hex(g)}${hex(b)}`;
+  if (votes < 24) return null; // barely any ink (e.g. a t=0 skeleton)
+  let best = 0;
+  for (let i = 1; i < BINS; i++) if (weight[i] > weight[best]) best = i;
+  if (weight[best] <= 0) return null;
+  return hsvHex(hueSum[best] / weight[best], 0.72, 0.9);
+}
+
+/** HSV → #rrggbb, all inputs in 0..1. */
+function hsvHex(h: number, s: number, v: number): string {
+  const f = (n: number) => {
+    const k = (n + h * 6) % 6;
+    const c = v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
+    return Math.round(c * 255)
+      .toString(16)
+      .padStart(2, '0');
+  };
+  return `#${f(5)}${f(3)}${f(1)}`;
 }
 
 interface CardCanvasProps {
