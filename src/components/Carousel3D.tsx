@@ -10,7 +10,7 @@ import {
 import { BlendFunction } from 'postprocessing';
 import { Environment, PerformanceMonitor } from '@react-three/drei';
 import { Vector2, Vector3 } from 'three';
-import { CameraRig } from './CameraRig';
+import { CAMERA_GAP, CameraRig } from './CameraRig';
 import { PerfProbe } from './PerfHud';
 import { Afterglow } from './Afterglow';
 import { Aurora } from './Aurora';
@@ -103,9 +103,11 @@ export function Carousel3D() {
   // mood already shifts while the old cards are still collapsing.
   const accent = (TAGS.find((t) => t.id === tag) ?? TAGS[0]).accent;
   const radius = radiusFor(Math.max(dashboards.length, MIN_COUNT));
-  const fogNear = radius + 2;
-  const fogFar = radius * 2 + 8;
-  const heroZ = radius + 4.5;
+  // Fog and hero distances track the camera at radius + CAMERA_GAP, so the
+  // depth fade on the panels stays put when the default framing changes.
+  const fogNear = radius + CAMERA_GAP - 7;
+  const fogFar = radius * 2 + CAMERA_GAP - 1;
+  const heroZ = radius + CAMERA_GAP - 4;
 
   // Live poses of the ring panels while a hero is open — fly-back and
   // arrow-key switch targets.
@@ -227,7 +229,7 @@ export function Carousel3D() {
       // hero is sharp without the fill-rate of a 2x buffer tanking the frame
       // rate on hi-dpi displays.
       dpr={heroOpen ? Math.min(maxDpr, 1.75) : dpr}
-      camera={{ position: [0, 0, DEFAULT_RADIUS + 9], fov: 40 }}
+      camera={{ position: [0, 0, DEFAULT_RADIUS + CAMERA_GAP], fov: 40 }}
       // Canvas MSAA is wasted work: EffectComposer renders offscreen anyway,
       // and the bloom/noise/vignette stack hides the aliasing it would fix.
       gl={{ antialias: false }}

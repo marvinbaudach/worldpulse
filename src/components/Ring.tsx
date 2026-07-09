@@ -8,6 +8,11 @@ import type { Dashboard } from '../dashboards';
 // How many ring panels are admitted per frame while the set mounts in.
 const MOUNT_BATCH = 3;
 
+// Resting tilt of the formation (radians). The matching downshift below uses
+// sin(INITIAL_TILT) so the tilt-lifted front row lands exactly at y = 0 —
+// the camera's height — putting the front panels at eye level for reading.
+const INITIAL_TILT = 0.11;
+
 interface RingProps {
   onSelect: (id: string, start: HeroStart) => void;
   selectedId: string | null;
@@ -81,7 +86,7 @@ export function Ring({
     // The visual lift of the front row is sin(tilt) * radius, so the start
     // tilt shrinks on big rings — otherwise a 30-panel ring opens with the
     // front row shoved to the top of the frame.
-    initialTilt: -0.11 * Math.min(1, DEFAULT_RADIUS / radius),
+    initialTilt: -INITIAL_TILT * Math.min(1, DEFAULT_RADIUS / radius),
   });
   // Memoized so the slot objects keep their identity across unrelated
   // re-renders — CarouselItem detects a formation switch by slot identity.
@@ -119,8 +124,9 @@ export function Ring({
     // frame — done on the ring, not the camera, so the camera stays head-on
     // (no "from below" pitch) and the separately-mounted hero card stays
     // centred. The tilt rotates about the ring's own origin, then this offset
-    // translates the tilted ring as a whole.
-    <group ref={tiltRef} position={[0, -radius * 0.12, 0]}>
+    // translates the tilted ring as a whole; sin(INITIAL_TILT) cancels the
+    // tilt's lift exactly, so the front row sits at camera height.
+    <group ref={tiltRef} position={[0, -Math.sin(INITIAL_TILT) * radius, 0]}>
       <group ref={groupRef}>
         {dashboards.slice(0, mountBudget).map((dashboard, i) => (
           <CarouselItem

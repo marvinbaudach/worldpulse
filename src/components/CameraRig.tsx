@@ -22,6 +22,12 @@ interface CameraRigProps {
 const REF_ASPECT = 16 / 9;
 const MAX_PULLBACK = 1.7;
 
+// Default gap between the ring front and the camera. 6.5 puts the front panel
+// at comfortable reading size (~2/3 of the frame height at 16:9) while the
+// aspect pull-back still keeps the ring's widest points just inside the frame
+// on 16:10 / 3:2 / 4:3 screens.
+export const CAMERA_GAP = 6.5;
+
 /**
  * Owns the camera framing: keeps the ring fit to any aspect ratio, adds an
  * optional mouse parallax, and scales the fog with the viewing distance so the
@@ -29,7 +35,7 @@ const MAX_PULLBACK = 1.7;
  */
 export function CameraRig({
   radius,
-  gap = 9,
+  gap = CAMERA_GAP,
   fogNear,
   fogFar,
   parallax = true,

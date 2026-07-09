@@ -4,7 +4,10 @@
 import { useEffect, useState } from 'react';
 
 const ZOOM_MIN = 0.5;
-const ZOOM_MAX = 2.5;
+// The default framing already sits at reading distance; 1.6 lets the front
+// panel fill the frame without the camera dollying past the hero plane
+// (heroZ = radius + CAMERA_GAP - 4).
+const ZOOM_MAX = 1.6;
 // Hold-to-zoom rate (factor per second): tap for a small nudge, hold to
 // glide all the way in or out.
 const ZOOM_RATE = 2.0;
