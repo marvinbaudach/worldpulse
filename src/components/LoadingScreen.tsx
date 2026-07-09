@@ -195,12 +195,19 @@ const GlobeCanvas = styled.canvas`
 
 // Progress ring hugging the globe. On done it collapses into the center in
 // step with the converging dots (same duration, same ease-in feel).
+// Portrait phones size against the width instead of vmin — the globe canvas
+// (see the draw loop) scales the same way, so the ring keeps hugging it.
 const RingWrap = styled.div<{ $done: boolean }>`
   position: absolute;
   left: 50%;
   top: 50%;
   width: 68vmin;
   height: 68vmin;
+
+  @media (orientation: portrait) and (max-width: 640px) {
+    width: 86vw;
+    height: 86vw;
+  }
   transform: translate(-50%, -50%) scale(${(p) => (p.$done ? 0 : 1)});
   opacity: ${(p) => (p.$done ? 0 : 1)};
   transition:
@@ -262,6 +269,14 @@ const Wordmark = styled.div`
   color: transparent;
   animation: ${sweep} 3.6s linear infinite;
 
+  /* Portrait phones have height to spare and width to fill: bigger type,
+     tracking trimmed so the tracked-out wordmark still fits the screen. */
+  @media (orientation: portrait) and (max-width: 640px) {
+    font-size: clamp(1.8rem, 7.5vw, 2.4rem);
+    letter-spacing: 0.34em;
+    margin-left: 0.34em;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     background: none;
@@ -297,6 +312,34 @@ const PulseSvg = styled.svg`
 // Empty space the globe rotates through; the type sits above, progress below.
 const GlobeGap = styled.div`
   height: min(48vmin, 44vh);
+
+  /* Match the width-scaled portrait globe (86vw ring + breathing room), so
+     the type clears its top edge instead of floating over the dots. */
+  @media (orientation: portrait) and (max-width: 640px) {
+    height: min(100vw, 56vh);
+  }
+`;
+
+// Numeric progress under the globe — portrait phones only. The ring arc gets
+// thin at phone size, and the tall screen leaves the lower third empty; a
+// plain tabular readout fills it with the one number that matters.
+const PctReadout = styled.div<{ $done: boolean }>`
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 10vh);
+  text-align: center;
+  font: 600 17px ${MONO};
+  letter-spacing: 0.24em;
+  color: rgba(143, 184, 236, 0.85);
+  opacity: ${(p) => (p.$done ? 0 : 1)};
+  transition: opacity ${CONVERGE_MS}ms ease-in;
+  pointer-events: none;
+
+  @media (orientation: portrait) and (max-width: 640px) {
+    display: block;
+  }
 `;
 
 /** lat/lon (degrees) -> unit sphere. */
@@ -464,7 +507,10 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
 
       const cx = w / 2;
       const cy = h / 2;
-      const R = Math.min(w, h) * 0.3 * (1 - ease);
+      // Portrait phones: scale on width to fill the tall screen, tracking the
+      // ring's 86vw sizing (ring radius 0.378w; globe stays just inside it).
+      const base = h > w && w <= 640 ? w * 0.348 : Math.min(w, h) * 0.3;
+      const R = base * (1 - ease);
       // Assembly: dots swirl outward from the center during the first beat.
       const assemble = Math.min(1, t / 1.1);
       const aEase = 1 - Math.pow(1 - assemble, 3);
@@ -694,6 +740,8 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
           />
         </ScannerSvg>
       </RingWrap>
+
+      {isMobile && <PctReadout $done={done}>{pct} %</PctReadout>}
 
       <Column $done={done}>
         <Wordmark>WORLDPULSE</Wordmark>
