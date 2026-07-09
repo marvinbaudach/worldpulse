@@ -66,6 +66,21 @@ export interface LiveData {
     /** Hottest countries right now, for the ranked list. */
     rows: { name: string; v: number }[];
   };
+  /** Middle-East conflict: live Gaza/West-Bank casualties (Tech for Palestine).
+      The Hormuz and missile figures the card shows alongside are bundled and
+      dated (no keyless live feed exists) — see data/geo.ts. */
+  mideast?: {
+    /** Gaza: cumulative killed, of which children; plus injured. */
+    killed: number;
+    children: number;
+    injured: number;
+    /** West Bank cumulative killed. */
+    westBankKilled: number;
+    /** Provider's own as-of date, e.g. "2026-07-08". */
+    lastUpdate: string;
+    /** Recent daily killed (oldest→newest) for the trend sparkline. */
+    daily: number[];
+  };
   /** Intentional homicides per 100k (World Bank, latest year per country). */
   homicide?: {
     byIso: Record<string, number>;

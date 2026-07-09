@@ -9,13 +9,25 @@ import {
   debtClock,
   hBarChart,
   lineChart,
+  mideastMap,
   nukeMap,
   tempMap,
   timelineChart,
   treemap,
   wealthSplit,
 } from './charts';
-import { CPI_INVERTED, EU_DEBT_GDP, EXECUTIONS_2024, LGBT_CRIMINAL, NUKE_STATES, NUKE_TOTAL, US_TROOPS_ABROAD } from './geo';
+import {
+  CPI_INVERTED,
+  EU_DEBT_GDP,
+  EXECUTIONS_2024,
+  HORMUZ,
+  IRAN_ISRAEL_MISSILES,
+  LGBT_CRIMINAL,
+  MIDEAST_FALLBACK,
+  NUKE_STATES,
+  NUKE_TOTAL,
+  US_TROOPS_ABROAD,
+} from './geo';
 import type { Dashboard } from './types';
 import { live } from '../data/store';
 import { EXCESS_100K_BY_ISO, VAX_RATE_BY_ISO } from '../data/covidWorld';
@@ -191,6 +203,40 @@ export const POOL: Dashboard[] = [
         ],
         // Rounded to whole billions — the tenths add no signal at this scale.
         rowFmt: (v) => `$${localeNum(v / 1e9, 0)} ${tr('Mrd')}`,
+      });
+    },
+  },
+  {
+    id: 'mideast',
+    title: 'Naher Osten · Konflikt',
+    source:
+      'Getötete: Tech for Palestine (Gaza & Westjordanland, Gesundheitsministerium/OCHA), live abgerufen. Hormus: EIA 2024 (Öldurchsatz) & Reuters (Schiffe/Tag) — kein Live-Feed für Schiffszählungen. Raketen: iranische Raketen auf Israel, 12-Tage-Krieg Juni 2025 (FPRI/WSJ). Nur eine der drei Zahlen ist live — der Rest ist datierter Kontext.',
+    dynamic: true,
+    draw: (f) => {
+      // Only the casualty block is live (Tech for Palestine, Gaza/West Bank —
+      // Palestinian figures only, no Iranian/Israeli side). Hormuz and the
+      // missile count are bundled, dated context: no keyless live feed exists
+      // for either. The card labels live vs. bundled so the two never blur.
+      const m = live.mideast;
+      const c = m ?? MIDEAST_FALLBACK;
+      mideastMap(f, {
+        label: 'Naher Osten · Konflikt',
+        killed: c.killed,
+        children: c.children,
+        injured: c.injured,
+        westBankKilled: c.westBankKilled,
+        lastUpdate: c.lastUpdate,
+        daily: c.daily,
+        isLive: m !== undefined,
+        hormuzOil: HORMUZ.oilBarrelsPerDay,
+        hormuzShips: HORMUZ.shipsPerDay,
+        hormuzVintage: HORMUZ.vintage,
+        missiles: IRAN_ISRAEL_MISSILES.count,
+        missilesRoute: IRAN_ISRAEL_MISSILES.route,
+        missilesPeriod: IRAN_ISRAEL_MISSILES.period,
+        world: live.worldMap,
+        source:
+          'Tech for Palestine (live) · EIA 2024 · FPRI/WSJ · Getötete = Gaza & Westjordanland',
       });
     },
   },

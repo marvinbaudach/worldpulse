@@ -366,6 +366,44 @@ async function loadHomicide(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Tech for Palestine — Gaza & West-Bank casualties. Keyless, CORS-enabled
+// static JSON (Cloudflare), refreshed ~daily. The only one of the Nahost
+// card's three metrics with a real live feed; Hormuz and the missile figure
+// are bundled and dated (see dashboards/geo.ts). No Iranian/Israeli-side
+// figures — the feed covers Palestinian casualties only, labeled as such.
+
+interface TfpSummary {
+  gaza: {
+    last_update: string;
+    killed: { total: number; children: number };
+    injured: { total: number };
+  };
+  west_bank: { killed: { total: number } };
+}
+
+// Some early daily rows carry only the extrapolated `ext_killed`; guard for both.
+type TfpDaily = { report_date: string; killed?: number; ext_killed?: number }[];
+
+async function loadMideast(): Promise<void> {
+  const data = await cached('mideast', 3 * 60 * MIN, async () => {
+    const [summary, daily] = await Promise.all([
+      fetchJson<TfpSummary>('https://data.techforpalestine.org/api/v3/summary.min.json'),
+      fetchJson<TfpDaily>('https://data.techforpalestine.org/api/v2/casualties_daily.min.json'),
+    ]);
+    return {
+      killed: summary.gaza.killed.total,
+      children: summary.gaza.killed.children,
+      injured: summary.gaza.injured.total,
+      westBankKilled: summary.west_bank.killed.total,
+      lastUpdate: summary.gaza.last_update,
+      daily: daily.slice(-30).map((d) => d.killed ?? d.ext_killed ?? 0),
+    };
+  });
+
+  live.mideast = data;
+}
+
+// ---------------------------------------------------------------------------
 
 export interface LiveFeed {
   /** Uplink station code on the loading screen's route strip. */
@@ -393,6 +431,7 @@ export const LIVE_FEEDS: LiveFeed[] = [
   { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Militärausgaben', load: loadMilitary },
   { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Bevölkerung', load: loadPopulation },
   { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Mordrate', load: loadHomicide },
+  { code: 'GZA', source: 'TECH FOR PALESTINE', city: 'GAZA', item: 'Opferzahlen', load: loadMideast },
 ];
 
 let started = false;

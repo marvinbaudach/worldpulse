@@ -60,6 +60,7 @@ function shuffled<T>(list: T[]): T[] {
 // a Germany and a money story). Applied to the POOL right below.
 const TAGS_BY_ID: Record<string, string[]> = {
   military: ['krieg'],
+  mideast: ['krieg', 'welt'],
   'military-per-soldier': ['krieg', 'geld'],
   'military-gdp': ['krieg', 'geld'],
   'us-debt': ['geld'],
@@ -247,6 +248,7 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
  */
 const ADDED_BY_ID: Record<string, string> = {
   'military': '2026-07-07T07:48:18+02:00',
+  'mideast': '2026-07-09T12:00:00+02:00',
   'military-per-soldier': '2026-07-07T12:06:22+02:00',
   'military-gdp': '2026-07-07T12:06:22+02:00',
   'us-debt': '2026-07-07T07:48:18+02:00',

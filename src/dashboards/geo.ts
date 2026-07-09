@@ -120,6 +120,53 @@ export const LGBT_CRIMINAL: Record<string, number> = {
   ZWE: 1, SWZ: 1, BDI: 1, UZB: 1, TKM: 1, LBN: 1, WSM: 1, ERI: 1,
 };
 
+// ---------------------------------------------------------------------------
+// Nahost-Karte ("Naher Osten · Konflikt"). The casualty figures are fetched
+// live (Tech for Palestine, see data/sources.ts); everything below is bundled
+// because no keyless, CORS-enabled live feed exists for it.
+
+/** Map hotspots, lon/lat, for the regional Middle-East map. */
+export const MIDEAST_HOTSPOTS = {
+  gaza: { lon: 34.45, lat: 31.5 },
+  hormuz: { lon: 56.4, lat: 26.6 },
+};
+
+// Strait of Hormuz throughput. Oil: EIA "Today in Energy" (16 Jun 2025, 2024
+// data) — ~20 million barrels/day, more than a quarter of global seaborne oil
+// trade. Vessels: no authoritative live count exists (all AIS data is keyed/
+// paywalled), so ~100 ships/day is the normal pre-2026 baseline from Reuters/
+// CNN (~3,000 vessels/month) and Britannica (80–130/day). A dated reference,
+// not a live number.
+export const HORMUZ = {
+  oilBarrelsPerDay: 20e6,
+  shipsPerDay: 100,
+  vintage: '2024',
+  source: 'EIA 2024 · Reuters',
+};
+
+// Ballistic missiles fired by Iran at Israel during the 12-day war,
+// 13–24 June 2025 (FPRI / Wall Street Journal analysis; some trackers count up
+// to ~591). A dated context figure — no live feed.
+export const IRAN_ISRAEL_MISSILES = {
+  count: 500,
+  route: 'Iran → Israel',
+  period: 'Juni 2025',
+  source: 'FPRI / WSJ',
+};
+
+// Offline/boot fallback for the live casualty block, so the card never renders
+// broken before (or without) the Tech-for-Palestine fetch. Snapshot values,
+// dated — the live feed overwrites them the moment it lands.
+export const MIDEAST_FALLBACK = {
+  killed: 73110,
+  children: 20179,
+  injured: 173599,
+  westBankKilled: 1094,
+  lastUpdate: '2026-07-08',
+  // A gently varying seed so the sparkline reads as a trend, not a flat line.
+  daily: [62, 48, 71, 55, 39, 84, 90, 67, 52, 45, 73, 61, 58, 42, 96, 70, 63, 51, 47, 38, 55, 44, 33, 29, 41, 26, 22, 18, 12, 8],
+};
+
 // Recorded executions in 2024 (Amnesty International, "Death Sentences and
 // Executions 2024"): at least 1,518 across 15 states — the highest since
 // 2015, with Iran, Saudi Arabia and Iraq accounting for over 90% of the

@@ -2,10 +2,10 @@
 // value choropleth and the signed temperature map, each with a ranked top-N
 // list below.
 
-import { t as tr } from '../../i18n';
-import { drawHeader, drawSurface, easeOut, fmtCompact, stagger, type Frame } from '../draw';
-import { CRITICAL, FONT, GRID, INK_SECONDARY, MUTED } from '../theme';
-import { drawRankedList, drawSource, withAlpha } from './shared';
+import { localeInt, localeNum, t as tr } from '../../i18n';
+import { drawHeader, drawSurface, easeOut, fmtCompact, roundRect, stagger, type Frame } from '../draw';
+import { CRITICAL, FONT, GRID, INK, INK_SECONDARY, MUTED, SERIES, SURFACE_DEEP } from '../theme';
+import { drawRankedList, drawSource, ellipsize, withAlpha } from './shared';
 
 export interface NukeMapCfg {
   label: string;
@@ -115,6 +115,245 @@ export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
   });
 
   if (cfg.source) drawSource(f, cfg.source);
+}
+
+// ---------------------------------------------------------------------------
+// Nahost-Karte: a regional Middle-East map with two hotspot pings (Gaza,
+// Strait of Hormuz), a live Gaza-casualty hero block with a daily-killed
+// sparkline, and two bundled context chips (Hormuz throughput, Iran→Israel
+// missiles). Live vs. bundled is spelled out on the card — only the casualty
+// block is live (Tech for Palestine); the chips are dated reference figures.
+
+export interface MideastCfg {
+  label: string;
+  /** Live (or bundled-fallback) Gaza / West-Bank casualties. */
+  killed: number;
+  children: number;
+  injured: number;
+  westBankKilled: number;
+  /** Provider's as-of date, ISO yyyy-mm-dd. */
+  lastUpdate: string;
+  /** Recent daily killed (oldest→newest) for the sparkline. */
+  daily: number[];
+  /** True when the figures came from the live feed, not the bundled snapshot. */
+  isLive: boolean;
+  /** Bundled, dated Hormuz throughput. */
+  hormuzOil: number;
+  hormuzShips: number;
+  hormuzVintage: string;
+  /** Bundled, dated missile-exchange context. */
+  missiles: number;
+  missilesRoute: string;
+  missilesPeriod: string;
+  /** Country outlines, clipped to the region. */
+  world?: { id: string; rings: number[][][] }[];
+  source: string;
+}
+
+const MIDEAST_REGION = { lonMin: 33, lonMax: 59, latMin: 22, latMax: 37 };
+const GAZA_PT = { lon: 34.45, lat: 31.5 };
+const HORMUZ_PT = { lon: 56.4, lat: 26.6 };
+
+/** ISO yyyy-mm-dd → dd.mm.yyyy for the German status stamp. */
+function deDate(iso: string): string {
+  const [y, m, d] = iso.split('-');
+  return d && m && y ? `${d}.${m}.${y}` : iso;
+}
+
+export function mideastMap(f: Frame, cfg: MideastCfg): void {
+  const { ctx, u, t, w, h } = f;
+  drawSurface(f);
+  const top = drawHeader(f, cfg.label);
+  const pad = 36 * u;
+  const mx0 = pad;
+  const mw = w - 2 * pad;
+  const footer = 40 * u;
+  const reveal = easeOut(t / 1.1);
+
+  // --- Regional map -------------------------------------------------------
+  const b = MIDEAST_REGION;
+  const mapTop = top + 4 * u;
+  const avail = h - mapTop - footer;
+  const mapH = Math.min((mw * (b.latMax - b.latMin)) / (b.lonMax - b.lonMin), avail * 0.34);
+  const px = (lon: number) => mx0 + ((lon - b.lonMin) / (b.lonMax - b.lonMin)) * mw;
+  const py = (lat: number) => mapTop + ((b.latMax - lat) / (b.latMax - b.latMin)) * mapH;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(mx0, mapTop, mw, mapH);
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(5,7,12,0.65)';
+  ctx.lineWidth = 1 * u;
+  ctx.lineJoin = 'round';
+  ctx.fillStyle = 'rgba(214,222,236,0.06)';
+  for (const country of cfg.world ?? []) {
+    for (const ring of country.rings) {
+      ctx.beginPath();
+      ring.forEach(([lon, lat], i) => {
+        if (i === 0) ctx.moveTo(px(lon), py(lat));
+        else ctx.lineTo(px(lon), py(lat));
+      });
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // Two hotspot pings: an expanding ring plus a core dot and a direct label,
+  // phase-shifted so they don't pulse in unison.
+  const marker = (lon: number, lat: number, color: string, label: string, i: number) => {
+    const x = px(lon);
+    const y = py(lat);
+    const phase = (t * 0.55 + i * 0.4) % 1;
+    ctx.globalAlpha = reveal * (1 - phase) * 0.8;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.8 * u;
+    ctx.beginPath();
+    ctx.arc(x, y, 3 * u + phase * 22 * u, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = reveal;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, y, 4 * u, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `700 ${12 * u}px ${FONT}`;
+    const flip = x + 12 * u + ctx.measureText(label).width > mx0 + mw;
+    ctx.fillStyle = INK;
+    ctx.textAlign = flip ? 'right' : 'left';
+    ctx.fillText(label, x + (flip ? -12 * u : 12 * u), y + 4 * u);
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+  };
+  marker(GAZA_PT.lon, GAZA_PT.lat, CRITICAL, tr('Gaza'), 0);
+  marker(HORMUZ_PT.lon, HORMUZ_PT.lat, SERIES[2], tr('Hormus'), 1);
+
+  // --- Live casualty hero -------------------------------------------------
+  const statsTop = mapTop + mapH + 18 * u;
+  const statsAvail = h - footer - statsTop;
+  const heroH = statsAvail * 0.52;
+
+  // Status line: a pulsing red dot + "LIVE" when the feed is up, otherwise a
+  // plain dated stamp. Either way it names exactly what the figures cover.
+  const stamp = deDate(cfg.lastUpdate);
+  const dotPad = cfg.isLive ? 16 * u : 0;
+  if (cfg.isLive) {
+    ctx.globalAlpha = 0.5 + 0.5 * Math.sin(t * 3);
+    ctx.fillStyle = CRITICAL;
+    ctx.beginPath();
+    ctx.arc(pad + 4 * u, statsTop + 8 * u, 4 * u, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.textAlign = 'left';
+  ctx.fillStyle = cfg.isLive ? CRITICAL : MUTED;
+  ctx.font = `700 ${12 * u}px ${FONT}`;
+  const status = `${cfg.isLive ? 'LIVE · ' : ''}${tr('Gaza & Westjordanland')} · ${tr('Stand')} ${stamp}`;
+  ctx.fillText(ellipsize(ctx, status.toUpperCase(), mw - dotPad), pad + dotPad, statsTop + 12 * u);
+
+  // Headline: cumulative Gaza killed, big.
+  const killed = Math.round(cfg.killed * reveal);
+  const numY = statsTop + 60 * u;
+  ctx.fillStyle = INK;
+  ctx.font = `800 ${52 * u}px ${FONT}`;
+  ctx.fillText(localeInt(killed), pad, numY);
+  const numW = ctx.measureText(localeInt(killed)).width;
+  ctx.fillStyle = INK_SECONDARY;
+  ctx.font = `500 ${15 * u}px ${FONT}`;
+  ctx.fillText(tr('Getötete · Gaza'), pad, numY + 22 * u);
+
+  // Secondary figures stacked to the right of the headline number.
+  const sx = pad + numW + 24 * u;
+  ctx.fillStyle = INK_SECONDARY;
+  ctx.font = `600 ${17 * u}px ${FONT}`;
+  ctx.fillText(`${localeInt(cfg.children)} ${tr('Kinder')}`, sx, numY - 18 * u);
+  ctx.fillText(`${localeInt(cfg.injured)} ${tr('Verletzte')}`, sx, numY + 4 * u);
+  ctx.fillStyle = MUTED;
+  ctx.font = `500 ${14 * u}px ${FONT}`;
+  ctx.fillText(`${localeInt(cfg.westBankKilled)} ${tr('Westjordanland')}`, sx, numY + 25 * u);
+
+  // Daily-killed sparkline along the bottom of the hero block.
+  const data = cfg.daily.length ? cfg.daily : [0];
+  const dmax = Math.max(...data, 1);
+  const sparkH = 22 * u;
+  const sparkTop = statsTop + heroH - sparkH - 4 * u;
+  ctx.fillStyle = MUTED;
+  ctx.font = `500 ${12 * u}px ${FONT}`;
+  ctx.fillText(tr('Getötete pro Tag · 30 Tage'), pad, sparkTop - 6 * u);
+  ctx.strokeStyle = withAlpha(CRITICAL, 0.9);
+  ctx.lineWidth = 2 * u;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const x = pad + (mw * i) / Math.max(1, data.length - 1);
+    const yy = sparkTop + sparkH - (v / dmax) * sparkH;
+    if (i === 0) ctx.moveTo(x, yy);
+    else ctx.lineTo(x, yy);
+  });
+  ctx.stroke();
+
+  // --- Two bundled context chips -----------------------------------------
+  const chipsTop = statsTop + heroH + 14 * u;
+  const chipsH = h - footer - chipsTop;
+  const gap = 14 * u;
+  const chipW = (mw - gap) / 2;
+  const chip = (
+    cx: number,
+    eyebrow: string,
+    value: string,
+    sub: string,
+    stampLine: string,
+    accent: string,
+  ) => {
+    ctx.fillStyle = SURFACE_DEEP;
+    roundRect(ctx, cx, chipsTop, chipW, chipsH, 14 * u);
+    ctx.fill();
+    ctx.fillStyle = accent;
+    roundRect(ctx, cx, chipsTop, chipW, 3 * u, 1.5 * u);
+    ctx.fill();
+    const ix = cx + 16 * u;
+    const iw = chipW - 32 * u;
+    // Eyebrow / value / sub are centered as a group above the pinned stamp, so
+    // the chip doesn't read top-heavy on a tall panel.
+    const mid = chipsTop + chipsH * 0.46;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = MUTED;
+    ctx.font = `700 ${11.5 * u}px ${FONT}`;
+    ctx.fillText(ellipsize(ctx, eyebrow.toUpperCase(), iw), ix, mid - 30 * u);
+    // Value shrinks to fit rather than ellipsizing — the whole figure matters.
+    ctx.fillStyle = INK;
+    let vs = 26;
+    ctx.font = `800 ${vs * u}px ${FONT}`;
+    while (vs > 17 && ctx.measureText(value).width > iw) {
+      vs -= 1;
+      ctx.font = `800 ${vs * u}px ${FONT}`;
+    }
+    ctx.fillText(value, ix, mid);
+    ctx.fillStyle = INK_SECONDARY;
+    ctx.font = `500 ${14 * u}px ${FONT}`;
+    ctx.fillText(ellipsize(ctx, sub, iw), ix, mid + 24 * u);
+    ctx.fillStyle = MUTED;
+    ctx.font = `500 ${12 * u}px ${FONT}`;
+    ctx.fillText(ellipsize(ctx, stampLine, iw), ix, chipsTop + chipsH - 16 * u);
+  };
+  chip(
+    pad,
+    tr('Straße von Hormus'),
+    `≈${localeNum(cfg.hormuzOil / 1e6, 0)} ${tr('Mio bbl/Tag')}`,
+    `≈${localeInt(cfg.hormuzShips)} ${tr('Schiffe/Tag')}`,
+    `${tr('Stand')} ${cfg.hormuzVintage} · EIA`,
+    SERIES[2],
+  );
+  chip(
+    pad + chipW + gap,
+    `${tr('Raketen')} · ${cfg.missilesRoute}`,
+    `≈${localeInt(cfg.missiles)}`,
+    tr(cfg.missilesPeriod),
+    `${tr('Stand')} ${tr(cfg.missilesPeriod)} · FPRI/WSJ`,
+    CRITICAL,
+  );
+
+  drawSource(f, cfg.source);
 }
 
 export interface ChoroplethCfg {
