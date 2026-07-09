@@ -103,12 +103,13 @@ const FRAG = `
 
     // Light shafts: two soft diagonal beams panning at different speeds.
     // Multiplied by the nebula density so they read as light through haze,
-    // not as flat stripes painted on top.
+    // not as flat stripes painted on top. Wide smoothstep windows: narrow
+    // ones draw straight-edged bands that read as hard seams on OLED.
     float diag = uv.x * 0.7 + uv.y * 0.75;
     float haze = smoothstep(0.3, 0.9, n);
-    float beamA = smoothstep(0.86, 1.0, sin(diag * 2.6 - uTime * 0.22));
-    float beamB = smoothstep(0.9, 1.0, sin(diag * 4.2 + uTime * 0.15 + 1.7));
-    col += (tint + cool * 0.5) * (beamA * 0.45 + beamB * 0.32) * haze;
+    float beamA = smoothstep(0.68, 1.0, sin(diag * 2.6 - uTime * 0.22));
+    float beamB = smoothstep(0.74, 1.0, sin(diag * 4.2 + uTime * 0.15 + 1.7));
+    col += (tint + cool * 0.5) * (beamA * 0.35 + beamB * 0.25) * haze;
 
     // Wandering glints: sparse bright knots where both noise fields peak,
     // drifting with the flow — small "city lights" inside the nebula.
@@ -123,10 +124,16 @@ const FRAG = `
     float breath = 1.9 + 0.2 * sin(uTime * 0.45);
     col *= mix(1.0, breath, smoothstep(0.3, 0.62, d));
 
-    // Ordered-free dither: ±1 LSB of per-pixel noise breaks the 8-bit banding
+    // Filmic-ish tone map instead of a hard clip: the brightness push can
+    // drive channels past 1.0, and raw clipping flattens those regions into
+    // saturated plateaus with sharp contour edges (the "hard seams" seen on
+    // OLED). The exponential rolls highlights off smoothly and never clips.
+    col = 1.0 - exp(-col * 1.5);
+
+    // Ordered-free dither: sub-LSB per-pixel noise breaks the 8-bit banding
     // that soft, slow gradients otherwise show on OLED phone panels. Time-
     // salted so the pattern never sits still enough to read as grain.
-    col += (hash(vUv * 913.7 + fract(uTime) * 17.0) - 0.5) * (2.0 / 255.0);
+    col += (hash(vUv * 913.7 + fract(uTime) * 17.0) - 0.5) * (3.0 / 255.0);
 
     gl_FragColor = vec4(col, 1.0);
   }
