@@ -24,6 +24,8 @@ export function trendCard(
   seed: number,
   markers?: { at: number; label: string }[],
   source?: string,
+  /** Projection start (0..1 of the x-range) — dashed line + arrow beyond. */
+  projectFrom?: number,
 ): Dashboard {
   return {
     id,
@@ -41,6 +43,7 @@ export function trendCard(
         ticks: panel.ticks,
         xLabels: panel.xLabels,
         markers,
+        projectFrom,
       }),
   };
 }

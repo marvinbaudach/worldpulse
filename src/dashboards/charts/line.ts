@@ -113,6 +113,78 @@ export function curveYFn(
   };
 }
 
+/**
+ * Stroke a series that turns into a projection at `splitX`: solid up to the
+ * split, dashed beyond it — measured data reads solid, forecast dashed. The
+ * current path style (color, width) applies to both halves; returns the end
+ * point so the caller can cap the line with an arrowhead.
+ */
+function strokeSplit(
+  ctx: CanvasRenderingContext2D,
+  data: number[],
+  x0: number,
+  x1: number,
+  yTop: number,
+  yBottom: number,
+  p: number,
+  splitX: number,
+  u: number,
+): { x: number; y: number } {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x0 - 8 * u, -1e5, splitX - x0 + 8 * u, 2e5);
+  ctx.clip();
+  linePath(ctx, data, x0, x1, yTop, yBottom, p);
+  ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(splitX, -1e5, x1 - splitX + 8 * u, 2e5);
+  ctx.clip();
+  ctx.setLineDash([6 * u, 5 * u]);
+  const end = linePath(ctx, data, x0, x1, yTop, yBottom, p);
+  ctx.stroke();
+  ctx.restore();
+  return end;
+}
+
+/**
+ * Arrowhead on a projected line's endpoint, oriented along the last segment —
+ * tip exactly on the data end, so it says "heading here" without overflowing
+ * the plot.
+ */
+function arrowHead(
+  ctx: CanvasRenderingContext2D,
+  data: number[],
+  x0: number,
+  x1: number,
+  yTop: number,
+  yBottom: number,
+  end: { x: number; y: number },
+  u: number,
+  color: string,
+): void {
+  const n = data.length;
+  const px = x0 + ((x1 - x0) * (n - 2)) / (n - 1);
+  const py = yBottom - (yBottom - yTop) * data[n - 2];
+  const a = Math.atan2(end.y - py, end.x - px);
+  const len = 11 * u;
+  const half = 4.5 * u;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(end.x, end.y);
+  ctx.lineTo(
+    end.x - Math.cos(a) * len + Math.cos(a + Math.PI / 2) * half,
+    end.y - Math.sin(a) * len + Math.sin(a + Math.PI / 2) * half,
+  );
+  ctx.lineTo(
+    end.x - Math.cos(a) * len + Math.cos(a - Math.PI / 2) * half,
+    end.y - Math.sin(a) * len + Math.sin(a - Math.PI / 2) * half,
+  );
+  ctx.closePath();
+  ctx.fill();
+}
+
 export interface LineCfg {
   label: string;
   value: number;
@@ -128,6 +200,9 @@ export interface LineCfg {
   shade?: { mask: boolean[]; label: string };
   /** Vertical era markers along the x-range (0..1), e.g. reforms/treaties. */
   markers?: { at: number; label: string }[];
+  /** Projection start (0..1 of the x-range): the lines render solid up to
+      here, dashed with an arrowhead beyond — forecast, not measurement. */
+  projectFrom?: number;
 }
 
 /** Two-series line chart with draw-in, endpoint pulse and direct labels. */
@@ -184,31 +259,55 @@ export function lineChart(f: Frame, cfg: LineCfg): void {
   const datas = cfg.series.map(
     (s, si) => s.data ?? makeSeries(cfg.seed + si * 97, 14, si === 0 ? 0.6 : 0.25),
   );
+  const yTop = r.y0 + 14 * u;
+  const yBottom = r.y1 - 6 * u;
+  const splitX =
+    cfg.projectFrom !== undefined ? d.x0 + (d.x1 - d.x0) * cfg.projectFrom : undefined;
   cfg.series.forEach((s, si) => {
     const data = datas[si];
     ctx.strokeStyle = s.color;
     ctx.lineWidth = 2.5 * u;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    const end = linePath(ctx, data, d.x0, d.x1, r.y0 + 14 * u, r.y1 - 6 * u, p);
-    ctx.stroke();
-    // Endpoint marker; the front series gets a soft live pulse.
-    ctx.fillStyle = s.color;
-    ctx.beginPath();
-    ctx.arc(end.x, end.y, 4.5 * u, 0, Math.PI * 2);
-    ctx.fill();
+    let end: { x: number; y: number };
+    if (splitX !== undefined) {
+      // Projection: dashed beyond the split, arrow instead of endpoint dot —
+      // the "now" anchor below marks where measurement ends.
+      end = strokeSplit(ctx, data, d.x0, d.x1, yTop, yBottom, p, splitX, u);
+      if (p >= 1) arrowHead(ctx, data, d.x0, d.x1, yTop, yBottom, end, u, s.color);
+    } else {
+      end = linePath(ctx, data, d.x0, d.x1, yTop, yBottom, p);
+      ctx.stroke();
+      // Endpoint marker on measured data.
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(end.x, end.y, 4.5 * u, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // The front series gets a soft live pulse — on the endpoint, or on the
+    // projection split ("today") once the draw-in has passed it.
+    const anchor =
+      splitX !== undefined && cfg.projectFrom !== undefined
+        ? { x: splitX, y: curveYFn(data, yTop, yBottom)(cfg.projectFrom) }
+        : end;
+    if (splitX !== undefined && p >= (cfg.projectFrom ?? 0)) {
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(anchor.x, anchor.y, 4.5 * u, 0, Math.PI * 2);
+      ctx.fill();
+    }
     if (si === 0 && p >= 1) {
       const pulse = (t * 0.9) % 1;
       ctx.strokeStyle = s.color;
       ctx.globalAlpha = (1 - pulse) * 0.5;
       ctx.lineWidth = 2 * u;
       ctx.beginPath();
-      ctx.arc(end.x, end.y, (5 + pulse * 14) * u, 0, Math.PI * 2);
+      ctx.arc(anchor.x, anchor.y, (5 + pulse * 14) * u, 0, Math.PI * 2);
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
   });
-  drawEraMarkers(f, { ...r, ...d }, marks, curveYFn(datas[0], r.y0 + 14 * u, r.y1 - 6 * u));
+  drawEraMarkers(f, { ...r, ...d }, marks, curveYFn(datas[0], yTop, yBottom));
   drawGridLabels(f, r.y0, r.y1, cfg.ticks);
   xAxisLabels(f, cfg.xLabels ?? ['Q1', 'Q2', 'Q3', 'Q4'], d.x0, d.x1, r.y1);
 }
@@ -231,6 +330,9 @@ export interface AreaCfg {
   /** Uncertainty band (normalized 0..1, same length as `data`), drawn as a
       translucent fill behind the line — e.g. a reconstruction's 90% range. */
   band?: { lo: number[]; hi: number[] };
+  /** Projection start (0..1 of the x-range): the line renders solid up to
+      here, dashed with an arrowhead beyond — forecast, not measurement. */
+  projectFrom?: number;
 }
 
 /** Single-series area chart with a gradient fill sweeping in. */
@@ -286,12 +388,26 @@ export function areaChart(f: Frame, cfg: AreaCfg): void {
   ctx.strokeStyle = cfg.color;
   ctx.lineWidth = 2.5 * u;
   ctx.lineJoin = 'round';
-  linePath(ctx, data, d.x0, d.x1, r.y0 + 14 * u, r.y1 - 6 * u, p);
-  ctx.stroke();
-  ctx.fillStyle = cfg.color;
-  ctx.beginPath();
-  ctx.arc(end.x, end.y, 4.5 * u, 0, Math.PI * 2);
-  ctx.fill();
+  if (cfg.projectFrom !== undefined) {
+    // Projection: dashed beyond the split with an arrowhead; a dot anchors
+    // the last measured value ("today") instead of the forecast endpoint.
+    const splitX = d.x0 + (d.x1 - d.x0) * cfg.projectFrom;
+    const pEnd = strokeSplit(ctx, data, d.x0, d.x1, r.y0 + 14 * u, r.y1 - 6 * u, p, splitX, u);
+    if (p >= 1) arrowHead(ctx, data, d.x0, d.x1, r.y0 + 14 * u, r.y1 - 6 * u, pEnd, u, cfg.color);
+    if (p >= cfg.projectFrom) {
+      ctx.fillStyle = cfg.color;
+      ctx.beginPath();
+      ctx.arc(splitX, curveYFn(data, r.y0 + 14 * u, r.y1 - 6 * u)(cfg.projectFrom), 4.5 * u, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else {
+    linePath(ctx, data, d.x0, d.x1, r.y0 + 14 * u, r.y1 - 6 * u, p);
+    ctx.stroke();
+    ctx.fillStyle = cfg.color;
+    ctx.beginPath();
+    ctx.arc(end.x, end.y, 4.5 * u, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // Vertical era markers (dashed line + label), drawn on top of the curve.
   drawEraMarkers(f, { ...r, ...d }, marks, curveYFn(data, r.y0 + 14 * u, r.y1 - 6 * u));

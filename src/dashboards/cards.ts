@@ -1173,6 +1173,8 @@ export const POOL: Dashboard[] = [
           [2015, '📈 Zuwanderung 2015'],
           [2024, '📍 heute'],
         ]),
+        // Forecast from 2025 on the 1970–2050 axis: dashed lines + arrows.
+        projectFrom: (2025 - 1970) / (2050 - 1970),
       }),
   },
   {
@@ -1386,6 +1388,8 @@ export const POOL: Dashboard[] = [
           [2024, '📍 heute'],
           [2035, '👴 Boomer in Rente'],
         ]),
+        // Everything right of "heute" is projection: dashed line + arrow.
+        projectFrom: (2024 - 1950) / (2060 - 1950),
       }),
   },
   {
@@ -1708,7 +1712,9 @@ export const POOL: Dashboard[] = [
     // The legislated 48% floor holds only through 2039; projections then slide.
     [2025, '⚖️ Haltelinie 48%'],
     [2039, '📉 danach ~45%'],
-  ]), 'Rentenversicherungsbericht · Sicherungsniveau vor Steuern; die Werte nach ~2024 sind amtliche Projektion.'),
+  ]), 'Rentenversicherungsbericht · Sicherungsniveau vor Steuern; die Werte nach ~2024 sind amtliche Projektion.',
+  // Official projection from 2024 on the 1990–2040 axis: dashed + arrow.
+  (2024 - 1990) / (2040 - 1990)),
   trendCard('rent-burden', 'Mietbelastung · Großstädte Deutschland', 'Mietbelastung · Neuvermietung · 🇩🇪 Top-7-Städte · % des Einkommens', DE_RENT_BURDEN_PANEL, red, (v) => `${localePct(v, 0)}`, 257, undefined, 'empirica / IW-Schätzungen · Median-Angebotsmiete zu Median-Nettoeinkommen, Top-7-Städte, gerundet.'),
   {
     id: 'armies',
@@ -3006,7 +3012,9 @@ export const POOL: Dashboard[] = [
   trendCard('ai-datacenter-power', 'Stromhunger der Rechenzentren', 'Rechenzentren · Strom · TWh · Prognose bis 2030', DATACENTER_POWER_PANEL, orange, (v) => `${localeNum(v, 0)} TWh`, 313, eraMarkers(2015, 2030, [
     [2022, '💬 ChatGPT'],
     [2025, '📈 IEA-Prognose'],
-  ]), 'IEA · Stromverbrauch aller Rechenzentren weltweit, TWh pro Jahr; ab 2025 IEA-Basisszenario — Prognose, keine Messung.'),
+  ]), 'IEA · Stromverbrauch aller Rechenzentren weltweit, TWh pro Jahr; ab 2025 IEA-Basisszenario — Prognose, keine Messung.',
+  // IEA base scenario from 2025 on the 2015–2030 axis: dashed + arrow.
+  (2025 - 2015) / (2030 - 2015)),
   trendCard('ai-users', 'ChatGPT · Nutzerwachstum', 'ChatGPT · aktive Nutzer', CHATGPT_USERS_PANEL, aqua, (v) => `${localeNum(v / 1e6, 0)} ${tr('Mio')}`, 317, eraMarkers(2022, 2025, [
     [2023, '🚀 100 Mio in 2 Monaten'],
   ]), 'OpenAI-Angaben · aktive Nutzer, gerundete Meilensteine; bis 2023 monatlich, danach wöchentlich aktive Nutzer.'),
