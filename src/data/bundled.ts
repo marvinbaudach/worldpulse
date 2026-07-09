@@ -567,7 +567,8 @@ export const DE_NATIONALITY_COMPARE = compareSeries(
     { name: 'Gesamtbevölkerung', pts: [[1970, 78.1], [1975, 78.7], [1980, 78.3], [1985, 77.7], [1990, 79.4], [1995, 81.7], [2000, 82.3], [2005, 82.4], [2010, 81.8], [2015, 82.2], [2019, 83.1], [2022, 84.4], [2024, 83.6], [2030, 84.3], [2040, 84.6], [2050, 84.3]] },
     { name: 'Deutsche Staatsangehörige', pts: [[1970, 75.1], [1975, 74.6], [1980, 73.8], [1985, 73.3], [1990, 74.1], [1995, 74.5], [2000, 75.0], [2005, 75.1], [2010, 74.7], [2015, 73.5], [2019, 72.7], [2022, 72.1], [2024, 70.2], [2030, 68.9], [2040, 66.7], [2050, 64.6]] },
   ],
-  (v) => `${localeNum(v, 0)}`,
+  // Unit lives on the axis, not in the card label ("Mio." was in the title).
+  (v) => `${localeNum(v, 0)} ${tr('Mio')}`,
   {
     /** Latest measured German-citizen count (2024, millions), for the headline. */
     deLatest: 70.2,
@@ -939,7 +940,9 @@ export const OIL_CONSUMPTION_PANEL: TrendSeries = trend(
     [2000, 76], [2008, 86], [2010, 88], [2019, 100], [2020, 91],
     [2023, 102],
   ],
-  (v) => `${localeNum(v, 0)} mb/d`,
+  // "Mio b/d" over the oil-trade "mb/d": the label no longer spells the unit
+  // out, so the ticks have to be decodable by a lay reader on their own.
+  (v) => `${localeNum(v, 0)} ${tr('Mio')} b/d`,
   ['1900', '1941', '1982', 'heute'],
 );
 

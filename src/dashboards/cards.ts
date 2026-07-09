@@ -386,7 +386,7 @@ export const POOL: Dashboard[] = [
   trendCard(
     'sea-level',
     'Meeresspiegel seit der Eiszeit',
-    'Meeresspiegel · m vs. heute',
+    'Meeresspiegel · vs. heute',
     SEALEVEL_PANEL,
     aqua,
     (v) => `${localeNum(v, 0)} m`,
@@ -458,7 +458,7 @@ export const POOL: Dashboard[] = [
       'Energy Institute Statistical Review of World Energy; vor 1965 historische BP-/Our-World-in-Data-Reihen.',
     draw: (f) =>
       areaChart(f, {
-        label: 'Ölverbrauch · Mio. Barrel/Tag',
+        label: 'Ölverbrauch · weltweit',
         value: OIL_CONSUMPTION_PANEL.latest,
         fmt: (v) => `${localeNum(v, 0)} mb/d`,
         // No delta: a single YoY figure under a 120-year curve reads as if it
@@ -643,7 +643,7 @@ export const POOL: Dashboard[] = [
         // Central Med peaks in the Libya years 2014-17 and again 2023,
         // Western Med spikes 2018 (Spain), the Canaries route explodes
         // from near zero in 2019 to ~47k in 2024.
-        label: 'Grenzübertritte · Afrika-Routen · Tsd. pro Jahr',
+        label: 'Grenzübertritte · Afrika-Routen · pro Jahr',
         value: AFRICA_ROUTES_COMPARE.latestTotal,
         unit: '',
         fmt: (v) => `${Math.round(v)}k`,
@@ -1024,7 +1024,7 @@ export const POOL: Dashboard[] = [
         // "Arbeitslose": the gap is everyone in measures, short-term sick or
         // under special rules who is removed from the official count. The
         // long-term line below shows how much is structurally stuck.
-        label: 'Arbeitslosigkeit · 🇩🇪 · Mio',
+        label: 'Arbeitslosigkeit · 🇩🇪',
         value: DE_UNDEREMPLOYMENT_COMPARE.underLatest,
         unit: '',
         fmt: (v) => `${localeNum(v, 1)} ${tr('Mio')}`,
@@ -1113,7 +1113,7 @@ export const POOL: Dashboard[] = [
         // Share of world merchandise exports: Germany's ~10% peak around 2003
         // (the #1 crown) slides to ~7% today, China climbs from under 2% to
         // ~14.5% — the decline the absolute-dollar view hides.
-        label: 'Anteil an Weltexporten · %',
+        label: 'Anteil an Weltexporten',
         value: DE_EXPORT_COMPARE.deuLatest,
         unit: '',
         fmt: (v) => `${localePct(v, 0)}`,
@@ -1179,7 +1179,7 @@ export const POOL: Dashboard[] = [
         // peaking 1988/89, the EU-accession/Freizügigkeit boom with arrivals
         // near 200k/yr — and since 2016 the quiet reversal. 2024 is the first
         // year since 1993 with more departures than arrivals.
-        label: 'Wanderungen · 🇵🇱 ↔ 🇩🇪 · Tsd. pro Jahr',
+        label: 'Wanderungen · 🇵🇱 ↔ 🇩🇪 · pro Jahr',
         value: PL_MIGRATION_COMPARE.inLatest,
         unit: '',
         fmt: (v) => `${Math.round(v)}k`,
@@ -1252,7 +1252,7 @@ export const POOL: Dashboard[] = [
         // peaks ~2005 at ~75m and falls to ~70m while the total climbs to a
         // record ~84m — the entire growth is immigration. The shaded band
         // right of "heute" extrapolates to 2050: total ~84m, Germans ~65m.
-        label: 'Bevölkerung nach Staatsangehörigkeit · 🇩🇪 · Mio. · Prognose bis 2050',
+        label: 'Bevölkerung nach Staatsangehörigkeit · 🇩🇪 · Prognose bis 2050',
         value: DE_NATIONALITY_COMPARE.deLatest,
         unit: '',
         fmt: (v) => `${localeNum(v, 1)} ${tr('Mio.')}`,
@@ -1433,7 +1433,7 @@ export const POOL: Dashboard[] = [
     [1970, '🏛️ Sozialstaatsausbau'],
     [2021, '📈 Rekord ~39%'],
   ]), 'OECD Revenue Statistics ab 1965; davor historische Schätzungen (Statistisches Reichsamt / Bundesbank), gerundet. Steuern plus Sozialabgaben in % des BIP; Weltkriegsjahre interpoliert (Kriegsfinanzierung lief über Schulden und Inflation), vor 1990 Reichsgebiet bzw. Westdeutschland.'),
-  trendCard('de-power-prices', 'Strompreis Deutschland', 'Strompreis · 🇩🇪 · Haushalte · ct/kWh', DE_POWER_PRICE_PANEL, blue, (v) => `${localeNum(v, 0)} ct`, 271, eraMarkers(1991, 2025, [
+  trendCard('de-power-prices', 'Strompreis Deutschland', 'Strompreis · 🇩🇪 · Haushalte · je kWh', DE_POWER_PRICE_PANEL, blue, (v) => `${localeNum(v, 0)} ct`, 271, eraMarkers(1991, 2025, [
     // The household price roughly tripled since 2000. The EEG renewables law
     // (2000) kicked off the green transition; the nuclear phase-out decision
     // (2011) and the 2022 energy crisis pushed it to among the world's highest.
@@ -1558,7 +1558,7 @@ export const POOL: Dashboard[] = [
         // RSF country scores (0–100, higher = freer). Germany stays high, the
         // US falls year on year, Thailand sits mid-table, and China and Saudi
         // Arabia hug the global floor.
-        label: 'Pressefreiheit · RSF-Score · 0–100',
+        label: 'Pressefreiheit · RSF-Score',
         value: PRESS_FREEDOM_COMPARE.deLatest,
         unit: '',
         fmt: (v) => localeNum(v, 1),
@@ -1735,7 +1735,7 @@ export const POOL: Dashboard[] = [
       lineChart(f, {
         // Near-flat until 2008, then two vertical legs — QE and the 2020
         // pandemic printing that roughly doubled both balance sheets.
-        label: 'Bilanzsumme · Fed vs. EZB · Bio.',
+        label: 'Bilanzsumme · Fed vs. EZB',
         value: CB_BALANCE_COMPARE.fedLatest,
         unit: '',
         fmt: (v) => `${localeNum(v, 1)} ${tr('Bio.')}`,
@@ -1988,7 +1988,7 @@ export const POOL: Dashboard[] = [
         // Life expectancy at birth, both sexes (UN WPP 2024 / OWID,
         // rounded). Top and bottom of the global range plus Germany,
         // the US and India as reference points in between.
-        label: 'Lebenserwartung · Jahre',
+        label: 'Lebenserwartung',
         value: 73.3,
         fmt: (v) => `Ø ${localeNum(v, 1)} J.`,
         rowFmt: (v) => `${localeNum(v, 1)} J.`,
@@ -2078,7 +2078,7 @@ export const POOL: Dashboard[] = [
         // Household electricity prices incl. taxes, euro cents per kWh,
         // rounded 2024 figures (Eurostat / GlobalPetrolPrices). Germany
         // is among the most expensive markets worldwide.
-        label: 'Strompreis · Haushalte · ct/kWh',
+        label: 'Strompreis · Haushalte · je kWh',
         value: 40,
         fmt: (v) => `${localeNum(v, 0)} ct`,
         rowFmt: (v) => `${localeNum(v, 0)} ct`,
@@ -2278,7 +2278,7 @@ export const POOL: Dashboard[] = [
       'Nielsen / Kaiser Family Foundation (TV-Ära) und Common Sense Media Census — grob zusammengefügt, Definitionen wechseln; die Form ist die Aussage.',
     draw: (f) =>
       areaChart(f, {
-        label: 'Unterhaltungsmedien · 🇺🇸 · 13–18 J. · Std./Tag',
+        label: 'Unterhaltungsmedien · 🇺🇸 · 13–18 J. · pro Tag',
         value: TEEN_SCREEN_PANEL.latest,
         fmt: (v) => `${localeNum(v, 1)} h`,
         delta: null,
@@ -2314,7 +2314,7 @@ export const POOL: Dashboard[] = [
         // overlay is the price of intermittency: yearly redispatch volume,
         // near zero for decades, then surging with the wind+solar build-out
         // (own TWh scale — only the shape is comparable, not the axis).
-        label: 'Installierte Leistung · 🇩🇪 · GW',
+        label: 'Installierte Leistung · 🇩🇪',
         value: DE_ENERGY_MIX.renewLatest,
         unit: '',
         fmt: (v) => `${Math.round(v)} GW`,
@@ -2445,12 +2445,14 @@ export const POOL: Dashboard[] = [
   {
     id: '5g-stations',
     title: '5G-Ausbau · führende Länder',
-    source: 'Betreiber- und Regulierungsbehörden-Angaben, gerundete Schätzwerte.',
+    source: 'Betreiber- und Regulierungsbehörden-Angaben, gerundete Schätzwerte; Fläche laut Weltbank.',
     draw: (f) =>
       hBarChart(f, {
         // Installed 5G base stations per country (operator/regulator figures,
         // rounded estimates). China counts base stations in the millions and
-        // dwarfs everyone — well over half the world's total.
+        // dwarfs everyone — well over half the world's total. The per-area
+        // annotation flips the story: South Korea packs ~9× China's density,
+        // the vast USA barely registers.
         label: '5G-Basisstationen · Schätzwerte',
         value: 5.1e6,
         fmt: (v) => `${localeNum(v / 1e6, 1)} ${tr('Mio')}`,
@@ -2458,16 +2460,22 @@ export const POOL: Dashboard[] = [
         delta: null,
         color: violet,
         unit: '',
+        // km2 = land area (World Bank, rounded); the density is derived so
+        // the absolute and the per-area reading can never drift apart.
         rows: [
-          { name: 'China 🇨🇳', v: 3_770_000 },
-          { name: 'Indien 🇮🇳', v: 450_000 },
-          { name: 'Südkorea 🇰🇷', v: 350_000 },
-          { name: 'Japan 🇯🇵', v: 230_000 },
-          { name: 'USA 🇺🇸', v: 200_000 },
-          { name: 'Deutschland 🇩🇪', v: 90_000 },
-          { name: 'Großbritannien 🇬🇧', v: 45_000 },
-          { name: 'Schweiz 🇨🇭', v: 15_000 },
-        ],
+          { name: 'China 🇨🇳', v: 3_770_000, km2: 9_596_960 },
+          { name: 'Indien 🇮🇳', v: 450_000, km2: 3_287_263 },
+          { name: 'Südkorea 🇰🇷', v: 350_000, km2: 100_410 },
+          { name: 'Japan 🇯🇵', v: 230_000, km2: 377_975 },
+          { name: 'USA 🇺🇸', v: 200_000, km2: 9_833_517 },
+          { name: 'Deutschland 🇩🇪', v: 90_000, km2: 357_596 },
+          { name: 'Großbritannien 🇬🇧', v: 45_000, km2: 243_610 },
+          { name: 'Schweiz 🇨🇭', v: 15_000, km2: 41_291 },
+        ].map(({ name, v, km2 }) => ({
+          name,
+          v,
+          sub: `${localeNum((v / km2) * 100, 0)} ${tr('je 100 km²')}`,
+        })),
       }),
   },
   {
@@ -2674,7 +2682,7 @@ export const POOL: Dashboard[] = [
         // Recorded alcohol per capita, litres of pure alcohol, adults 15+
         // (WHO 2019). Eastern Europe tops it; Germany drinks heavily too,
         // Türkiye anchors the low end.
-        label: 'Alkohol · Liter Reinalkohol pro Kopf',
+        label: 'Alkohol · Reinalkohol pro Kopf',
         value: 15.2,
         fmt: (v) => `${localeNum(v, 1)} L`,
         rowFmt: (v) => `${localeNum(v, 1)} L`,
@@ -3076,7 +3084,7 @@ export const POOL: Dashboard[] = [
     [2020, 'GPT-3'],
     [2022, '💬 ChatGPT'],
   ]), 'Epoch AI · Trainingsrechenleistung führender KI-Modelle in FLOP, logarithmische Achse; 2025 geschätzt.'),
-  trendCard('ai-training-cost', 'KI-Training · Kosten explodieren', 'Teuerster KI-Trainingslauf · Mio. $', AI_TRAIN_COST_PANEL, violet, (v) => (v >= 950 ? `${localeNum(v / 1000, 1)} ${tr('Mrd')} $` : `${localeNum(v, 0)} ${tr('Mio')} $`), 457, eraMarkers(2017, 2027, [
+  trendCard('ai-training-cost', 'KI-Training · Kosten explodieren', 'Teuerster KI-Trainingslauf', AI_TRAIN_COST_PANEL, violet, (v) => (v >= 950 ? `${localeNum(v / 1000, 1)} ${tr('Mrd')} $` : `${localeNum(v, 0)} ${tr('Mio')} $`), 457, eraMarkers(2017, 2027, [
     // Cloud-rental compute estimates per milestone run; the projection leg
     // carries Epoch's ">$1B by 2027" headline (costs grew ~2.4x/year).
     [2020, 'GPT-3 · $4 Mio'],
@@ -3095,22 +3103,24 @@ export const POOL: Dashboard[] = [
         // (Epoch AI / Stanford AI Index; Claude per Anthropic's own "a few
         // tens of millions"). DeepSeek-V3 anchors the low end — its official
         // figure covers GPU rental only, but the efficiency gap IS the story.
-        label: 'Teuerste Trainingsläufe · Mio. $ · Schätzung',
+        label: 'Teuerste Trainingsläufe · Schätzung',
         value: 191e6,
         fmt: (v) => `${localeNum(v / 1e6, 0)} ${tr('Mio')} $`,
         rowFmt: (v) => `${localeNum(v, v < 10 ? 1 : 0)} ${tr('Mio')} $`,
         delta: null,
         color: violet,
         unit: '',
+        // Years show the real plot: costs exploding 2020→2023, and 2024's
+        // DeepSeek-V3 undercutting the frontier by two orders of magnitude.
         rows: [
-          { name: 'Gemini Ultra · Google', v: 191 },
-          { name: 'Llama 3.1 405B · Meta', v: 170 },
-          { name: 'Grok-2 · xAI', v: 107 },
-          { name: 'GPT-4 · OpenAI', v: 78 },
-          { name: 'Claude 3.5 · Anthropic', v: 40 },
-          { name: 'PaLM · Google', v: 12 },
-          { name: 'DeepSeek-V3 · DeepSeek', v: 5.6 },
-          { name: 'GPT-3 · OpenAI', v: 4.3 },
+          { name: 'Gemini Ultra · Google', v: 191, sub: '2023' },
+          { name: 'Llama 3.1 405B · Meta', v: 170, sub: '2024' },
+          { name: 'Grok-2 · xAI', v: 107, sub: '2024' },
+          { name: 'GPT-4 · OpenAI', v: 78, sub: '2023' },
+          { name: 'Claude 3.5 · Anthropic', v: 40, sub: '2024' },
+          { name: 'PaLM · Google', v: 12, sub: '2022' },
+          { name: 'DeepSeek-V3 · DeepSeek', v: 5.6, sub: '2024' },
+          { name: 'GPT-3 · OpenAI', v: 4.3, sub: '2020' },
         ],
       }),
   },
@@ -3396,7 +3406,7 @@ export const POOL: Dashboard[] = [
         // WHO's biggest funders in the 2024–25 biennium. With the US exit
         // (announced Jan 2025, effective Jan 2026) a private foundation is
         // now the WHO's single largest financier — ahead of every state.
-        label: 'WHO-Geldgeber · 2024–25 · Mio. $',
+        label: 'WHO-Geldgeber · 2024–25',
         value: 761e6,
         delta: null,
         color: aqua,
@@ -3449,7 +3459,7 @@ export const POOL: Dashboard[] = [
         // Rollout curve against the monthly excess-mortality P-score on one
         // percent axis — the reader sees WHEN the waves sat relative to the
         // campaign; the source note is explicit that timing is not causation.
-        label: 'Impfquote vs. Übersterblichkeit · 🇩🇪 · %',
+        label: 'Impfquote vs. Übersterblichkeit · 🇩🇪',
         value: 76,
         unit: '%',
         fmt: (v) => localePct(v, 0),
@@ -3477,7 +3487,7 @@ export const POOL: Dashboard[] = [
         // Births held ~100 through 2021 (795k, the highest since 1997),
         // then stepped down in January 2022 and kept sliding. The chart
         // shows the timing; the source note carries the causal dispute.
-        label: 'Impfquote vs. Geburten · 🇩🇪 · %',
+        label: 'Impfquote vs. Geburten · 🇩🇪',
         value: 87,
         unit: '%',
         fmt: (v) => localePct(v, 0),
@@ -3594,7 +3604,7 @@ export const POOL: Dashboard[] = [
       hBarChart(f, {
         // IMF IFS via WGC, ~Q3 2025. China's official figure is widely seen
         // as a floor — the PBoC reports purchases selectively.
-        label: 'Goldreserven · Tonnen · 2025',
+        label: 'Goldreserven · 2025',
         value: 8133,
         delta: null,
         color: yellow,
@@ -3672,7 +3682,7 @@ export const POOL: Dashboard[] = [
         // target of ~16 kg/year that C40 cities cite as the "ambitious"
         // consumption goal — an 87% cut for the US, 79% for Germany. India
         // already sits below the target.
-        label: 'Fleisch · kg pro Kopf und Jahr',
+        label: 'Fleisch · pro Kopf und Jahr',
         value: 124,
         fmt: (v) => `${localeNum(v, 0)} kg`,
         rowFmt: (v) => `${localeNum(v, 0)} kg`,
@@ -3702,7 +3712,7 @@ export const POOL: Dashboard[] = [
         // The Big Three asset managers' AUM against national GDPs. The money
         // belongs to clients, but proxy voting power concentrates in three
         // Manhattan boardrooms — bigger than any European economy.
-        label: 'Verwaltetes Vermögen vs. BIP · Bio. $',
+        label: 'Verwaltetes Vermögen vs. BIP',
         value: 14e12,
         delta: null,
         color: violet,
