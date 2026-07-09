@@ -63,8 +63,9 @@ export interface LiveData {
   /** Current 2-m temperature per country (Open-Meteo, one anchor point each). */
   worldTemp?: {
     byIso: Record<string, number>;
-    /** Hottest countries right now, for the ranked list. */
-    rows: { name: string; v: number }[];
+    /** Hottest countries right now, for the ranked list. `min`/`max` are today's
+        low/high at the same anchor, so the list can show the daily range. */
+    rows: { name: string; v: number; min?: number; max?: number }[];
   };
   /** Middle-East conflict: live Gaza/West-Bank casualties (Tech for Palestine).
       The Hormuz and missile figures the card shows alongside are bundled and

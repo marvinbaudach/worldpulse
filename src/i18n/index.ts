@@ -114,3 +114,17 @@ export function localePct(v: number, digits = 0): string {
   const gap = LOCALE === 'de' || LOCALE === 'fr' ? ' ' : '';
   return `${localeNum(v, digits)}${gap}%`;
 }
+
+/** Like `localeNum` but drops a redundant trailing-zero decimal while capping
+    precision at `maxDigits` (84 -> "84", 84.7 -> "84,7", 5.63 -> "5,6"). Use
+    where whole values shouldn't render a pointless ",0" but real decimals stay. */
+export function localeNumTrim(v: number, maxDigits = 1): string {
+  return v.toLocaleString(LOCALE, { minimumFractionDigits: 0, maximumFractionDigits: maxDigits });
+}
+
+/** `localePct` that drops a redundant trailing-zero decimal (34 -> "34 %",
+    13.4 -> "13,4 %"), capped at `maxDigits`. */
+export function localePctTrim(v: number, maxDigits = 1): string {
+  const gap = LOCALE === 'de' || LOCALE === 'fr' ? ' ' : '';
+  return `${localeNumTrim(v, maxDigits)}${gap}%`;
+}

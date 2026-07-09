@@ -8,6 +8,13 @@ import { onLiveUpdate } from '../data/store';
 // width, boosting u (and with it every font, stroke and legend) ~22% across
 // all cards at once. Tune this constant by eye in device emulation.
 const MOBILE_REF_W = 420;
+// The draws are authored against a portrait-ish reference (~5:4 at its widest).
+// `u` keys off the width, so a landscape card — allowed to grow much wider than
+// tall — would balloon every font and collapse the fixed-height layout. Past
+// this aspect we key `u` to the height instead: the extra width then becomes
+// chart room (longer bars, wider plots), not bigger type. Portrait cards keep
+// the exact same `u` (w is always ≤ h·REF_ASPECT there), so they're untouched.
+const REF_ASPECT = 1.25;
 // Real-time seconds to play the fly-in for before locking the settled frame.
 // Draw progress runs on `t`; the slowest element (the line, easeOut(t/1.4))
 // finishes at t=1.4, so a ~2s window covers every panel's intro. After that we
@@ -98,7 +105,8 @@ export function CardCanvas({ dashboard, animate, restT = SETTLED_T, onColor }: C
       const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
       if (canvas.width !== w) canvas.width = w;
       if (canvas.height !== h) canvas.height = h;
-      dashboard.draw({ ctx, w, h, t, u: w / MOBILE_REF_W, compact: true });
+      const u = Math.min(w, h * REF_ASPECT) / MOBILE_REF_W;
+      dashboard.draw({ ctx, w, h, t, u, compact: true });
     };
 
     let raf = 0;

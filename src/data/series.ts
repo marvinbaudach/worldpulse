@@ -33,6 +33,33 @@ export function niceScale(
   };
 }
 
+/**
+ * Nice log axis: bounds snapped to powers of `base`, with one label per
+ * gridline. For (min ≈ 1, max ≈ 19) with base 2 → lo 1, hi 32 and ticks
+ * ×1/×2/×4/…/×32. Use for baskets that span very different growth, where a
+ * linear scale would flatten the slow movers against the axis. Needs min > 0.
+ */
+export function logScale(
+  min: number,
+  max: number,
+  fmt: (v: number) => string,
+  base = 2,
+): { lo: number; hi: number; ticks: string[] } {
+  const lb = Math.log(base);
+  const lo = Math.pow(base, Math.floor(Math.log(Math.max(1e-9, min)) / lb));
+  const hi = Math.pow(base, Math.ceil(Math.log(Math.max(min, max)) / lb));
+  const ticks: string[] = [];
+  for (let v = lo; v <= hi * (1 + 1e-9); v *= base) ticks.push(fmt(v));
+  return { lo, hi, ticks };
+}
+
+/** Log-normalize a series into 0..1 against a (lo, hi) range. */
+export function logNorm(series: number[], lo: number, hi: number): number[] {
+  const llo = Math.log(lo);
+  const span = Math.max(1e-9, Math.log(hi) - llo);
+  return series.map((v) => (Math.log(Math.max(1e-9, v)) - llo) / span);
+}
+
 /** Evenly resample a series down to n points (keeps first and last). */
 export function resample(series: number[], n: number): number[] {
   if (series.length <= n) return series;
@@ -91,6 +118,31 @@ export function trend(
   };
 }
 
+/**
+ * Build a trend panel from an already-dense series (e.g. one value per month),
+ * skipping the year interpolation {@link trend} does. Use when the story plays
+ * out inside a single year — a monthly crisis curve would collapse to one point
+ * under `yearly()`. `latest` is the last value; label the axis by hand.
+ */
+export function rawTrend(
+  values: number[],
+  fmt: (v: number) => string,
+  xLabels: string[],
+  samples = 40,
+): TrendSeries {
+  const s = niceScale(Math.min(...values), Math.max(...values), fmt);
+  return {
+    series: norm(resample(values, samples), s.lo, s.hi),
+    ticks: s.ticks,
+    latest: values[values.length - 1],
+    yoyPct:
+      values.length > 1
+        ? ((values[values.length - 1] - values[values.length - 2]) / values[values.length - 2]) * 100
+        : 0,
+    xLabels,
+  };
+}
+
 /** One labeled anchor set for a multi-series comparison chart. */
 export interface CompareAnchors {
   name: string;
@@ -116,6 +168,31 @@ export function compareSeries<E extends object>(
     rows: anchors.map((c, i) => ({
       name: c.name,
       data: norm(resample(yearlySets[i], samples), s.lo, s.hi),
+    })),
+    ticks: s.ticks,
+    ...extra,
+  };
+}
+
+/**
+ * Like {@link compareSeries} but on a log y-axis — for baskets whose members
+ * span very different growth (e.g. a ×2 ETF beside a ×20 single stock), where a
+ * linear scale would flatten the slow movers against the axis. Every anchor
+ * value must be > 0.
+ */
+export function compareSeriesLog<E extends object>(
+  anchors: CompareAnchors[],
+  fmt: (v: number) => string,
+  extra: E,
+  samples = 48,
+): { rows: { name: string; data: number[] }[]; ticks: string[] } & E {
+  const yearlySets = anchors.map((c) => yearly(c.pts));
+  const all = yearlySets.flat();
+  const s = logScale(Math.min(...all), Math.max(...all), fmt);
+  return {
+    rows: anchors.map((c, i) => ({
+      name: c.name,
+      data: logNorm(resample(yearlySets[i], samples), s.lo, s.hi),
     })),
     ticks: s.ticks,
     ...extra,

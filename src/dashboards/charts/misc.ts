@@ -1,6 +1,5 @@
-// The remaining bespoke renderers: the wealth-inequality split, the Gantt-style
-// conflict timeline, the running debt clock, the weekly weather forecast and
-// the strip treemap.
+// The remaining bespoke renderers: the wealth-inequality split, the running
+// debt clock, the weekly weather forecast and the strip treemap.
 
 import { localePct, t as tr } from '../../i18n';
 import {
@@ -10,14 +9,12 @@ import {
   drawSurface,
   drawTracked,
   easeOut,
-  fmtCompact,
   linePath,
   roundRect,
   stagger,
   type Frame,
 } from '../draw';
 import {
-  BASELINE,
   CRITICAL,
   FONT,
   GOOD,
@@ -140,96 +137,6 @@ export function wealthSplit(f: Frame, cfg: WealthSplitCfg): void {
     ctx.textAlign = 'right';
     ctx.fillText(`${g.wealth} %`, x1, y);
     ctx.textAlign = 'left';
-    ctx.globalAlpha = 1;
-  });
-
-  drawSource(f, cfg.source);
-}
-
-export interface TimelineCfg {
-  label: string;
-  value: number;
-  fmt?: (v: number) => string;
-  color: string;
-  yearStart: number;
-  yearEnd: number;
-  /** Chronological events; omit `to` for coups / point interventions. */
-  events: { name: string; from: number; to?: number; deaths: number }[];
-  source: string;
-}
-
-/**
- * Gantt-style timeline: each event spans its years on a shared axis, one
- * lane per event. Bar weight scales with the death toll on a log ramp, so
- * a 300-victim coup stays visible next to a three-million-victim war.
- */
-export function timelineChart(f: Frame, cfg: TimelineCfg): void {
-  const { ctx, u, t, w, h } = f;
-  drawSurface(f);
-  const top = drawHeader(f, cfg.label);
-  const pad = 36 * u;
-  const x0 = pad;
-  const x1 = w - pad;
-  const y0 = top + 14 * u;
-  const y1 = h - 64 * u;
-  const px = (year: number) =>
-    x0 + ((year - cfg.yearStart) / (cfg.yearEnd - cfg.yearStart)) * (x1 - x0);
-
-  // Decade grid, labeled along the baseline.
-  ctx.lineWidth = 1 * u;
-  ctx.font = `400 ${14 * u}px ${FONT}`;
-  ctx.textAlign = 'center';
-  for (let yr = Math.ceil(cfg.yearStart / 10) * 10; yr <= cfg.yearEnd; yr += 10) {
-    const x = px(yr);
-    ctx.strokeStyle = GRID;
-    ctx.beginPath();
-    ctx.moveTo(x, y0);
-    ctx.lineTo(x, y1);
-    ctx.stroke();
-    ctx.fillStyle = INK_SECONDARY; // axis reading — muted gray is too dim here
-    ctx.fillText(`${yr}`, x, y1 + 24 * u);
-  }
-  ctx.textAlign = 'left';
-  ctx.strokeStyle = BASELINE;
-  ctx.beginPath();
-  ctx.moveTo(x0, y1);
-  ctx.lineTo(x1, y1);
-  ctx.stroke();
-
-  const maxLog = Math.log10(Math.max(...cfg.events.map((e) => e.deaths)));
-  const weight = (d: number) =>
-    Math.min(1, Math.max(0.1, (Math.log10(d) - 2) / (maxLog - 2)));
-
-  const laneH = (y1 - y0) / cfg.events.length;
-  cfg.events.forEach((e, i) => {
-    const p = stagger(t, i, 0.06);
-    if (p <= 0) return;
-    const cy = y0 + laneH * (i + 0.68);
-    const bh = (5 + 13 * weight(e.deaths)) * u;
-    const bx0 = px(e.from);
-    const full = Math.max(px(e.to ?? e.from + 1) - bx0, bh);
-    ctx.globalAlpha = Math.min(1, p * 2);
-    ctx.fillStyle = cfg.color;
-    roundRect(ctx, bx0, cy - bh / 2, Math.max(full * p, bh), bh, bh / 2);
-    ctx.fill();
-
-    // Name + toll next to the bar: right of it when there is room,
-    // otherwise flipped to the left (events near the axis end).
-    const dead = fmtCompact(e.deaths);
-    ctx.font = `500 ${15 * u}px ${FONT}`;
-    const eName = tr(e.name);
-    const nameW = ctx.measureText(`${eName}  `).width;
-    ctx.font = `600 ${15 * u}px ${FONT}`;
-    const deadW = ctx.measureText(dead).width;
-    const bx1 = bx0 + full;
-    const tx = bx1 + 10 * u + nameW + deadW > x1 ? bx0 - nameW - deadW - 10 * u : bx1 + 10 * u;
-    const ty = cy + 5 * u;
-    ctx.fillStyle = INK_SECONDARY;
-    ctx.font = `500 ${15 * u}px ${FONT}`;
-    ctx.fillText(eName, tx, ty);
-    ctx.fillStyle = INK;
-    ctx.font = `600 ${15 * u}px ${FONT}`;
-    ctx.fillText(dead, tx + nameW, ty);
     ctx.globalAlpha = 1;
   });
 

@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import styled from 'styled-components';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import styled, { keyframes } from 'styled-components';
 import { ALL_DASHBOARDS, NEWEST } from '../dashboards';
 import { favoriteDashboards } from '../favorites';
 import { refreshLiveData } from '../data/refresh';
@@ -70,21 +70,45 @@ const Hint = styled.div<{ $gone: boolean }>`
   ${glassSurface}
 `;
 
-const RefreshPill = styled.div`
+const RefreshPill = styled.div<{ $error?: boolean }>`
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 68px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 9px 16px;
   border-radius: 999px;
-  color: #cfe4ff;
+  color: ${(p) => (p.$error ? '#ffb3ab' : '#cfe4ff')};
   font: 600 12px/1 inherit;
   letter-spacing: 0.1em;
   white-space: nowrap;
   pointer-events: none;
   ${glassSurface}
 `;
+
+const spin = keyframes`
+  to { transform: rotate(360deg); }
+`;
+
+const Spinner = styled.span`
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid rgba(207, 228, 255, 0.25);
+  border-top-color: #cfe4ff;
+  animation: ${spin} 0.8s linear infinite;
+  /* Static ring under reduced motion — the label carries the meaning. */
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+`;
+
+// How long the offline/error pill stays before it dismisses itself.
+const ERROR_PILL_MS = 3500;
 
 const TiltFrame = styled.div`
   flex: 1;
@@ -102,7 +126,8 @@ const SourceNote = styled.div`
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+  /* Sits above the 56px action cluster (top at inset + 74px) with a gap. */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 86px);
   z-index: 12;
   padding: 12px 14px;
   border-radius: 14px;
@@ -166,19 +191,33 @@ export function MobileDeck() {
   useDismissOnOutsideTap(actionsOpen, 'data-actions-ui', closeActions);
 
   const [swiped, setSwiped] = useState(() => localStorage.getItem('worldpulse-swiped') === '1');
-  const [refreshing, setRefreshing] = useState(false);
+  const [refreshState, setRefreshState] = useState<'idle' | 'loading' | 'error'>('idle');
   // Stable identity: SwipeDeck holds this in a prop, and a fresh closure per
   // render would churn its internals for no reason.
   const refresh = useCallback(async () => {
-    if (refreshing) return;
-    setRefreshing(true);
-    try {
-      await refreshLiveData();
-    } finally {
-      // Always drop the pill — a throw must not leave it stuck on screen.
-      setRefreshing(false);
+    if (refreshState === 'loading') return;
+    // Known-offline: skip the doomed fetches and say so right away.
+    if (!navigator.onLine) {
+      setRefreshState('error');
+      return;
     }
-  }, [refreshing]);
+    setRefreshState('loading');
+    try {
+      const anyLoaded = await refreshLiveData();
+      setRefreshState(anyLoaded ? 'idle' : 'error');
+    } catch {
+      // A throw must not leave the spinner stuck on screen.
+      setRefreshState('error');
+    }
+  }, [refreshState]);
+
+  // The error pill dismisses itself — there is nothing to act on beyond
+  // reading it, and it must not linger into the next successful pull.
+  useEffect(() => {
+    if (refreshState !== 'error') return;
+    const id = setTimeout(() => setRefreshState('idle'), ERROR_PILL_MS);
+    return () => clearTimeout(id);
+  }, [refreshState]);
 
   // Guard against same-index re-fires, and keep the identity stable via
   // useCallback: SwipeDeck's snap effect depends on onIndex, and a fresh
@@ -229,7 +268,17 @@ export function MobileDeck() {
         </TiltLayer>
       </TiltFrame>
 
-      {refreshing && <RefreshPill>{trans('Daten werden aktualisiert …')}</RefreshPill>}
+      {refreshState === 'loading' && (
+        <RefreshPill>
+          <Spinner aria-hidden />
+          {trans('Daten werden aktualisiert …')}
+        </RefreshPill>
+      )}
+      {refreshState === 'error' && (
+        <RefreshPill $error role="alert">
+          {trans('Keine Verbindung — Daten nicht aktualisiert')}
+        </RefreshPill>
+      )}
 
       {/* The one-time swipe hint borrows the pager's spot: until the first
           swipe it IS the pagination affordance, then the dots take over. */}

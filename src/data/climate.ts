@@ -1,10 +1,10 @@
 // Climate datasets: per-country anchor points for the live world-temperature
 // map (derived from the bundled outlines, so no extra geometry ships), a
 // crude latitude/season climatology as its offline fallback, and the bundled
-// 10,000-year global temperature reconstruction.
+// deep-time paleoclimate reconstructions (ice cores, deglaciation, sea level).
 
 import { localeNum } from '../i18n';
-import { interpAt, niceScale, norm, trend } from './series';
+import { trend } from './series';
 import { WORLD } from './world';
 
 // ---------------------------------------------------------------------------
@@ -75,6 +75,21 @@ export const FALLBACK_TEMPS: Record<string, number> = Object.fromEntries(
   TEMP_ANCHORS.map((a) => [a.iso, climatologyTemp(a.lat)]),
 );
 
+/**
+ * Crude offline diurnal range around the climatology mean: hot, dry, low-latitude
+ * belts swing hardest between afternoon high and pre-dawn low, so the amplitude
+ * grows toward the equator. Deliberately rough — only fills the range list until
+ * the live Open-Meteo min/max lands.
+ */
+function climatologyRange(lat: number, mean: number): { min: number; max: number } {
+  const swing = 6 + 8 * Math.max(0, 1 - Math.abs(lat) / 45);
+  return { min: mean - swing * 0.6, max: mean + swing * 0.4 };
+}
+
+const FALLBACK_RANGES: Record<string, { min: number; max: number }> = Object.fromEntries(
+  TEMP_ANCHORS.map((a) => [a.iso, climatologyRange(a.lat, climatologyTemp(a.lat))]),
+);
+
 // German display names for the ranked "hottest now" list — a hot-belt subset
 // (both hemispheres) so the ranking never surfaces an ISO code without a name.
 const TEMP_NAME_BY_ISO: Record<string, string> = {
@@ -86,87 +101,26 @@ const TEMP_NAME_BY_ISO: Record<string, string> = {
   VEN: 'Venezuela', AUS: 'Australien', IDN: 'Indonesien',
 };
 
-/** Top-4 hottest countries (from the named subset) for the ranked list. */
-export function hottestRows(byIso: Record<string, number>): { name: string; v: number }[] {
+/**
+ * Top-4 hottest countries (from the named subset) for the ranked list. When a
+ * `rangeByIso` is supplied (live Open-Meteo, or the offline climatology fallback)
+ * each row carries today's low/high so the list can show the daily range.
+ */
+export function hottestRows(
+  byIso: Record<string, number>,
+  rangeByIso?: Record<string, { min: number; max: number }>,
+): { name: string; v: number; min?: number; max?: number }[] {
   return Object.entries(TEMP_NAME_BY_ISO)
     .filter(([iso]) => byIso[iso] !== undefined)
-    .map(([iso, name]) => ({ name, v: byIso[iso] }))
+    .map(([iso, name]) => {
+      const r = rangeByIso?.[iso];
+      return { name, v: byIso[iso], min: r?.min, max: r?.max };
+    })
     .toSorted((a, b) => b.v - a.v)
     .slice(0, 4);
 }
 
-export const FALLBACK_TEMP_ROWS = hottestRows(FALLBACK_TEMPS);
-
-// ---------------------------------------------------------------------------
-// Global mean temperature over the last 10,000 years: simplified anchors along
-// the Kaufman et al. 2020 (Temp12k) multi-method median, switching to the
-// instrumental record (HadCRUT5) from 1850. Anomalies vs. the 1800–1900 mean.
-// The half-width approximates the 90% ensemble range — wide in the proxy era,
-// narrow once thermometers take over. Two honest caveats the card repeats:
-// proxies average over ~100–200 years (a spike as short as the current one
-// would be smoothed), and the mid-Holocene warmth is strongest in northern
-// summers — the global median shown here is flatter than regional records.
-
-// [calendar year (negative = BC), median °C, half-width of the 90% range]
-const HOLOCENE_ANCHORS: [number, number, number][] = [
-  [-8000, 0.05, 0.45],
-  [-7000, 0.25, 0.4],
-  [-6000, 0.35, 0.4],
-  [-5000, 0.42, 0.35],
-  [-4500, 0.45, 0.35], // mid-Holocene optimum (global median)
-  [-3500, 0.4, 0.35],
-  [-2500, 0.3, 0.3],
-  [-1500, 0.25, 0.3],
-  [-500, 0.2, 0.25],
-  [0, 0.15, 0.25],
-  [500, 0.1, 0.22],
-  [1000, 0.1, 0.2], // medieval warm period barely moves the global median
-  [1450, -0.05, 0.18],
-  [1700, -0.15, 0.15], // Little Ice Age
-  [1820, -0.1, 0.12],
-  [1850, 0.0, 0.06], // instrumental record starts
-  [1900, 0.05, 0.05],
-  [1940, 0.25, 0.05],
-  [1970, 0.25, 0.04],
-  [1990, 0.55, 0.03],
-  [2005, 0.85, 0.03],
-  [2015, 1.1, 0.03],
-  [2024, 1.5, 0.05], // HadCRUT5, warmest year on record
-];
-
-const HOLOCENE_START = -8000;
-const HOLOCENE_END = 2025;
-
-function holocenePanel() {
-  const med = HOLOCENE_ANCHORS.map(([y, m]) => [y, m] as [number, number]);
-  const loPts = HOLOCENE_ANCHORS.map(([y, m, w]) => [y, m - w] as [number, number]);
-  const hiPts = HOLOCENE_ANCHORS.map(([y, m, w]) => [y, m + w] as [number, number]);
-
-  const n = 240;
-  const median: number[] = [];
-  const lo: number[] = [];
-  const hi: number[] = [];
-  for (let i = 0; i < n; i++) {
-    const year = HOLOCENE_START + ((HOLOCENE_END - HOLOCENE_START) * i) / (n - 1);
-    median.push(interpAt(med, year));
-    lo.push(interpAt(loPts, year));
-    hi.push(interpAt(hiPts, year));
-  }
-  const s = niceScale(
-    Math.min(...lo) - 0.05,
-    Math.max(...hi) + 0.05,
-    (v) => `${v > 0 ? '+' : ''}${localeNum(v, 1)}°`,
-  );
-  return {
-    median: norm(median, s.lo, s.hi),
-    lo: norm(lo, s.lo, s.hi),
-    hi: norm(hi, s.lo, s.hi),
-    ticks: s.ticks,
-    latest: HOLOCENE_ANCHORS[HOLOCENE_ANCHORS.length - 1][1],
-  };
-}
-
-export const HOLOCENE_PANEL = holocenePanel();
+export const FALLBACK_TEMP_ROWS = hottestRows(FALLBACK_TEMPS, FALLBACK_RANGES);
 
 // ---------------------------------------------------------------------------
 // Deep-time paleoclimate: three single-series panels that put the modern

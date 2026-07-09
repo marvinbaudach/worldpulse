@@ -8,20 +8,26 @@ import { emitLiveUpdate } from './store';
 let refreshing = false;
 
 /** Drop the cache and re-run every feed. Resolves when all feeds settled;
-    failures keep their demo data as usual. */
-export async function refreshLiveData(): Promise<void> {
-  if (refreshing) return;
+    failures keep their demo data as usual. Returns true when at least one
+    feed came back — false means the network is effectively gone and the UI
+    should say so. */
+export async function refreshLiveData(): Promise<boolean> {
+  if (refreshing) return true;
   refreshing = true;
   try {
     clearDataCache();
-    await Promise.allSettled(
+    const settled = await Promise.allSettled(
       LIVE_FEEDS.map((feed) =>
         feed.load().then(
           () => emitLiveUpdate('data'),
-          (err) => console.warn(`[live-data] refresh ${feed.source} ${feed.item} failed`, err),
+          (err) => {
+            console.warn(`[live-data] refresh ${feed.source} ${feed.item} failed`, err);
+            throw err;
+          },
         ),
       ),
     );
+    return settled.some((r) => r.status === 'fulfilled');
   } finally {
     // Never leave the guard latched — a throw would otherwise disable
     // pull-to-refresh for the rest of the session.

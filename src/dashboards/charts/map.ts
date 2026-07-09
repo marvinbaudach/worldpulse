@@ -2,10 +2,10 @@
 // value choropleth and the signed temperature map, each with a ranked top-N
 // list below.
 
-import { localeInt, localeNum, t as tr } from '../../i18n';
+import { localeInt, t as tr } from '../../i18n';
 import { drawHeader, drawSurface, easeOut, fmtCompact, roundRect, stagger, type Frame } from '../draw';
-import { CRITICAL, FONT, GRID, INK, INK_SECONDARY, MUTED, SERIES, SURFACE_DEEP } from '../theme';
-import { drawRankedList, drawSource, ellipsize, withAlpha } from './shared';
+import { CRITICAL, FONT, GRID, INK, INK_SECONDARY, MUTED, SURFACE_DEEP } from '../theme';
+import { drawRankedList, drawSource, ellipsize, withAlpha, withFlag } from './shared';
 
 export interface NukeMapCfg {
   label: string;
@@ -23,15 +23,21 @@ export interface NukeMapCfg {
  * below. Equirectangular, cropped to 85°N..60°S.
  */
 export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
-  const { ctx, u, t, w } = f;
+  const { ctx, u, t, w, h } = f;
   drawSurface(f);
   const top = drawHeader(f, cfg.label);
   const pad = 36 * u;
 
   const mx0 = pad;
   const mw = w - 2 * pad;
-  const mh = mw / 2;
   const my0 = top + 4 * u;
+  // Reserve room for the top-5 list, so a wide, short (landscape) card can't let
+  // the 2:1 map grow tall enough to push the rows off the bottom. Mirrors the
+  // clamp in choroplethMap/tempMap.
+  const listGap = 18 * u;
+  const rowMin = 42 * u;
+  const mapMax = h - 46 * u - my0 - listGap - 5 * rowMin;
+  const mh = Math.min(mw / 2, mapMax);
   const px = (lon: number) => mx0 + ((lon + 180) / 360) * mw;
   const py = (lat: number) => my0 + ((85 - Math.min(85, Math.max(-60, lat))) / 145) * mh;
   const maxCount = Math.max(...cfg.states.map((s) => s.count));
@@ -118,11 +124,11 @@ export function nukeMap(f: Frame, cfg: NukeMapCfg): void {
 }
 
 // ---------------------------------------------------------------------------
-// Nahost-Karte: a regional Middle-East map with two hotspot pings (Gaza,
-// Strait of Hormuz), a live Gaza-casualty hero block with a daily-killed
-// sparkline, and two bundled context chips (Hormuz throughput, Iran→Israel
-// missiles). Live vs. bundled is spelled out on the card — only the casualty
-// block is live (Tech for Palestine); the chips are dated reference figures.
+// Nahost-Karte: a regional map centered on Gaza / the West Bank with a hotspot
+// ping, a live Gaza-casualty hero block with a daily-killed sparkline, and one
+// bundled context chip (Iran→Israel missiles). Live vs. bundled is spelled out
+// on the card — only the casualty block is live (Tech for Palestine); the chip
+// is a dated reference figure.
 
 export interface MideastCfg {
   label: string;
@@ -137,10 +143,6 @@ export interface MideastCfg {
   daily: number[];
   /** True when the figures came from the live feed, not the bundled snapshot. */
   isLive: boolean;
-  /** Bundled, dated Hormuz throughput. */
-  hormuzOil: number;
-  hormuzShips: number;
-  hormuzVintage: string;
   /** Bundled, dated missile-exchange context. */
   missiles: number;
   missilesRoute: string;
@@ -150,9 +152,8 @@ export interface MideastCfg {
   source: string;
 }
 
-const MIDEAST_REGION = { lonMin: 33, lonMax: 59, latMin: 22, latMax: 37 };
+const MIDEAST_REGION = { lonMin: 32, lonMax: 40, latMin: 28.5, latMax: 34.5 };
 const GAZA_PT = { lon: 34.45, lat: 31.5 };
-const HORMUZ_PT = { lon: 56.4, lat: 26.6 };
 
 /** ISO yyyy-mm-dd → dd.mm.yyyy for the German status stamp. */
 function deDate(iso: string): string {
@@ -200,8 +201,7 @@ export function mideastMap(f: Frame, cfg: MideastCfg): void {
   }
   ctx.restore();
 
-  // Two hotspot pings: an expanding ring plus a core dot and a direct label,
-  // phase-shifted so they don't pulse in unison.
+  // Hotspot ping: an expanding ring plus a core dot and a direct label.
   const marker = (lon: number, lat: number, color: string, label: string, i: number) => {
     const x = px(lon);
     const y = py(lat);
@@ -226,7 +226,6 @@ export function mideastMap(f: Frame, cfg: MideastCfg): void {
     ctx.globalAlpha = 1;
   };
   marker(GAZA_PT.lon, GAZA_PT.lat, CRITICAL, tr('Gaza'), 0);
-  marker(HORMUZ_PT.lon, HORMUZ_PT.lat, SERIES[2], tr('Hormus'), 1);
 
   // --- Live casualty hero -------------------------------------------------
   const statsTop = mapTop + mapH + 18 * u;
@@ -292,11 +291,10 @@ export function mideastMap(f: Frame, cfg: MideastCfg): void {
   });
   ctx.stroke();
 
-  // --- Two bundled context chips -----------------------------------------
+  // --- One bundled context chip ------------------------------------------
   const chipsTop = statsTop + heroH + 14 * u;
   const chipsH = h - footer - chipsTop;
-  const gap = 14 * u;
-  const chipW = (mw - gap) / 2;
+  const chipW = mw;
   const chip = (
     cx: number,
     eyebrow: string,
@@ -338,14 +336,6 @@ export function mideastMap(f: Frame, cfg: MideastCfg): void {
   };
   chip(
     pad,
-    tr('Straße von Hormus'),
-    `≈${localeNum(cfg.hormuzOil / 1e6, 0)} ${tr('Mio bbl/Tag')}`,
-    `≈${localeInt(cfg.hormuzShips)} ${tr('Schiffe/Tag')}`,
-    `${tr('Stand')} ${cfg.hormuzVintage} · EIA`,
-    SERIES[2],
-  );
-  chip(
-    pad + chipW + gap,
     `${tr('Raketen')} · ${cfg.missilesRoute}`,
     `≈${localeInt(cfg.missiles)}`,
     tr(cfg.missilesPeriod),
@@ -498,13 +488,99 @@ function tempColor(v: number): string {
   return TEMP_STOPS[TEMP_STOPS.length - 1][1];
 }
 
+/**
+ * Ranked hottest-country list showing each country's *daily temperature range*:
+ * a track on a shared °C axis, a warm segment spanning today's low→high, and a
+ * bright marker at the current reading — so the list reads as "how far the temp
+ * swings today", not just a zero-based bar. Rows without min/max collapse to a
+ * single marker at the current value.
+ */
+function drawTempRangeList(
+  f: Frame,
+  opts: {
+    rows: { name: string; v: number; min?: number; max?: number }[];
+    /** Y where the list starts (below the caption). */
+    top: number;
+    /** Y where the list ends (the shared axis is drawn just below this). */
+    bottom: number;
+    rowFmt: (v: number) => string;
+  },
+): void {
+  const { ctx, u, t, w } = f;
+  const pad = 36 * u;
+  const { rows, top, bottom, rowFmt } = opts;
+  const rowH = (bottom - top) / Math.max(1, rows.length);
+  // One shared °C axis across every row, so segment lengths compare directly.
+  const lo = Math.floor(Math.min(...rows.map((r) => r.min ?? r.v)) - 1);
+  const hi = Math.ceil(Math.max(...rows.map((r) => r.max ?? r.v)) + 1);
+  const span = Math.max(1, hi - lo);
+  const trackW = w - 2 * pad;
+  const xAt = (v: number) => pad + ((v - lo) / span) * trackW;
+  const groupH = 26 * u;
+
+  rows.forEach((s, i) => {
+    const p = Math.max(0, stagger(t, i + 4, 0.06));
+    const y = top + rowH * i + Math.max(0, (rowH - groupH) / 2);
+    const min = s.min ?? s.v;
+    const max = s.max ?? s.v;
+    ctx.globalAlpha = p;
+    // Name (left) + current reading (right).
+    ctx.fillStyle = INK_SECONDARY;
+    ctx.font = `500 ${16 * u}px ${FONT}`;
+    ctx.fillText(withFlag(s.name), pad, y + 13 * u);
+    ctx.fillStyle = INK;
+    ctx.font = `600 ${16 * u}px ${FONT}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(rowFmt(s.v), w - pad, y + 13 * u);
+    ctx.textAlign = 'left';
+    // Baseline track.
+    const trackY = y + 20 * u;
+    ctx.fillStyle = GRID;
+    roundRect(ctx, pad, trackY, trackW, 7 * u, 3.5 * u);
+    ctx.fill();
+    // Range segment low→high, cool-to-hot gradient, growing in with the stagger.
+    const xMin = xAt(min);
+    const xMax = xAt(max);
+    const grad = ctx.createLinearGradient(xMin, 0, Math.max(xMax, xMin + 1), 0);
+    grad.addColorStop(0, tempColor(min));
+    grad.addColorStop(1, tempColor(max));
+    ctx.fillStyle = grad;
+    roundRect(ctx, xMin, trackY, Math.max((xMax - xMin) * p, 3 * u), 7 * u, 3.5 * u);
+    ctx.fill();
+    // "Now" marker at the current reading, once the segment has mostly drawn.
+    if (p >= 0.6) {
+      const cx = xAt(s.v);
+      const cy = trackY + 3.5 * u;
+      ctx.fillStyle = INK;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4 * u, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = tempColor(s.v);
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2.4 * u, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  });
+
+  // Shared °C axis under the list, so each segment reads on a common thermometer.
+  ctx.fillStyle = MUTED;
+  ctx.font = `400 ${11 * u}px ${FONT}`;
+  ctx.textAlign = 'center';
+  const step = span <= 12 ? 2 : 5;
+  for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+    ctx.fillText(`${v}°`, xAt(v), bottom + 14 * u);
+  }
+  ctx.textAlign = 'left';
+}
+
 export interface TempMapCfg {
   label: string;
   /** Current 2-m temperature (°C) per ISO3 country. */
   tempByIso: Record<string, number>;
   world?: { id: string; rings: number[][][] }[];
-  /** Hottest countries right now. */
-  rows: { name: string; v: number }[];
+  /** Hottest countries right now, each with today's low/high for the range. */
+  rows: { name: string; v: number; min?: number; max?: number }[];
   rowFmt: (v: number) => string;
   source: string;
 }
@@ -526,7 +602,10 @@ export function tempMap(f: Frame, cfg: TempMapCfg): void {
   const captionH = 22 * u;
   const listGap = 12 * u;
   const rowMin = 42 * u;
-  const mapMax = h - 46 * u - my0 - legendH - captionH - listGap - cfg.rows.length * rowMin;
+  // Room under the list for the shared °C axis of the range track.
+  const axisH = 22 * u;
+  const mapMax =
+    h - 46 * u - my0 - legendH - captionH - listGap - axisH - cfg.rows.length * rowMin;
   const mh = Math.min((mw * 145) / 360, mapMax);
   const px = (lon: number) => mx0 + ((lon + 180) / 360) * mw;
   const py = (lat: number) => my0 + ((85 - Math.min(85, Math.max(-60, lat))) / 145) * mh;
@@ -583,12 +662,12 @@ export function tempMap(f: Frame, cfg: TempMapCfg): void {
   const capY = lgY + legendH;
   ctx.fillStyle = MUTED;
   ctx.font = `600 ${12 * u}px ${FONT}`;
-  ctx.fillText(tr('Heißeste Länder · jetzt').toUpperCase(), pad, capY + 10 * u);
-  drawRankedList(f, {
+  ctx.fillText(tr('Heißeste Länder').toUpperCase(), pad, capY + 10 * u);
+  drawTempRangeList(f, {
     rows: cfg.rows,
     top: capY + captionH + listGap - 12 * u,
+    bottom: h - 46 * u - axisH,
     rowFmt: cfg.rowFmt,
-    color: CRITICAL,
   });
 
   if (cfg.source) drawSource(f, cfg.source);

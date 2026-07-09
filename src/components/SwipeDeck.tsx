@@ -34,13 +34,15 @@ const Card = styled.div`
   height: min(76vh, calc(100% - 88px));
 
   /* Landscape phones: the portrait caps (width keyed to vh) shrink the card
-     to a stamp. Widen it — but only moderately: the chart renderers scale
-     their type with the card WIDTH (u = width/512) against a fixed height,
-     so past ~1.25:1 the titles balloon and the y-axis collapses. The 92vh
-     cap keeps the aspect in the renderers' comfort zone. */
+     to a stamp with ~35% dead margin either side. Now that CardCanvas keys its
+     unit u to the height past REF_ASPECT, the renderers no longer balloon when
+     the card widens — so let it grow to ~1.7:1 and reclaim that space as chart
+     room. Width stays vh-linked (height is vh-linked too), which pins the
+     aspect regardless of screen; the vw/px caps keep it sane on wide displays
+     and tablets. The remaining side gap is the intentional aurora frame. */
   @media (max-height: 520px) {
     top: calc(50% - 10px);
-    width: min(72vw, 640px, 92vh);
+    width: min(92vw, 840px, 135vh);
     height: min(80vh, calc(100% - 40px));
   }
   border-radius: 18px;

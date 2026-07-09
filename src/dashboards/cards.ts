@@ -2,7 +2,7 @@
 // it picks up live data on the next frame and otherwise falls back to a seeded
 // or bundled series. Tagging, ordering and the public registry live in index.ts.
 
-import { localeNum, localePct, t as tr } from '../i18n';
+import { localeNum, localeNumTrim, localePct, localePctTrim, t as tr } from '../i18n';
 import {
   areaChart,
   choroplethMap,
@@ -12,19 +12,21 @@ import {
   mideastMap,
   nukeMap,
   tempMap,
-  timelineChart,
   treemap,
   warLosses,
   wealthSplit,
 } from './charts';
 import {
   CPI_INVERTED,
+  DRUG_DEATHS_100K,
+  DRUG_DEATHS_TOP,
   EU_DEBT_GDP,
   EXECUTIONS_2024,
-  HORMUZ,
   IRAN_ISRAEL_MISSILES,
   LGBT_CRIMINAL,
   MIDEAST_FALLBACK,
+  MODERN_SLAVERY_1K,
+  MODERN_SLAVERY_TOP,
   NUKE_STATES,
   NUKE_TOTAL,
   US_TROOPS_ABROAD,
@@ -36,13 +38,14 @@ import {
   DEGLACIATION_PANEL,
   FALLBACK_TEMPS,
   FALLBACK_TEMP_ROWS,
-  HOLOCENE_PANEL,
   ICE_CORE_PANEL,
   SEALEVEL_PANEL,
 } from '../data/climate';
 import {
   AFRICA_ROUTES_COMPARE,
   AI_JOBS_COMPARE,
+  DE_AUTO_JOBS_PANEL,
+  HORMUZ_OIL_PANEL,
   CAMERAS_PANEL,
   CB_BALANCE_COMPARE,
   CONFLICT_PANEL,
@@ -55,7 +58,13 @@ import {
   DE_RENT_BURDEN_PANEL,
   DE_WAGE_COMPARE,
   FOOD_FERT_COMPARE,
+  GAS_NITROGEN_PANEL,
+  FERT_FOOD_SHOCK,
+  FOOD_CRISIS_PANEL,
   WEALTH_DIVERGE_COMPARE,
+  DE_BANK_INFRA_COMPARE,
+  US_MIDDLE_WEALTH_COMPARE,
+  US_CONSUMER_DEBT_COMPARE,
   AGE_VERIF_PANEL,
   AGE_VERIF_NATIONS_PANEL,
   PNR_PANEL,
@@ -66,6 +75,10 @@ import {
   CONTINENT_FERTILITY,
   INTERNET_PANEL,
   AI_COMPUTE_PANEL,
+  MOORE_PANEL,
+  PROCESS_NODE_PANEL,
+  COMPUTE_COST_PANEL,
+  GENOME_COST_PANEL,
   AI_TRAIN_COST_PANEL,
   CHATGPT_USERS_PANEL,
   DATACENTER_POWER_PANEL,
@@ -93,6 +106,7 @@ import {
   DE_STATE_QUOTA_PANEL,
   DE_PUBLIC_EMPLOYMENT_PANEL,
   DE_UNDEREMPLOYMENT_COMPARE,
+  DEFENSE_COMPARE,
   INDUSTRY_COMPARE,
   M2_COMPARE,
   M2_PANEL,
@@ -123,6 +137,9 @@ import {
   DE_SPEECH_PANEL,
   UK_SPEECH_ARRESTS_PANEL,
   YOUNG_HOME_COMPARE,
+  HOME_PRICE_INCOME_COMPARE,
+  INVESTOR_HOMES_PANEL,
+  YOUNG_WEALTH_COMPARE,
   LEZ_PANEL,
   SHUTDOWN_PANEL,
   GENE_THERAPY_PANEL,
@@ -155,6 +172,7 @@ import {
   DE_TFR_PANEL,
   DE_VAX_EXCESS,
   DE_VAX_BIRTHS,
+  DE_DEATHS_PANEL,
 } from '../data/bundled';
 import {
   blue,
@@ -213,13 +231,13 @@ export const POOL: Dashboard[] = [
     id: 'mideast',
     title: 'Naher Osten · Konflikt',
     source:
-      'Getötete: Tech for Palestine (Gaza & Westjordanland, Gesundheitsministerium/OCHA), live abgerufen. Hormus: EIA 2024 (Öldurchsatz) & Reuters (Schiffe/Tag) — kein Live-Feed für Schiffszählungen. Raketen: iranische Raketen auf Israel, 12-Tage-Krieg Juni 2025 (FPRI/WSJ). Nur eine der drei Zahlen ist live — der Rest ist datierter Kontext.',
+      'Getötete: Tech for Palestine (Gaza & Westjordanland, Gesundheitsministerium/OCHA), live abgerufen. Raketen: iranische Raketen auf Israel, 12-Tage-Krieg Juni 2025 (FPRI/WSJ). Nur die Opferzahl ist live — die Raketenzahl ist datierter Kontext.',
     dynamic: true,
     draw: (f) => {
       // Only the casualty block is live (Tech for Palestine, Gaza/West Bank —
-      // Palestinian figures only, no Iranian/Israeli side). Hormuz and the
-      // missile count are bundled, dated context: no keyless live feed exists
-      // for either. The card labels live vs. bundled so the two never blur.
+      // Palestinian figures only, no Iranian/Israeli side). The missile count is
+      // bundled, dated context: no keyless live feed exists for it. The card
+      // labels live vs. bundled so the two never blur.
       const m = live.mideast;
       const c = m ?? MIDEAST_FALLBACK;
       mideastMap(f, {
@@ -231,15 +249,11 @@ export const POOL: Dashboard[] = [
         lastUpdate: c.lastUpdate,
         daily: c.daily,
         isLive: m !== undefined,
-        hormuzOil: HORMUZ.oilBarrelsPerDay,
-        hormuzShips: HORMUZ.shipsPerDay,
-        hormuzVintage: HORMUZ.vintage,
         missiles: IRAN_ISRAEL_MISSILES.count,
         missilesRoute: IRAN_ISRAEL_MISSILES.route,
         missilesPeriod: IRAN_ISRAEL_MISSILES.period,
         world: live.worldMap,
-        source:
-          'Tech for Palestine (live) · EIA 2024 · FPRI/WSJ · Getötete = Gaza & Westjordanland',
+        source: 'Tech for Palestine (live) · FPRI/WSJ · Getötete = Gaza & Westjordanland',
       });
     },
   },
@@ -256,7 +270,9 @@ export const POOL: Dashboard[] = [
         label: 'US-Staatsschulden',
         latest: d?.latest ?? 39.4e12,
         latestMs: d?.latestMs ?? Date.now() - 86_400_000,
-        ratePerMs: d?.ratePerMs ?? 0.06,
+        // Fallback rate in $/ms, consistent with the latest/yoyPct fallbacks:
+        // 39.4e12 × 5.8% / seconds-per-year / 1000 ≈ 72.4 $/ms (~$72k/second).
+        ratePerMs: d?.ratePerMs ?? 72.4,
         yoyPct: d?.yoyPct ?? 5.8,
         series: d?.series ?? DEBT_TREND_FALLBACK.series,
         ticks: d?.ticks ?? DEBT_TREND_FALLBACK.ticks,
@@ -296,7 +312,7 @@ export const POOL: Dashboard[] = [
       choroplethMap(f, {
         label: 'Mordrate',
         value: hm?.world ?? 5.6,
-        fmt: (v) => `${localeNum(v, 1)} /100k`,
+        fmt: (v) => `${localeNumTrim(v, 1)} /100k`,
         valueByIso: hm?.byIso,
         world: live.worldMap,
         rows: hm?.rows ?? [
@@ -306,7 +322,7 @@ export const POOL: Dashboard[] = [
           { name: 'Brasilien', v: 19.3 },
           { name: 'Mexiko', v: 18.5 },
         ],
-        rowFmt: (v) => localeNum(v, 1),
+        rowFmt: (v) => localeNumTrim(v, 1),
         source: 'World Bank · Tötungsdelikte pro 100k',
       });
     },
@@ -315,7 +331,7 @@ export const POOL: Dashboard[] = [
     id: 'temp-map',
     title: 'Welt-Temperaturen · jetzt',
     source:
-      'Open-Meteo · aktuelle 2-m-Temperatur, ein Messpunkt nahe der Landesmitte je Land; offline: Breitengrad-Klimatologie als Näherung.',
+      'Open-Meteo · aktuelle 2-m-Temperatur plus Tages-Min/Max, ein Messpunkt nahe der Landesmitte je Land; offline: Breitengrad-Klimatologie als Näherung.',
     dynamic: true,
     draw: (f) => {
       const wt = live.worldTemp;
@@ -324,33 +340,8 @@ export const POOL: Dashboard[] = [
         tempByIso: wt?.byIso ?? FALLBACK_TEMPS,
         world: live.worldMap,
         rows: wt?.rows ?? FALLBACK_TEMP_ROWS,
-        rowFmt: (v) => `${localeNum(v, 1)} °C`,
+        rowFmt: (v) => `${localeNumTrim(v, 1)} °C`,
         source: wt ? 'Open-Meteo · live · 1 Punkt je Land' : 'Klimatologie-Näherung · offline',
-      });
-    },
-  },
-  {
-    id: 'holocene',
-    title: 'Globale Temperatur · 10.000 Jahre',
-    source:
-      'Kaufman et al. 2020 (Temp12k, Multi-Methoden-Median) · ab 1850 HadCRUT5. Band: 90-%-Unsicherheit. Proxys mitteln über ~100–200 Jahre — kurze Ausschläge wären geglättet; das Holozän-Optimum war v. a. in Nordsommern warm, das globale Mittel hier ist flacher als regionale Reihen.',
-    draw: (f) => {
-      const p = HOLOCENE_PANEL;
-      areaChart(f, {
-        label: 'Temperatur-Anomalie · vs. 1800–1900',
-        value: p.latest,
-        fmt: (v) => `+${localeNum(v, 1)} °C`,
-        delta: null,
-        seed: 41,
-        color: orange,
-        data: p.median,
-        band: { lo: p.lo, hi: p.hi },
-        ticks: p.ticks,
-        xLabels: ['≈8000 v. Chr.', '≈4700 v. Chr.', '≈1300 v. Chr.', 'heute'],
-        markers: eraMarkers(-8000, 2025, [
-          [-4500, '☀️ Holozän-Optimum'],
-          [1650, '❄️ Kleine Eiszeit'],
-        ]),
       });
     },
   },
@@ -893,8 +884,8 @@ export const POOL: Dashboard[] = [
         // dual apprenticeship systems, anchor the low end.
         label: 'Jugendarbeitslosigkeit · 15–24 J. · 2024',
         value: 14.9,
-        fmt: (v) => `Ø ${localePct(v, 1)}`,
-        rowFmt: (v) => `${localePct(v, 1)}`,
+        fmt: (v) => `Ø ${localePctTrim(v, 1)}`,
+        rowFmt: (v) => `${localePctTrim(v, 1)}`,
         delta: null,
         color: orange,
         unit: '',
@@ -924,8 +915,8 @@ export const POOL: Dashboard[] = [
         // France lead; Germany, Japan and Switzerland sit at the low end.
         label: 'Arbeitslosenquote · harmonisiert · 2024',
         value: 5.9,
-        fmt: (v) => `Ø ${localePct(v, 1)}`,
-        rowFmt: (v) => `${localePct(v, 1)}`,
+        fmt: (v) => `Ø ${localePctTrim(v, 1)}`,
+        rowFmt: (v) => `${localePctTrim(v, 1)}`,
         delta: null,
         color: red,
         unit: '',
@@ -956,8 +947,8 @@ export const POOL: Dashboard[] = [
         // sit in the middle, the Nordics lowest.
         label: 'Armutsquote · < 50 % Medianeinkommen',
         value: 11.4,
-        fmt: (v) => `Ø ${localePct(v, 1)}`,
-        rowFmt: (v) => `${localePct(v, 1)}`,
+        fmt: (v) => `Ø ${localePctTrim(v, 1)}`,
+        rowFmt: (v) => `${localePctTrim(v, 1)}`,
         delta: null,
         color: violet,
         unit: '',
@@ -1133,6 +1124,42 @@ export const POOL: Dashboard[] = [
         ]),
       }),
   },
+  // German auto-industry employment: the 2018 record, then the slide. Markers
+  // stay strictly factual — Dieselgate is VW's own defeat-device case (ICCT
+  // test 2014 → US-EPA suit 2015), and the 2024 marker is the documented
+  // VW/IG-Metall deal (−35,000 jobs by 2030). No unsourced ownership claims.
+  trendCard(
+    'de-auto-jobs',
+    'Autojobs · Beschäftigte in der Autoindustrie · 🇩🇪',
+    'Autojobs · 🇩🇪',
+    DE_AUTO_JOBS_PANEL,
+    red,
+    (v) => localeNum(Math.round(v), 0),
+    421,
+    eraMarkers(2005, 2025, [
+      [2015, '🛢️ Dieselgate'],
+      [2018, '📈 Höchststand'],
+      [2024, '🏭 VW: −35.000 Jobs'],
+    ]),
+    'VDA/Destatis · Beschäftigte in der Automobilindustrie, gerundet; Jahre vor 2015 grob. Dieselgate: ICCT-Test 2014, US-EPA-Klage 2015, ~30 Mrd € Kosten. Dez 2024: VW streicht 35.000 Stellen bis 2030, Kapazität −700.000 Autos.',
+  ),
+  // Oil through the Strait of Hormuz, Mio bbl/day, monthly. The flat ~20 Mb/d
+  // baseline then the 2026-war cliff to a trickle, recovering after the June
+  // US–Iran deal — "früher vs. heute" in one curve.
+  trendCard(
+    'hormuz-oil',
+    'Öl durch Hormuz · Mio Barrel/Tag',
+    'Hormuz · Öl · Mio bbl/Tag',
+    HORMUZ_OIL_PANEL,
+    orange,
+    (v) => `${localeNum(v, 0)}`,
+    422,
+    eraMarkers(2024, 2026.5, [
+      [2026.1, '💥 Krieg 2026'],
+      [2026.42, '🤝 US-Iran-Deal'],
+    ]),
+    'EIA/IEA/Kpler · Rohöl + Produkte durch die Straße von Hormuz, ~20 % des Welt-Öls. Normal ~3.000 Schiffe/Monat (~100/Tag), 50–60 % Tanker; April 2026 nur ~191 Schiffe. Kriegsmonate grob geschätzt. Stand Juli 2026.',
+  ),
   trendCard('de-migration', 'Migrationsanteil Deutschland', 'Migrationshintergrund · 🇩🇪', DE_MIGRATION_PANEL, aqua, (v) => `${localePct(v, 1)}`, 149, eraMarkers(1950, 2024, [
     // The four big waves on the 1950–2024 axis: guest-worker recruitment, the
     // post-1990 Aussiedler/Balkan influx, the 2015 asylum wave, and Ukraine.
@@ -1214,7 +1241,7 @@ export const POOL: Dashboard[] = [
         label: 'Auswanderung Deutscher · Zielländer · 2024',
         value: 20.7,
         fmt: (v) => `${deInt(v)}k`,
-        rowFmt: (v) => `${localeNum(v, 1)}k`,
+        rowFmt: (v) => `${localeNumTrim(v, 1)}k`,
         delta: null,
         color: aqua,
         unit: '',
@@ -1743,7 +1770,10 @@ export const POOL: Dashboard[] = [
         seed: 243,
         series: [
           { name: '🇺🇸 Fed', color: blue, data: CB_BALANCE_COMPARE.rows[0].data },
-          { name: '🇪🇺 EZB', color: violet, data: CB_BALANCE_COMPARE.rows[1].data },
+          // Fed stays blue; EZB moves off violet (too close to the blue in dim
+          // light / CVD) to the gold slot — maximal hue contrast to blue, and
+          // the EU flag's gold gives it semantic resonance.
+          { name: '🇪🇺 EZB', color: yellow, data: CB_BALANCE_COMPARE.rows[1].data },
         ],
         ticks: CB_BALANCE_COMPARE.ticks,
         xLabels: ['2000', '2008', '2016', 'heute'],
@@ -1779,6 +1809,125 @@ export const POOL: Dashboard[] = [
       }),
   },
   {
+    id: 'home-price-income',
+    title: 'Hauspreis je Einkommen · DE vs. USA',
+    source:
+      'OECD · Verhältnis Hauspreis zu verfügbarem Einkommen (nominal), Index 2015 = 100; höher = mehr Jahreseinkommen pro Eigenheim.',
+    draw: (f) =>
+      lineChart(f, {
+        // OECD price-to-income index (2015 = 100). Germany fell through the
+        // 2000s, then the zero-rate decade drove a boom past 130 before the
+        // 2022 rate shock corrected it; the US rebuilt past its 2006 bubble
+        // peak. Higher index = more years of income to buy the same home.
+        label: 'Hauspreis je Einkommen · Index 2015 = 100',
+        value: HOME_PRICE_INCOME_COMPARE.deLatest,
+        unit: '',
+        fmt: (v) => localeNum(v, 0),
+        delta: null,
+        seed: 613,
+        series: [
+          { name: '🇩🇪 Deutschland', color: blue, data: HOME_PRICE_INCOME_COMPARE.rows[0].data },
+          { name: '🇺🇸 USA', color: yellow, data: HOME_PRICE_INCOME_COMPARE.rows[1].data },
+        ],
+        ticks: HOME_PRICE_INCOME_COMPARE.ticks,
+        xLabels: ['2000', '2008', '2016', 'heute'],
+        markers: eraMarkers(2000, 2024, [
+          [2008, '🏦 Finanzkrise'],
+          [2021, '💸 Nullzins-Boom'],
+        ]),
+      }),
+  },
+  trendCard('investor-homes', 'Wem gehört das Eigenheim', 'Investoren-Anteil an US-Eigenheimkäufen', INVESTOR_HOMES_PANEL, red, (v) => `${localePct(v, 0)}`, 617, eraMarkers(2000, 2024, [
+    // After 2008 Wall Street industrialised buying up foreclosed single-family
+    // homes into a rental asset class — investor share stuck near one in five.
+    [2012, '🏦 Blackstone kauft'],
+    [2022, '📈 1 von 5 Käufen'],
+  ]), 'Redfin · Investoren-Anteil an US-Eigenheimkäufen; die institutionelle Single-Family-Rental-Branche entstand nach dem Crash 2008.'),
+  {
+    id: 'young-wealth',
+    title: 'Vermögen der Jungen schrumpft',
+    source:
+      'US Federal Reserve · Distributional Financial Accounts, Anteil am Haushaltsnettovermögen nach Alter des Haushalts; gerundet.',
+    draw: (f) =>
+      lineChart(f, {
+        // Fed DFA wealth share by age. The under-40 slice roughly halved since
+        // the early 1990s while the 55–69 boomer cohort climbed past 40% —
+        // wealth ageing out of reach of the young even as the total grew.
+        label: 'Anteil am Haushaltsvermögen · 🇺🇸',
+        value: YOUNG_WEALTH_COMPARE.youngLatest,
+        unit: '%',
+        fmt: (v) => `${localeNum(v, 0)} %`,
+        delta: null,
+        seed: 619,
+        series: [
+          { name: '🧑 Unter 40', color: blue, data: YOUNG_WEALTH_COMPARE.rows[0].data },
+          { name: '👴 55–69 · Boomer', color: orange, data: YOUNG_WEALTH_COMPARE.rows[1].data },
+        ],
+        ticks: YOUNG_WEALTH_COMPARE.ticks,
+        xLabels: ['1990', '2002', '2013', 'heute'],
+        markers: eraMarkers(1990, 2024, [[2008, '🏦 Finanzkrise']]),
+      }),
+  },
+  {
+    id: 'us-middle-wealth',
+    title: 'Mittelschicht schrumpft · USA',
+    source:
+      'US Federal Reserve · Distributional Financial Accounts, Anteil am Haushaltsnettovermögen; Mittelschicht = 50.–90. Vermögensperzentil, gerundet.',
+    draw: (f) =>
+      lineChart(f, {
+        // Fed DFA net-worth shares. The middle 40% (50th–90th percentile) and
+        // the top 1% cross around 2014: the single richest percent now owns a
+        // bigger slice of national wealth than the entire middle class, and the
+        // gap keeps widening.
+        label: 'Anteil am Haushaltsvermögen · 🇺🇸',
+        value: US_MIDDLE_WEALTH_COMPARE.middleLatest,
+        unit: '%',
+        fmt: (v) => `${localeNum(v, 0)} %`,
+        delta: null,
+        seed: 631,
+        series: [
+          { name: '🏠 Mittelschicht', color: blue, data: US_MIDDLE_WEALTH_COMPARE.rows[0].data },
+          { name: '💰 Reichstes 1 %', color: red, data: US_MIDDLE_WEALTH_COMPARE.rows[1].data },
+        ],
+        ticks: US_MIDDLE_WEALTH_COMPARE.ticks,
+        xLabels: ['1990', '2002', '2013', 'heute'],
+        markers: eraMarkers(1990, 2024, [
+          [2008, '🏦 Finanzkrise'],
+          [2014, '🔀 1 % überholt Mitte'],
+        ]),
+      }),
+  },
+  {
+    id: 'us-consumer-debt',
+    title: 'Schuldenlast der Mittelschicht · USA',
+    source:
+      'Federal Reserve Bank of New York · Household Debt and Credit Report, ausstehende Salden ohne Hypotheken, gerundet auf Billionen US-Dollar.',
+    draw: (f) =>
+      lineChart(f, {
+        // NY Fed non-mortgage consumer debt. Student debt ~7× since 2003 as
+        // tuition outran wages; auto loans more than doubled; credit cards
+        // dipped after 2008 then pushed to fresh records past $1.2tn — the
+        // borrowing that fills the gap a stagnant middle-class paycheck leaves.
+        label: 'Verbraucherschulden · 🇺🇸 · ohne Hypotheken',
+        value: US_CONSUMER_DEBT_COMPARE.studentLatest,
+        unit: '',
+        fmt: (v) => `$${localeNum(v, 2)} ${tr('Bio.')}`,
+        delta: null,
+        seed: 641,
+        series: [
+          { name: '🎓 Studienkredite', color: violet, data: US_CONSUMER_DEBT_COMPARE.rows[0].data },
+          { name: '🚗 Autokredite', color: orange, data: US_CONSUMER_DEBT_COMPARE.rows[1].data },
+          { name: '💳 Kreditkarten', color: yellow, data: US_CONSUMER_DEBT_COMPARE.rows[2].data },
+        ],
+        ticks: US_CONSUMER_DEBT_COMPARE.ticks,
+        xLabels: ['2003', '2010', '2017', 'heute'],
+        markers: eraMarkers(2003, 2024, [
+          [2008, '🏦 Finanzkrise'],
+          [2012, '🎓 Studien-Boom'],
+        ]),
+      }),
+  },
+  {
     id: 'food-fertilizer',
     title: 'Nahrungs- & Düngemittelpreise',
     source:
@@ -1806,6 +1955,69 @@ export const POOL: Dashboard[] = [
         ]),
       }),
   },
+  // Hormuz → fertilizer → food → hunger, the 2026 chain. The three panels below
+  // read as a sequence: the gas feedstock, the price transmission, the human
+  // toll. Each draws H2 2026 as a dashed projection (projectFrom ≈ "now",
+  // Jul 2026 = month 30 of 36); captions flag the tails as scenario, not data.
+  trendCard(
+    'gas-fertilizer',
+    'Erdgas · Rohstoff für Dünger',
+    'Erdgaspreis · Europa · €/MWh',
+    GAS_NITROGEN_PANEL,
+    orange,
+    (v) => `${localeNum(v, 0)} €`,
+    611,
+    // War/closure spike, then the June deal — both already in the i18n dicts.
+    [
+      { at: 26 / 35, label: '💥 Krieg 2026' },
+      { at: 29 / 35, label: '🤝 US-Iran-Deal' },
+    ],
+    'ICE TTF Frontmonat (Großhandels-Erdgas Europa), €/MWh, monatlich. Katar liefert ~20 % des Welt-LNG, komplett durch die Straße von Hormuz; Erdgas ist der Rohstoff für Stickstoffdünger. Ab Aug 2026 gestrichelt = Szenario/Projektion (Winter-Wiederanstieg), grob geschätzt, unter dem Niveau der Gaskrise 2022 (~235 €). Stand Juli 2026.',
+    // Solid through Jul 2026 (month 30 of 36), dashed projection after.
+    30 / 35,
+  ),
+  {
+    id: 'fert-food-shock',
+    title: 'Dünger treibt Nahrung · 2026',
+    source:
+      'FAO Food Price Index & Weltbank-Düngemittelindex (2014–16 = 100), monatlich, auf ein gemeinsames Fenster umgerechnet. Dünger reagiert zuerst auf den Gas-/Hormuz-Schock und schwankt stärker, Nahrung folgt mit Verzögerung. Ab Aug 2026 gestrichelt = Szenario/Projektion, grob geschätzt. Stand Juli 2026.',
+    draw: (f) =>
+      lineChart(f, {
+        // Fertilizer leads and swings harder (natural gas is its feedstock);
+        // food follows a few months later and milder. The 2026 spike mirrors the
+        // 2022 transmission, this time from the Gulf gas squeeze.
+        label: 'Preisindex · Dünger & Nahrung · 2014–16 = 100',
+        value: FERT_FOOD_SHOCK.fertLatest,
+        unit: '',
+        fmt: deInt,
+        delta: null,
+        seed: 617,
+        series: [
+          { name: '🧪 Dünger', color: orange, data: FERT_FOOD_SHOCK.rows[0].data },
+          { name: '🌾 Nahrung', color: green, data: FERT_FOOD_SHOCK.rows[1].data },
+        ],
+        ticks: FERT_FOOD_SHOCK.ticks,
+        xLabels: ['2024', '2025', '2026', 'Winter'],
+        markers: [{ at: 26 / 35, label: '💥 Krieg 2026' }],
+        projectFrom: 30 / 35,
+      }),
+  },
+  trendCard(
+    'food-crisis',
+    'Akute Ernährungskrise · IPC 3+',
+    'Menschen in akuter Ernährungskrise · IPC/CH 3+',
+    FOOD_CRISIS_PANEL,
+    red,
+    (v) => `${Math.round(v)} ${tr('Mio')}`,
+    619,
+    eraMarkers(2016, 2026, [
+      [2020, '🦠 Pandemie'],
+      [2022, '🌾 Preiskrise'],
+    ]),
+    'FSIN · Global Report on Food Crises (WFP/FAO/EU) · Menschen in „Krise oder schlimmer" (IPC/CH Phase 3+) in den erfassten Krisenländern, Mio. Ab 2025 gestrichelt = Projektion unter dem neuen Preisschock, grob geschätzt. Nicht identisch mit der chronischen Unterernährung (SDG 2). Stand Juli 2026.',
+    // Solid through 2024 (last firm figure), dashed projection 2025–26.
+    (2024 - 2016) / (2026 - 2016),
+  ),
   trendCard('pension-level', 'Rentenniveau · Deutschland', 'Rentenniveau · 🇩🇪 · % des Durchschnittslohns', DE_PENSION_LEVEL_PANEL, magenta, (v) => `${localePct(v, 0)}`, 253, eraMarkers(1990, 2040, [
     // The legislated 48% floor holds only through 2039; projections then slide.
     [2025, '⚖️ Haltelinie 48%'],
@@ -1878,8 +2090,8 @@ export const POOL: Dashboard[] = [
         // siege economies top it; the big absolute spenders sit far lower.
         label: 'Militärausgaben · % des BIP',
         value: 34,
-        fmt: (v) => `${localePct(v, 1)}`,
-        rowFmt: (v) => `${localePct(v, 1)}`,
+        fmt: (v) => `${localePctTrim(v, 1)}`,
+        rowFmt: (v) => `${localePctTrim(v, 1)}`,
         delta: null,
         color: red,
         unit: '',
@@ -1990,8 +2202,8 @@ export const POOL: Dashboard[] = [
         // the US and India as reference points in between.
         label: 'Lebenserwartung',
         value: 73.3,
-        fmt: (v) => `Ø ${localeNum(v, 1)} J.`,
-        rowFmt: (v) => `${localeNum(v, 1)} J.`,
+        fmt: (v) => `Ø ${localeNumTrim(v, 1)} J.`,
+        rowFmt: (v) => `${localeNumTrim(v, 1)} J.`,
         delta: null,
         color: green,
         unit: '',
@@ -2049,8 +2261,8 @@ export const POOL: Dashboard[] = [
         // OECD; Switzerland sits near the bottom.
         label: 'Abgabenkeil · Single',
         value: 34.9,
-        fmt: (v) => `Ø ${localePct(v, 1)}`,
-        rowFmt: (v) => `${localePct(v, 1)}`,
+        fmt: (v) => `Ø ${localePctTrim(v, 1)}`,
+        rowFmt: (v) => `${localePctTrim(v, 1)}`,
         delta: null,
         color: yellow,
         unit: '',
@@ -2096,6 +2308,42 @@ export const POOL: Dashboard[] = [
           { name: 'Frankreich', v: 27 },
           { name: 'USA', v: 15 },
           { name: 'China', v: 8 },
+        ],
+      }),
+  },
+  {
+    id: 'pension-nations',
+    title: 'Renten-Ersatzrate im Ländervergleich',
+    source:
+      'OECD Pensions at a Glance 2025, Tab. 4.4 · Netto-Ersatzrate für Durchschnittsverdiener: Rente in % des letzten eigenen Nettolohns (Pflichtsysteme, volle Erwerbsbiografie). Nicht zu verwechseln mit dem deutschen „Rentenniveau" (48 %), das die Standardrente am Durchschnittslohn misst — daher der höhere Wert.',
+    draw: (f) =>
+      hBarChart(f, {
+        // OECD Pensions at a Glance 2025, Table 4.4: net pension replacement
+        // rate for a full-career average earner — the mandatory pension as a
+        // share of the worker's own pre-retirement NET earnings. A comparable,
+        // currency-neutral measure (unlike absolute euro amounts). Distinct
+        // from the German "Rentenniveau" (Standardrente ÷ average wage, ~48%):
+        // different denominator, so the number is higher. Germany (53.3) sits
+        // well below the OECD average (63.2); the Netherlands near-fully
+        // replaces prior income, Japan barely two-fifths.
+        label: 'Netto-Ersatzrate · Ø-Verdiener',
+        value: 63.2,
+        fmt: (v) => `Ø ${localePctTrim(v, 0)}`,
+        rowFmt: (v) => `${localePctTrim(v, 0)}`,
+        delta: null,
+        color: blue,
+        unit: '',
+        rows: [
+          { name: 'Niederlande', v: 96.0 },
+          { name: 'Österreich', v: 86.8 },
+          { name: 'Spanien', v: 86.3 },
+          { name: 'Italien', v: 79.0 },
+          { name: 'Frankreich', v: 70.0 },
+          { name: 'Schweden', v: 66.3 },
+          { name: 'Großbritannien', v: 54.2 },
+          { name: 'Deutschland', v: 53.3 },
+          { name: 'USA', v: 51.3 },
+          { name: 'Japan', v: 42.4 },
         ],
       }),
   },
@@ -2188,34 +2436,38 @@ export const POOL: Dashboard[] = [
     source:
       'Zusammenstellung nach Daniele Ganser („Imperium USA"). Totenzahlen sind Mittelwerte gängiger Schätzungen, teils stark umstritten — Größenordnungen, keine exakten Zahlen.',
     draw: (f) =>
-      timelineChart(f, {
+      hBarChart(f, {
         // US wars and interventions as catalogued by Daniele Ganser
         // ("Imperium USA" / "Illegale Kriege"). Death tolls are midpoints
         // of common estimates and heavily contested — treat as magnitudes.
         // Only wars with more than 10k deaths — covert coups (Iran 1953,
         // Guatemala 1954, Bay of Pigs) and sub-10k interventions (Serbia) are
-        // left out so the timeline stays a war chart, not a regime-change list.
+        // left out so this stays a war chart, not a regime-change list.
+        //
+        // Horizontal bars, length = deaths, on a linear scale sorted
+        // descending: the whole point is that Korea and Vietnam (3 Mio each)
+        // dwarf everything after — a log scale or a duration-based timeline
+        // hides exactly the magnitude gap that matters. The year span rides
+        // along as a muted `sub` label so the chronology isn't lost.
         label: 'US-Kriege · Tote seit 1945',
         value: 7.156e6,
-        fmt: (v) => `${localeNum(v / 1e6, 1)} ${tr('Mio')}`,
+        delta: null,
         color: red,
-        yearStart: 1946,
-        yearEnd: 2026,
-        source: 'nach Daniele Ganser · Schätzwerte, teils umstritten',
-        events: [
-          { name: 'Korea', from: 1950, to: 1953, deaths: 3_000_000 },
-          { name: 'Vietnam', from: 1964, to: 1975, deaths: 3_000_000 },
+        unit: '',
+        rows: [
+          { name: 'Korea', v: 3_000_000, sub: '1950–53' },
+          { name: 'Vietnam', v: 3_000_000, sub: '1964–75' },
+          { name: 'Irak', v: 500_000, sub: '2003–11' },
+          { name: 'Afghanistan', v: 176_000, sub: '2001–21' },
+          { name: 'Golfkrieg', v: 100_000, sub: '1990–91' },
           // Laos & Kambodscha: the covert bombing campaigns alongside Vietnam;
-          // direct US military action, so they belong on a war timeline. Death
+          // direct US military action, so they belong on a war chart. Death
           // tolls are wide ranges — conservative midpoints here.
-          { name: 'Laos', from: 1964, to: 1973, deaths: 50_000 },
-          { name: 'Kambodscha', from: 1969, to: 1973, deaths: 100_000 },
-          { name: 'Nicaragua · Contras', from: 1981, to: 1990, deaths: 30_000 },
-          { name: 'Golfkrieg', from: 1990, to: 1991, deaths: 100_000 },
-          { name: 'Afghanistan', from: 2001, to: 2021, deaths: 176_000 },
-          { name: 'Irak', from: 2003, to: 2011, deaths: 500_000 },
-          { name: 'Libyen', from: 2011, deaths: 30_000 },
-          { name: 'Syrien', from: 2014, to: 2019, deaths: 20_000 },
+          { name: 'Kambodscha', v: 100_000, sub: '1969–73' },
+          { name: 'Laos', v: 50_000, sub: '1964–73' },
+          { name: 'Nicaragua · Contras', v: 30_000, sub: '1981–90' },
+          { name: 'Libyen', v: 30_000, sub: '2011–' },
+          { name: 'Syrien', v: 20_000, sub: '2014–19' },
         ],
       }),
   },
@@ -2684,8 +2936,8 @@ export const POOL: Dashboard[] = [
         // Türkiye anchors the low end.
         label: 'Alkohol · Reinalkohol pro Kopf',
         value: 15.2,
-        fmt: (v) => `${localeNum(v, 1)} L`,
-        rowFmt: (v) => `${localeNum(v, 1)} L`,
+        fmt: (v) => `${localeNumTrim(v, 1)} L`,
+        rowFmt: (v) => `${localeNumTrim(v, 1)} L`,
         delta: null,
         color: magenta,
         unit: '',
@@ -2887,6 +3139,35 @@ export const POOL: Dashboard[] = [
       }),
   },
   {
+    id: 'de-bank-branches',
+    title: 'Bankfilialen & Geldautomaten · Deutschland',
+    source:
+      'Deutsche Bundesbank · Bankstellenstatistik (Zweigstellen inländischer Kreditinstitute) und Bundesbank/EHI (Geldautomaten), gerundete Bestände.',
+    draw: (f) =>
+      lineChart(f, {
+        // German cash infrastructure retreating: branch count collapsed from
+        // ~57k in 2000 to under 19k, and the ATM fleet turned down after its
+        // ~2018 peak too. Both curves point the same way — the physical rails
+        // for cash being pulled up beside the cashless / CBDC push.
+        label: 'Anzahl · Deutschland',
+        value: DE_BANK_INFRA_COMPARE.filialenLatest,
+        unit: '',
+        fmt: (v) => deInt(v),
+        delta: null,
+        seed: 271,
+        series: [
+          { name: '🏦 Bankstellen', color: yellow, data: DE_BANK_INFRA_COMPARE.rows[0].data },
+          { name: '🏧 Geldautomaten', color: blue, data: DE_BANK_INFRA_COMPARE.rows[1].data },
+        ],
+        ticks: DE_BANK_INFRA_COMPARE.ticks,
+        xLabels: ['2000', '2008', '2016', 'heute'],
+        markers: eraMarkers(2000, 2024, [
+          [2015, '🏦 Filialsterben'],
+          [2018, '🏧 ATM-Höchststand'],
+        ]),
+      }),
+  },
+  {
     id: 'fiat-lifespan',
     title: 'Fiat-Währungen · Lebensdauer',
     source:
@@ -3027,12 +3308,14 @@ export const POOL: Dashboard[] = [
     id: 'young-homeownership',
     title: '„You\'ll own nothing" · Wohneigentum U35',
     source:
-      'English Housing Survey / IFS und US Census (Housing Vacancy Survey), gerundete Survey-Werte.',
+      'English Housing Survey / IFS, US Census, IW Köln (DE) und INSEE / Banque de France (FR), gerundete Survey-Werte.',
     draw: (f) =>
       lineChart(f, {
-        // Homeownership among young households: two-thirds of English 25–34s
-        // owned in 1991, barely a third by 2014. The US never regained its
-        // 2004 peak. Owning a home is quietly leaving the normal biography.
+        // Homeownership among young households (England 25–34, the others
+        // under 35): two-thirds of English 25–34s owned in 1991, barely a
+        // third by 2014, and the US never regained its 2004 peak. Germany is
+        // Europe's laggard even in youth; France sits in between. Legend labels
+        // stay country-only so four series fit one row across all languages.
         label: 'Wohneigentum junger Haushalte',
         value: YOUNG_HOME_COMPARE.engLatest,
         unit: '%',
@@ -3040,8 +3323,10 @@ export const POOL: Dashboard[] = [
         delta: null,
         seed: 271,
         series: [
-          { name: '🏴 England 25–34', color: blue, data: YOUNG_HOME_COMPARE.rows[0].data },
-          { name: '🇺🇸 USA unter 35', color: yellow, data: YOUNG_HOME_COMPARE.rows[1].data },
+          { name: '🏴 England', color: blue, data: YOUNG_HOME_COMPARE.rows[0].data },
+          { name: '🇺🇸 USA', color: yellow, data: YOUNG_HOME_COMPARE.rows[1].data },
+          { name: '🇩🇪 Deutschland', color: red, data: YOUNG_HOME_COMPARE.rows[2].data },
+          { name: '🇫🇷 Frankreich', color: violet, data: YOUNG_HOME_COMPARE.rows[3].data },
         ],
         ticks: YOUNG_HOME_COMPARE.ticks,
         xLabels: ['1991', '2002', '2013', 'heute'],
@@ -3084,6 +3369,32 @@ export const POOL: Dashboard[] = [
     [2020, 'GPT-3'],
     [2022, '💬 ChatGPT'],
   ]), 'Epoch AI · Trainingsrechenleistung führender KI-Modelle in FLOP, logarithmische Achse; 2025 geschätzt.'),
+  trendCard('moore', 'Moores Gesetz · Transistoren pro Chip', 'Transistoren pro Chip · seit 1971', MOORE_PANEL, blue, (v) => `${localeNum(v / 1e9, 0)} ${tr('Mrd')}`, 521, eraMarkers(1971, 2024, [
+    // Every gridline is a factor of a thousand — from 2.300 (Intel 4004) to
+    // 208 Mrd. (Nvidia B200), the near-straight line is the doubling.
+    [1993, '💻 Pentium'],
+    [2006, '🖥️ Core 2'],
+    [2020, '🍎 Apple M1'],
+    [2024, '🟩 Nvidia B200'],
+  ]), 'Wikipedia „Transistor count" · repräsentative Flaggschiff-Chips, keine lückenlose Reihe. Vom Intel 4004 (2.300, 1971) bis Nvidia B200 (208 Mrd., 2024) — eine Verdopplung etwa alle zwei Jahre über ein halbes Jahrhundert.'),
+  trendCard('process-node', 'Strukturbreite · Chip-Fertigung', 'Fertigungsstruktur · seit 1971', PROCESS_NODE_PANEL, aqua, (v) => `${localeNum(v, 0)} nm`, 523, eraMarkers(1971, 2025, [
+    // The falling twin of Moore's law: smaller structures, more transistors.
+    [1985, '📐 1 µm'],
+    [2007, '45 nm'],
+    [2020, '5 nm'],
+    [2025, '⚛️ 2 nm'],
+  ]), 'Intel/TSMC-Node-Roadmap · kleinste Fertigungsstruktur in der Serienproduktion, von 10 µm (1971) auf 2 nm (2025). Achtung: Ab etwa 22 nm sind die „nm"-Namen Marketing-Bezeichnungen, keine physische Gate-Länge mehr.'),
+  trendCard('compute-cost', 'Rechenkosten · Dollar pro GFLOPS', 'Kosten pro GFLOPS · seit 1961', COMPUTE_COST_PANEL, yellow, (v) => (v < 1 ? `${localeNum(v * 100, 1)} ¢` : `$${localeNum(v, 2)}`), 527, eraMarkers(1961, 2023, [
+    // ~12 orders of magnitude down: a GFLOPS went from $19 Mrd. to fractions
+    // of a cent as the mainframe gave way to the PC and then the GPU.
+    [1976, '🖥️ Cray-1'],
+    [2007, '🎮 GPU-Ära'],
+  ]), 'Wikipedia „FLOPS" · Hardwarekosten je GFLOPS, gerundet, nicht inflationsbereinigt. Von ~19 Mrd. $ (1961) auf Bruchteile eines Cents (2023) — der ökonomische Zwilling von Moores Gesetz.'),
+  trendCard('genome-cost', 'Kosten · ein Genom sequenzieren', 'Kosten pro Genom · seit 2001', GENOME_COST_PANEL, green, (v) => `$${localeNum(v, 0)}`, 529, eraMarkers(2001, 2024, [
+    [2003, '🧬 Humangenom-Projekt'],
+    [2008, '⚡ Next-Gen-Sequenzierung'],
+    [2014, '💵 1000-$-Genom'],
+  ]), 'NHGRI „Sequencing Cost" · Kosten für ein komplettes menschliches Genom, von 95 Mio. $ (2001) auf ~200 $ (2024). Der Absturz 2008 ist der Umstieg auf Next-Generation-Sequenzierung; die Kurve fällt schneller als Moores Gesetz.'),
   trendCard('ai-training-cost', 'KI-Training · Kosten explodieren', 'Teuerster KI-Trainingslauf', AI_TRAIN_COST_PANEL, violet, (v) => (v >= 950 ? `${localeNum(v / 1000, 1)} ${tr('Mrd')} $` : `${localeNum(v, 0)} ${tr('Mio')} $`), 457, eraMarkers(2017, 2027, [
     // Cloud-rental compute estimates per milestone run; the projection leg
     // carries Epoch's ">$1B by 2027" headline (costs grew ~2.4x/year).
@@ -3137,7 +3448,7 @@ export const POOL: Dashboard[] = [
         label: 'Private KI-Investitionen · 2024',
         value: 109.1,
         fmt: (v) => `🇺🇸 $${localeNum(v, 0)} ${tr('Mrd')}`,
-        rowFmt: (v) => `$${localeNum(v, 1)} ${tr('Mrd')}`,
+        rowFmt: (v) => `$${localeNumTrim(v, 1)} ${tr('Mrd')}`,
         delta: null,
         color: violet,
         unit: '',
@@ -3296,6 +3607,50 @@ export const POOL: Dashboard[] = [
         source: 'Amnesty International 2024 · Mindestzahlen, China geschätzt',
       }),
   },
+  {
+    id: 'slavery-map',
+    title: 'Menschenhandel · moderne Sklaverei',
+    source:
+      'Walk Free · Global Slavery Index 2023: weltweit ~50 Mio. Menschen in moderner Sklaverei (Zwangsarbeit, Zwangsheirat, Menschenhandel). Die Karte färbt nach Betroffenen je 1.000 Einwohner — ein Anteil, keine Kopfzahl: Spitzenreiter Nordkorea (staatliche Zwangsarbeit) und Eritrea sind extrapoliert, kein Land-Zugang. Schätzungen, alle ~5 Jahre revidiert.',
+    draw: (f) =>
+      choroplethMap(f, {
+        // Prevalence shades the whole world (the North-Korea → Gulf → Sahel
+        // belt IS the picture); the ranked list stays on the SAME per-1,000
+        // scale as the shading. Absolute victim counts live on the separate
+        // 'modern-slavery' bar card, so this map doesn't duplicate them.
+        label: 'Moderne Sklaverei · je 1.000',
+        value: 50e6,
+        fmt: (v) => `≈ ${localeNum(v / 1e6, 0)} ${tr('Mio')}`,
+        valueByIso: MODERN_SLAVERY_1K,
+        world: live.worldMap,
+        ramp: magenta,
+        rows: MODERN_SLAVERY_TOP,
+        rowFmt: (v) => localeNumTrim(v, 1),
+        source: 'Walk Free · Global Slavery Index 2023 · Betroffene je 1.000 Einw.',
+      }),
+  },
+  {
+    id: 'drug-deaths-map',
+    title: 'Drogenhandel · Drogentote',
+    source:
+      'IHME Global Burden of Disease / UNODC World Drug Report · altersstandardisierte drogenbedingte Todesfälle je 100.000 Einwohner. Ausschnitt Amerika + Europa, wo sich die Sterblichkeit des Drogenhandels ballt (die USA mit der Opioid-/Fentanyl-Krise weit voraus) und die GBD-Datenlage am dichtesten ist. Gemessen werden Tote, nicht Handelsumsatz. Gerundete Schätzungen.',
+    draw: (f) =>
+      choroplethMap(f, {
+        // Regional crop to the Americas + Europe: honest given sparse GBD
+        // coverage in much of Africa/Asia, and the US outlier only reads as
+        // extreme next to its peers, not against a mostly-grey world map.
+        label: 'Drogentote · je 100.000',
+        value: 27,
+        fmt: (v) => `bis ${localeNum(v, 0)} /100k`,
+        valueByIso: DRUG_DEATHS_100K,
+        world: live.worldMap,
+        bounds: { lonMin: -130, lonMax: 45, latMin: 5, latMax: 72 },
+        ramp: orange,
+        rows: DRUG_DEATHS_TOP,
+        rowFmt: (v) => `${localeNum(v, 0)} /100k`,
+        source: 'IHME GBD / UNODC · Drogentote je 100.000',
+      }),
+  },
   trendCard('trans-youth', 'Genderklinik England · Ansturm', 'Minderjährige · Überweisungen an GIDS · pro Jahr', TRANS_YOUTH_PANEL, magenta, deInt, 353, eraMarkers(2010, 2022, [
     [2014, '📱 Tumblr-Ära'],
     [2020, '⚖️ Fall Keira Bell'],
@@ -3316,6 +3671,35 @@ export const POOL: Dashboard[] = [
     [2022, '⚔️ Zeitenwende'],
     [2025, '🇪🇺 ReArm Europe'],
   ]), 'Xetra-Schlusskurse, gerundet · Rheinmetall als Proxy für europäische Rüstungswerte: rund ×20 seit dem Angriff auf die Ukraine.'),
+  {
+    id: 'defense-basket',
+    title: 'Rüstungsaktien · die ganze Branche',
+    source:
+      'Kurse indexiert: Anfang 2022 = ×1, log-Skala, gerundete Anker · Rheinmetall (Xetra), EU-Rüstung (STOXX Europe Aerospace & Defense), US-Rüstung (iShares ITA-ETF). Nicht Rheinmetall allein — der ganze Sektor hat re-ratet, Rheinmetall am extremsten.',
+    draw: (f) =>
+      lineChart(f, {
+        // Indexed to the Zeitenwende (Anfang 2022 = ×1) on a log axis, so a ×2
+        // ETF stays readable next to Rheinmetall's ×19. Rheinmetall leads as
+        // series[0] (front pulse; era markers ride its curve).
+        label: 'Rüstungsaktien · Anfang 2022 = ×1',
+        value: DEFENSE_COMPARE.rheinLatest,
+        unit: '',
+        fmt: (v) => `×${localeNum(v, 0)}`,
+        delta: null,
+        seed: 423,
+        series: [
+          { name: '🇩🇪 Rheinmetall', color: red, data: DEFENSE_COMPARE.rows[0].data },
+          { name: '🇪🇺 EU-Rüstung', color: blue, data: DEFENSE_COMPARE.rows[1].data },
+          { name: '🇺🇸 US-Rüstung', color: yellow, data: DEFENSE_COMPARE.rows[2].data },
+        ],
+        ticks: DEFENSE_COMPARE.ticks,
+        xLabels: ['2019', '2021', '2023', 'heute'],
+        markers: eraMarkers(2019, 2025, [
+          [2022, '⚔️ Zeitenwende'],
+          [2025, '🇪🇺 ReArm Europe'],
+        ]),
+      }),
+  },
   trendCard('gold-price', 'Goldpreis seit 1970', 'Goldpreis · $/Unze · Jahresschnitt', GOLD_PRICE_PANEL, yellow, (v) => `$${localeNum(v, 0)}`, 431, eraMarkers(1970, 2025, [
     [1971, '⛓️‍💥 Gold-Ende 1971'],
     [1980, '📈 Inflations-Peak'],
@@ -3453,7 +3837,7 @@ export const POOL: Dashboard[] = [
     id: 'covid-vax-excess',
     title: 'Impfquote und Übersterblichkeit · Deutschland',
     source:
-      'OWID (P-Score, Sterbefälle über der Vor-Pandemie-Projektion, monatlich, geglättet) & RKI (vollständig Geimpfte) · gerundet. Zeitlicher Verlauf ohne Kausalaussage: Winterwellen, Hitzesommer und Alterung wirken auf die Übersterblichkeit ein.',
+      'OWID (P-Score, Sterbefälle über der Vor-Pandemie-Projektion, monatlich, geglättet; vollständig Geimpfte) · gerundet. Zeitlicher Verlauf ohne Kausalaussage: Winterwellen, Hitzesommer und Alterung wirken auf die Übersterblichkeit ein.',
     draw: (f) =>
       lineChart(f, {
         // Rollout curve against the monthly excess-mortality P-score on one
@@ -3481,7 +3865,7 @@ export const POOL: Dashboard[] = [
     id: 'covid-vax-births',
     title: 'Impfquote und Geburtenrate · Deutschland',
     source:
-      'Destatis (Monatsgeburten als Index, 2019 = 100, geglättet) & RKI (vollständig Geimpfte) · gerundet. Der Rückgang beginnt Januar 2022 — neun Monate nach dem Höhepunkt der Erwachsenen-Kampagne (BiB, Bujard/Andersson 2023); die Ursachen sind umstritten: Unsicherheit, aufgeschobene Kinderwünsche und Impfeffekte werden diskutiert.',
+      'Destatis (Monatsgeburten als Index, 2019 = 100, geglättet) & OWID (vollständig Geimpfte) · gerundet. Der Rückgang beginnt Januar 2022 — neun Monate nach dem Höhepunkt der Erwachsenen-Kampagne (BiB, Bujard/Andersson 2023); die Ursachen sind umstritten: Unsicherheit, aufgeschobene Kinderwünsche und Impfeffekte werden diskutiert.',
     draw: (f) =>
       lineChart(f, {
         // Births held ~100 through 2021 (795k, the highest since 1997),
@@ -3505,6 +3889,20 @@ export const POOL: Dashboard[] = [
         ]),
       }),
   },
+  trendCard(
+    'de-deaths-raw',
+    'Rohe Sterbefälle · Deutschland',
+    'Registrierte Gestorbene · 🇩🇪 · jährlich',
+    DE_DEATHS_PANEL,
+    red,
+    (v) => deInt(v),
+    465,
+    eraMarkers(2015, 2025, [
+      [2020, '🦠 Corona 2020'],
+      [2022, '🦠 Höchststand'],
+    ]),
+    'Destatis · Sonderauswertung Sterbefälle, jährlich in Deutschland registrierte Gestorbene — Rohzahlen aus dem Sterberegister, ohne Modell, ohne Basislinie, ohne Altersstandardisierung. Der Aufwärtstrend ist großteils demografisch: Die Bevölkerung altert, daher steigen die absoluten Sterbefälle auch bei gleichbleibender altersspezifischer Sterblichkeit. Der Anstieg 2020–22 liegt darüber, 2023–25 sinken wieder Richtung Trend.',
+  ),
   {
     id: 'covid-myocarditis',
     title: 'Myokarditis nach mRNA-Impfung · nach Alter und Geschlecht',
@@ -3519,8 +3917,8 @@ export const POOL: Dashboard[] = [
         // mostly-mild adverse effect — kept strictly to the published data.
         label: 'Myokarditis · Fälle je 100.000 · nach 2. mRNA-Dosis',
         value: 10.6,
-        fmt: (v) => `${localeNum(v, 1)}`,
-        rowFmt: (v) => `${localeNum(v, 1)}`,
+        fmt: (v) => `${localeNumTrim(v, 1)}`,
+        rowFmt: (v) => `${localeNumTrim(v, 1)}`,
         delta: null,
         color: red,
         unit: '',
@@ -3532,6 +3930,62 @@ export const POOL: Dashboard[] = [
           { name: 'Frauen 16–24', v: 1.0 },
           { name: 'Männer 30–49', v: 0.7 },
           { name: 'Frauen 25+', v: 0.2 },
+        ],
+      }),
+  },
+  {
+    id: 'covid-vax-reports',
+    title: 'Impf-Verdachtsmeldungen · COVID',
+    source:
+      'EMA EudraVigilance & US-VAERS (CDC/FDA) · passive Spontan-Meldesysteme: jede Person kann melden, die Fälle sind NICHT auf Ursächlichkeit geprüft. Werte je Mio. verabreichter Dosen, gerundet — Größenordnung Stand 2023 (EEA rund 1 Mrd., USA rund 0,7 Mrd. Dosen). Eine Meldung ist kein Nachweis eines durch die Impfung verursachten Schadens: rund 90 % sind nicht schwerwiegend, gemeldete Todesfälle sind zeitlich assoziiert (überwiegend Hochbetagte), nicht kausal belegt. Tatsächlich belegte Risiken: siehe Karte „Belegte Impfrisiken".',
+    draw: (f) =>
+      // Passive spontaneous-report systems (EudraVigilance, VAERS): the counts
+      // are unverified SUSPICIONS, not confirmed harm. Drawn per million doses
+      // as a funnel — most reports non-serious, death reports temporally
+      // associated (mostly the elderly), not causally established. Amber (not
+      // red) signals "unverified". The source note and the paired
+      // "belegte Risiken" card carry the interpretation; kept honest per the
+      // agencies' own warning that a report ≠ causation.
+      hBarChart(f, {
+        label: 'Verdachtsmeldungen je Mio. Dosen · COVID-Impfstoffe',
+        value: 1500,
+        fmt: (v) => `${localeNum(v, 0)}`,
+        rowFmt: (v) => `${localeNum(v, 0)}`,
+        delta: null,
+        color: yellow,
+        unit: '',
+        rows: [
+          { name: 'Meldungen gesamt', v: 1500, sub: tr('~90 % nicht schwerwiegend') },
+          { name: 'schwerwiegend gemeldet', v: 150 },
+          { name: 'Todesfall gemeldet', v: 30, sub: tr('zeitlich assoziiert, nicht kausal') },
+        ],
+      }),
+  },
+  {
+    id: 'covid-vax-risks',
+    title: 'Belegte Impfrisiken · COVID',
+    source:
+      'CDC/EMA/Fachliteratur · in kontrollierten Studien bestätigte Nebenwirkungsraten je Mio. Dosen, je Impfstoff und Gruppe — Größenordnungen, gerundet. Myokarditis: junge Männer nach 2. mRNA-Dosis, meist milder Verlauf (Oster et al., JAMA 2022; Moderna höher). TTS/VITT: seltene Thrombosen mit Thrombozytopenie nach Vektorimpfstoffen (AstraZeneca/J&J), v. a. Jüngere. Anaphylaxie rund 2–5/Mio. Diese Raten messen tatsächliche Gefährlichkeit — anders als ungeprüfte Verdachtsmeldungen (siehe Karte „Impf-Verdachtsmeldungen").',
+    draw: (f) =>
+      // Adjudicated adverse-event rates from controlled studies, per million
+      // doses — the figures that actually measure risk, unlike raw reports.
+      // Each bar is a different product/group, so `sub` carries the denominator;
+      // kept to the published, mostly-mild findings (matches the myocarditis
+      // card's boys-16–17 rate of 10.6/100k = ~106/Mio).
+      hBarChart(f, {
+        label: 'Belegte Nebenwirkungen je Mio. Dosen · COVID',
+        value: 106,
+        fmt: (v) => `${localeNum(v, 0)}`,
+        rowFmt: (v) => `${localeNum(v, 0)}`,
+        delta: null,
+        color: red,
+        unit: '',
+        rows: [
+          { name: 'Myokarditis', v: 106, sub: tr('junge ♂ · 2. mRNA-Dosis') },
+          { name: 'TTS-Thrombose', v: 15, sub: 'AstraZeneca' },
+          { name: 'Guillain-Barré', v: 6, sub: tr('Vektorimpfstoff') },
+          { name: 'Anaphylaxie', v: 5, sub: 'mRNA' },
+          { name: 'TTS-Thrombose', v: 4, sub: 'J&J' },
         ],
       }),
   },

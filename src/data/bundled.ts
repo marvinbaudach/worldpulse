@@ -8,9 +8,11 @@ import { localeNum, localePct, t as tr } from '../i18n';
 import type { TrendSeries } from './store';
 import {
   compareSeries,
+  compareSeriesLog,
   interpAt,
   niceScale,
   norm,
+  rawTrend,
   resample,
   trend,
   yearly,
@@ -460,6 +462,41 @@ export const INDUSTRY_COMPARE = compareSeries(
   (v) => `${localeNum(v, 0)}`,
   /** Germany's latest index level, for the headline. */
   { deuLatest: 85 },
+);
+
+// Employees in the German automotive industry (VDA/Destatis, "Beschäftigte in
+// der Automobilindustrie", persons). The story: a post-2008 dip, the climb to
+// the 2018 record (~834k, the boom peak), then the slide the EV transition and
+// weak home demand drove — 2024 avg 772.9k, and by Q3 2025 ~721k, the lowest
+// since 2011 (~100k jobs gone since 2019). Pre-2015 anchors are rough.
+export const DE_AUTO_JOBS_PANEL: TrendSeries = trend(
+  [
+    [2005, 780000], [2010, 710000], [2013, 760000], [2016, 808000],
+    [2018, 834000], [2019, 833000], [2020, 809000], [2021, 786000],
+    [2022, 780000], [2023, 780000], [2024, 773000], [2025, 721000],
+  ],
+  (v) => localeNum(Math.round(v), 0),
+  ['2005', '2013', '2019', 'heute'],
+);
+
+// Oil (crude + products) through the Strait of Hormuz, million barrels/day,
+// monthly Jan 2024 → Jul 2026. ~20 Mb/d in normal times = ~20% of world
+// petroleum liquids; ~3,000 ships/month (~100/day), 50–60% of them tankers.
+// The 2026 war (Israel/US strikes on Iran from late Feb) collapsed transits to
+// ~191 ships in all of April (~6/day, ~5% of normal); flows only recover after
+// the mid-June US–Iran deal. Baseline is firm (EIA/IEA/Kpler); the war-month
+// values are rough estimates — traffic ran "dark" with transponders off.
+export const HORMUZ_OIL_PANEL: TrendSeries = rawTrend(
+  [
+    // 2024 — steady baseline
+    20.5, 20.5, 20.6, 20.5, 20.4, 20.6, 20.5, 20.5, 20.6, 20.7, 20.5, 20.6,
+    // 2025 — steady baseline
+    21.0, 20.9, 20.9, 20.8, 20.7, 20.9, 20.4, 20.2, 20.1, 20.2, 20.4, 20.6,
+    // 2026 — Jan normal, war from late Feb, April trough, June deal, July recovering
+    20.5, 18.0, 6.0, 3.0, 4.0, 8.0, 11.0,
+  ],
+  (v) => `${localeNum(v, 0)}`,
+  ['2024', '2025', '2026', 'heute'],
 );
 
 // Share of Germany's population with a migration background, %
@@ -1487,6 +1524,98 @@ export const WEALTH_DIVERGE_COMPARE = compareSeries(
   { richLatest: 3.9 },
 );
 
+// OECD price-to-income ratio (nominal house prices ÷ nominal disposable income
+// per head), indexed to 2015 = 100 — the standard "how many years of income a
+// home costs" gauge. Germany fell through the 2000s, then the zero-rate decade
+// drove a boom past 130 before the 2022 rate shock corrected it; the US rebuilt
+// past its 2006 bubble peak. Higher index = ownership drifting further out of
+// reach of a normal income. Rounded to whole index points.
+export const HOME_PRICE_INCOME_COMPARE = compareSeries(
+  [
+    { name: '🇩🇪 Deutschland', pts: [[2000, 98], [2005, 90], [2009, 86], [2012, 94], [2015, 100], [2018, 116], [2020, 124], [2022, 135], [2024, 127]] },
+    { name: '🇺🇸 USA', pts: [[2000, 78], [2006, 118], [2009, 92], [2012, 84], [2015, 100], [2018, 108], [2020, 112], [2022, 133], [2024, 129]] },
+  ],
+  (v) => `${Math.round(v)}`,
+  /** Latest German price-to-income index, for the headline. */
+  { deLatest: 127 },
+);
+
+// Investor share of US home purchases (Redfin): the share of homes bought by
+// investors rather than owner-occupiers. Elevated in the mid-2000s bubble, it
+// jumped after the 2008 crash when Wall Street (Blackstone → Invitation Homes,
+// from 2012) industrialised buying up foreclosed single-family homes into a
+// rental asset class — and stuck near one in five purchases. Rounded shares.
+export const INVESTOR_HOMES_PANEL: TrendSeries = trend(
+  [[2000, 6], [2005, 12], [2009, 14], [2012, 15], [2016, 13], [2020, 15], [2021, 20], [2022, 19], [2024, 18]],
+  (v) => `${Math.round(v)}%`,
+  ['2000', '2008', '2016', 'heute'],
+);
+
+// Share of US household net worth by age of the head of household (Federal
+// Reserve Distributional Financial Accounts). The under-40 cohort's slice
+// roughly halved from the early 1990s while the 55–69 boomer cohort's climbed
+// past 40%: wealth is ageing out of reach of the young even as the total grew.
+// Rounded shares on one shared axis, so the widening gap reads directly.
+export const YOUNG_WEALTH_COMPARE = compareSeries(
+  [
+    { name: '🧑 Unter 40', pts: [[1990, 12], [2000, 9], [2008, 7], [2012, 5.6], [2016, 5.4], [2020, 5.9], [2024, 6.8]] },
+    { name: '👴 55–69 · Boomer', pts: [[1990, 30], [2000, 33], [2008, 37], [2012, 40], [2016, 42], [2020, 43], [2024, 41]] },
+  ],
+  (v) => `${Math.round(v)}%`,
+  /** Latest under-40 wealth share, for the headline. */
+  { youngLatest: 6.8 },
+);
+
+// German cash infrastructure in retreat (Deutsche Bundesbank Bankstellen-
+// statistik for branches; Bundesbank/EHI for ATMs). Bank branches (Zweigstellen
+// of domestic credit institutions, head offices excluded) collapsed from ~57k
+// in 2000 to under 19k — a third of the network gone. ATMs climbed to a ~2018
+// peak near 58k, then turned down too as banks thinned the fleet. Both curves
+// point the same way: the physical rails for cash are being pulled up, the
+// quiet groundwork under the cashless / programmable-money push. Rounded counts
+// on one shared axis so the two declines read together.
+export const DE_BANK_INFRA_COMPARE = compareSeries(
+  [
+    { name: '🏦 Bankstellen', pts: [[2000, 56900], [2004, 47800], [2008, 39700], [2012, 36200], [2016, 32000], [2019, 26700], [2021, 21700], [2023, 19600], [2024, 18900]] },
+    { name: '🏧 Geldautomaten', pts: [[2000, 44000], [2005, 52000], [2010, 57000], [2015, 59000], [2018, 58400], [2020, 56000], [2022, 54500], [2023, 51300], [2024, 50000]] },
+  ],
+  (v) => localeNum(v, 0),
+  /** Latest branch count, for the headline. */
+  { filialenLatest: 18900 },
+);
+
+// Share of total US household net worth held by the richest 1% vs. the "middle
+// class" — the 50th–90th wealth percentile, the next 40% below the top decile
+// (US Federal Reserve Distributional Financial Accounts). The two lines cross
+// around 2014: the top 1% now owns more of the nation's wealth than that entire
+// middle 40% put together, a gap that keeps widening. Rounded shares on one
+// shared axis, so the crossover reads directly.
+export const US_MIDDLE_WEALTH_COMPARE = compareSeries(
+  [
+    { name: '🏠 Mittelschicht', pts: [[1990, 36.4], [2000, 33.2], [2008, 30.6], [2012, 29.1], [2016, 27.4], [2020, 26.6], [2021, 26.0], [2024, 25.0]] },
+    { name: '💰 Reichstes 1 %', pts: [[1990, 23.6], [2000, 27.5], [2008, 28.4], [2012, 28.6], [2016, 29.7], [2020, 30.9], [2021, 31.9], [2024, 30.8]] },
+  ],
+  (v) => `${Math.round(v)}%`,
+  /** Latest middle-class wealth share, for the headline. */
+  { middleLatest: 25 },
+);
+
+// US non-mortgage consumer debt by type ($ trillions, NY Fed Household Debt and
+// Credit Report). Student debt exploded ~7× since 2003 as tuition outran wages;
+// auto loans more than doubled; credit-card balances dipped after 2008, then
+// pushed to fresh records past $1.2tn. The borrowing that fills the gap left by
+// a stagnant middle-class paycheck — and the mortgage isn't even in the frame.
+export const US_CONSUMER_DEBT_COMPARE = compareSeries(
+  [
+    { name: '🎓 Studienkredite', pts: [[2003, 0.24], [2008, 0.64], [2013, 1.08], [2016, 1.28], [2019, 1.49], [2022, 1.60], [2024, 1.61]] },
+    { name: '🚗 Autokredite', pts: [[2003, 0.70], [2008, 0.79], [2013, 0.86], [2016, 1.14], [2019, 1.33], [2022, 1.52], [2024, 1.66]] },
+    { name: '💳 Kreditkarten', pts: [[2003, 0.69], [2008, 0.87], [2013, 0.66], [2016, 0.75], [2019, 0.93], [2021, 0.86], [2024, 1.21]] },
+  ],
+  (v) => `$${localeNum(v, 2)} ${tr('Bio.')}`,
+  /** Latest student-debt total, for the headline. */
+  { studentLatest: 1.61 },
+);
+
 // Food vs. fertilizer price indices (FAO Food Price Index, 2014–16 = 100;
 // World Bank fertilizer index, rebased onto the same window). The two move
 // together, and fertilizer swings harder: natural gas is the feedstock for
@@ -1501,6 +1630,80 @@ export const FOOD_FERT_COMPARE = compareSeries(
   (v) => `${Math.round(v)}`,
   /** Latest food index, for the headline. */
   { foodLatest: 122 },
+);
+
+// ---------------------------------------------------------------------------
+// Hormuz → fertilizer → food → hunger, the 2026 chain. These three panels play
+// out inside 2024–26 at monthly/annual resolution, with the second half of 2026
+// drawn as a dashed *projection* (see `projectFrom` on the cards): the Strait of
+// Hormuz closure of spring 2026 (Israel/US–Iran war, see HORMUZ_OIL_PANEL)
+// squeezes the gas that feeds nitrogen fertilizer, fertilizer spikes, food
+// follows with a lag, and the crisis figure is projected to climb into the
+// autumn/winter. The projected tails are scenario estimates, not measurement —
+// captions say so.
+
+// European wholesale gas (ICE TTF front-month, €/MWh), monthly Jan 2024 → Dec
+// 2026. Qatar ships ~20% of world LNG, all of it through Hormuz, and natural gas
+// is the feedstock for nitrogen (ammonia/urea) fertilizer — so a Gulf gas
+// squeeze lands on the fertilizer bill first. Baseline (2024–25 ~€30–52) is
+// firm; the 2026 war spike (Mar–Apr) and the projected winter re-rise (from Aug,
+// dashed on the card) stay well below the 2022 crisis (~€235) — a partial,
+// temporary disruption, not 2022. Jul 2026 (~€66) is "now".
+export const GAS_NITROGEN_PANEL: TrendSeries = rawTrend(
+  [
+    // 2024 — post-crisis normalization
+    30, 29, 27, 29, 33, 34, 35, 37, 38, 40, 44, 42,
+    // 2025 — mild winter peak, calm summer
+    48, 46, 42, 39, 35, 33, 34, 36, 40, 45, 49, 52,
+    // 2026 — Jan winter-elevated, war spike Mar–Apr, mid-June deal eases it,
+    // then the projected re-rise into winter demand (Aug→Dec)
+    50, 56, 80, 100, 90, 72, 66, 71, 84, 100, 120, 136,
+  ],
+  (v) => `${localeNum(v, 0)} €`,
+  ['2024', '2025', '2026', 'Winter'],
+);
+
+// Fertilizer vs. food price indices (2014–16 = 100), monthly Jan 2024 → Dec
+// 2026, on one shared scale so the lead–lag reads directly. Fertilizer (World
+// Bank) tracks the gas shock and swings hard (toward the 2022 ~230 level); food
+// (FAO Food Price Index) follows a few months later and milder. Both tails from
+// Aug 2026 are the dashed projection on the card. Jul 2026 is "now".
+const FERT_2026_MONTHLY = [
+  112, 111, 110, 110, 112, 113, 113, 114, 114, 115, 116, 116,
+  118, 118, 117, 116, 115, 114, 116, 118, 121, 125, 129, 133,
+  139, 152, 182, 208, 196, 176, 168, 182, 201, 216, 224, 219,
+];
+const FOOD_2026_MONTHLY = [
+  122, 121, 121, 122, 122, 123, 123, 123, 124, 124, 125, 125,
+  126, 126, 125, 125, 124, 124, 125, 127, 129, 131, 133, 135,
+  138, 141, 146, 152, 155, 153, 152, 155, 159, 162, 164, 165,
+];
+export const FERT_FOOD_SHOCK = (() => {
+  const all = [...FERT_2026_MONTHLY, ...FOOD_2026_MONTHLY];
+  const s = niceScale(Math.min(...all), Math.max(...all), (v) => `${Math.round(v)}`);
+  return {
+    rows: [
+      { name: '🧪 Dünger', data: norm(FERT_2026_MONTHLY, s.lo, s.hi) },
+      { name: '🌾 Nahrung', data: norm(FOOD_2026_MONTHLY, s.lo, s.hi) },
+    ],
+    ticks: s.ticks,
+    /** Fertilizer index at "now" (Jul 2026), for the headline. */
+    fertLatest: FERT_2026_MONTHLY[30],
+  };
+})();
+
+// People in acute food crisis — IPC/CH Phase 3+ ("crisis or worse") in the
+// countries the Global Report on Food Crises (FSIN/WFP/FAO/EU) covers, millions.
+// This is the "famine-risk" tally (distinct from FAO chronic undernourishment in
+// HUNGER_PANEL): a steady climb from ~108M (2016) to ~295M (2024), then a dashed
+// projection up as the 2026 price shock passes through import-dependent regions.
+export const FOOD_CRISIS_PANEL: TrendSeries = trend(
+  [
+    [2016, 108], [2017, 124], [2018, 113], [2019, 135], [2020, 155],
+    [2021, 193], [2022, 258], [2023, 282], [2024, 295], [2025, 300], [2026, 345],
+  ],
+  (v) => `${Math.round(v)} ${tr('Mio')}`,
+  ['2016', '2019', '2023', '2026'],
 );
 
 // German statutory pension level ("Sicherungsniveau vor Steuern": standard
@@ -1586,6 +1789,13 @@ export const YOUNG_HOME_COMPARE = compareSeries(
   [
     { name: 'England 25–34', pts: [[1991, 67], [2004, 59], [2014, 36], [2024, 45]] },
     { name: 'USA unter 35', pts: [[1991, 38], [2004, 43], [2016, 35], [2024, 36]] },
+    // Germany is Europe's homeownership laggard, and it shows youngest: just
+    // under 30% of under-35s owned three decades ago (IW Köln), fewer than one
+    // in five today and still falling. France sits between the two: young
+    // access plateaued after the mid-80s and slipped through the 2000s
+    // (INSEE / Banque de France), with only a slight recent recovery.
+    { name: 'Deutschland unter 35', pts: [[1991, 28], [2004, 25], [2014, 20], [2024, 15]] },
+    { name: 'Frankreich unter 35', pts: [[1991, 34], [2004, 31], [2013, 27], [2024, 30]] },
   ],
   (v) => `${localePct(v, 0)}`,
   /** Latest England share, for the headline. */
@@ -1656,6 +1866,138 @@ export const AI_COMPUTE_PANEL: TrendSeries = trend(
   ],
   pow10Label,
   ['2012', '2017', '2021', 'heute'],
+);
+
+// ---------------------------------------------------------------------------
+// Technological-progress log panels. Each spans 8–15 orders of magnitude, so a
+// linear axis would flatten everything before the last few years against the
+// baseline. They ride the same idea as AI_COMPUTE_PANEL — interpolate in log10
+// space so geometric growth reads as the straight line it is — but through one
+// shared helper that pins explicit decade bounds and formats one tick per few
+// decades from the real (un-logged) value. The area/line renderers ignore the
+// headline `value`/`fmt`; magnitude is carried entirely by these y-axis ticks.
+
+/**
+ * Log-axis trend panel from sparse [year, value] anchors: interpolate in log10
+ * space, normalise against the [loDec, hiDec] decade window, and label every
+ * `stepDec` decades via `tickFmt` (which receives the real decade value, e.g.
+ * 1e6, not the exponent). Returns the same shape trend() does, so trendCard()
+ * consumes it unchanged. `latest` holds the real last value (renderer-inert).
+ */
+function logPanel(
+  points: [number, number][],
+  loDec: number,
+  hiDec: number,
+  stepDec: number,
+  tickFmt: (real: number) => string,
+  xLabels: string[],
+): TrendSeries {
+  const series = yearly(points.map(([yr, v]) => [yr, Math.log10(v)] as [number, number]));
+  const ticks: string[] = [];
+  for (let d = loDec; d <= hiDec + 1e-9; d += stepDec) ticks.push(tickFmt(10 ** d));
+  return {
+    series: norm(resample(series, 40), loDec, hiDec),
+    ticks,
+    latest: 10 ** series[series.length - 1],
+    yoyPct: 0,
+    xLabels,
+  };
+}
+
+/** Count with a magnitude suffix (1e6 → "1 Mio", 1e9 → "1 Mrd"). */
+function countFmt(real: number): string {
+  if (real >= 1e12) return `${localeNum(real / 1e12, 0)} ${tr('Bio.')}`;
+  if (real >= 1e9) return `${localeNum(real / 1e9, 0)} ${tr('Mrd')}`;
+  if (real >= 1e6) return `${localeNum(real / 1e6, 0)} ${tr('Mio')}`;
+  if (real >= 1e3) return `${localeNum(real / 1e3, 0)}k`;
+  return `${localeNum(real, 0)}`;
+}
+
+/** Dollar amount across the whole range, cents below $1. */
+function dollarFmt(real: number): string {
+  if (real >= 1e12) return `$${localeNum(real / 1e12, 0)} ${tr('Bio.')}`;
+  if (real >= 1e9) return `$${localeNum(real / 1e9, 0)} ${tr('Mrd')}`;
+  if (real >= 1e6) return `$${localeNum(real / 1e6, 0)} ${tr('Mio')}`;
+  if (real >= 1e3) return `$${localeNum(real / 1e3, 0)}k`;
+  if (real >= 1) return `$${localeNum(real, 0)}`;
+  return `${localeNum(real * 100, 1)} ¢`;
+}
+
+/** Feature size in nm, switching to µm at 1000 nm. */
+function nmFmt(real: number): string {
+  return real >= 1000 ? `${localeNum(real / 1000, 0)} µm` : `${localeNum(real, 0)} nm`;
+}
+
+// Moore's law: transistors on a single commercial chip, from the Intel 4004
+// (2,300, 1971) to Nvidia's B200 (208 billion, 2024) — a representative rising
+// envelope of flagship parts, not an exhaustive series. ~8 orders of magnitude,
+// a doubling roughly every two years for half a century. Wikipedia "Transistor
+// count". Ticks 1k / 1 Mio / 1 Mrd / 1 Bio.
+export const MOORE_PANEL: TrendSeries = logPanel(
+  [
+    [1971, 2_300], [1978, 29_000], [1982, 134_000], [1985, 275_000],
+    [1989, 1_180_000], [1993, 3_100_000], [1997, 7_500_000], [2000, 42_000_000],
+    [2006, 291_000_000], [2010, 1_170_000_000], [2016, 7_200_000_000],
+    [2020, 16_000_000_000], [2022, 114_000_000_000], [2024, 208_000_000_000],
+  ],
+  3,
+  12,
+  3,
+  countFmt,
+  ['1971', '1989', '2007', 'heute'],
+);
+
+// Chip feature size (process node) shrinking from 10 µm (1971) to 2 nm (2025),
+// log10(nm). The falling twin of Moore's law: smaller structures pack more
+// transistors. Node names below ~22 nm are marketing labels, not physical gate
+// lengths — flagged in the card source. Ticks 1 nm / 10 nm / 100 nm / 1 µm / 10 µm.
+export const PROCESS_NODE_PANEL: TrendSeries = logPanel(
+  [
+    [1971, 10_000], [1975, 3_000], [1982, 1_500], [1985, 1_000], [1989, 800],
+    [1994, 600], [1997, 250], [1999, 180], [2001, 130], [2004, 90], [2006, 65],
+    [2008, 45], [2010, 32], [2012, 22], [2014, 14], [2017, 10], [2018, 7],
+    [2020, 5], [2022, 3], [2025, 2],
+  ],
+  0,
+  4,
+  1,
+  nmFmt,
+  ['1971', '1989', '2007', 'heute'],
+);
+
+// Cost of computing: US dollars per GFLOPS, ~$19 billion (1961) to fractions of
+// a cent (2023) — ~12 orders of magnitude, hardware cost, not inflation
+// adjusted. Wikipedia "FLOPS", rounded milestones. Ticks 0,1 ¢ / $1 / $1k /
+// $1 Mio / $1 Mrd / $1 Bio.
+export const COMPUTE_COST_PANEL: TrendSeries = logPanel(
+  [
+    [1961, 1.87e10], [1984, 1.87e7], [1997, 42_000], [2000, 1_000], [2003, 100],
+    [2007, 52], [2011, 1.8], [2013, 0.22], [2015, 0.08], [2017, 0.03],
+    [2020, 0.013], [2023, 0.006],
+  ],
+  -3,
+  12,
+  3,
+  dollarFmt,
+  ['1961', '1982', '2003', 'heute'],
+);
+
+// Cost to sequence one human genome, US dollars: $95 M in 2001 to ~$200 today
+// (NHGRI "Sequencing Cost"). The 2008 cliff is the switch to next-generation
+// sequencing; the curve falls faster than Moore's law — noted in the card
+// source. Ticks $100 / $10k / $1 Mio / $100 Mio.
+export const GENOME_COST_PANEL: TrendSeries = logPanel(
+  [
+    [2001, 95_263_072], [2003, 50_000_000], [2004, 20_000_000], [2006, 14_000_000],
+    [2007, 10_000_000], [2008, 3_000_000], [2009, 100_000], [2010, 50_000],
+    [2012, 7_000], [2014, 4_900], [2015, 1_400], [2016, 1_100], [2019, 942],
+    [2021, 562], [2022, 525], [2024, 200],
+  ],
+  2,
+  8,
+  2,
+  dollarFmt,
+  ['2001', '2009', '2017', 'heute'],
 );
 
 // Training cost of the most expensive AI run per year, million USD on a
@@ -1840,6 +2182,25 @@ export const RHEINMETALL_PANEL: TrendSeries = trend(
   ],
   (v) => `${localeNum(v, 0)} €`,
   ['2014', '2018', '2022', 'heute'],
+);
+
+/**
+ * Defence stocks indexed to the Zeitenwende (Jahresende 2021 ≈ Anfang 2022 =
+ * ×1), on a log axis. Rheinmetall's factors are its own year-end anchors ÷83;
+ * "EU-Rüstung" is the European aerospace-&-defence sector (STOXX-style proxy),
+ * "US-Rüstung" the iShares U.S. Aerospace & Defense ETF (ITA). The point: the
+ * whole sector re-rated after the invasion — Rheinmetall by far the most.
+ * Illustrative, rounded anchors like the rest of the bundled series.
+ */
+export const DEFENSE_COMPARE = compareSeriesLog(
+  [
+    { name: '🇩🇪 Rheinmetall', pts: [[2019, 1.2], [2020, 1.05], [2021, 1.0], [2022, 2.2], [2023, 3.5], [2024, 7.4], [2025, 19.3]] },
+    { name: '🇪🇺 EU-Rüstung', pts: [[2019, 1.0], [2020, 1.0], [2021, 1.0], [2022, 1.3], [2023, 1.7], [2024, 2.4], [2025, 4.2]] },
+    { name: '🇺🇸 US-Rüstung', pts: [[2019, 1.0], [2020, 1.0], [2021, 1.0], [2022, 1.1], [2023, 1.25], [2024, 1.5], [2025, 2.0]] },
+  ],
+  (v) => `×${localeNum(v, 0)}`,
+  /** Rheinmetall's latest multiple, for the headline. */
+  { rheinLatest: 19.3 },
 );
 
 /** Gold, USD/troy ounce, yearly average; the last anchor is the late-2025 level. */
@@ -2097,7 +2458,7 @@ export const ZOMBIE_PANEL: TrendSeries = trend(
 
 // ---------------------------------------------------------------------------
 // Germany, monthly-sampled 2020–2024: cumulative full-vaccination coverage
-// (RKI via OWID) against excess mortality (OWID P-score — share of deaths
+// (official reporting via OWID) against excess mortality (OWID P-score — share of deaths
 // above the pre-pandemic projection, monthly, rounded/smoothed). Shared
 // percent axis so the timing of waves and rollout reads directly. The chart
 // makes no causal claim: winter waves, heat summers and an ageing baseline
@@ -2144,3 +2505,23 @@ export const DE_VAX_BIRTHS = {
   ],
   ticks: vaxBirthScale.ticks,
 };
+
+// Germany, annual registered deaths (Sterbefälle) 2015–2025 — Destatis
+// Sonderauswertung. Raw counts straight from the death registers: no model,
+// no pre-pandemic baseline, no age-standardisation — the metric hardest to
+// "adjust". The upward drift is largely demographic (an ageing population
+// raises absolute deaths even at unchanged age-specific mortality); the
+// 2020–22 rise sits on top of that trend, 2023–25 fall back toward it.
+// Every anchor is a verified Destatis figure (fetched 2026-07-09) — no
+// interpolated stand-ins on this card.
+const DE_DEATHS_PTS: [number, number][] = [
+  [2015, 925200], [2016, 910902], [2017, 932272], [2018, 954874],
+  [2019, 939520], [2020, 985572], [2021, 1023687], [2022, 1066341],
+  [2023, 1020907], [2024, 1007758], [2025, 1003130],
+];
+export const DE_DEATHS_PANEL: TrendSeries = trend(
+  DE_DEATHS_PTS,
+  (v) => `${localeNum(v / 1e6, 2)} ${tr('Mio')}`,
+  ['2015', '2018', '2021', '2025'],
+  32,
+);

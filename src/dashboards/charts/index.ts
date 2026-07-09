@@ -7,12 +7,10 @@ export { type BarCfg, type HBarCfg, type WarLossesCfg, barChart, hBarChart, warL
 export { type NukeMapCfg, type ChoroplethCfg, type TempMapCfg, type MideastCfg, nukeMap, choroplethMap, tempMap, mideastMap } from './map';
 export {
   type WealthSplitCfg,
-  type TimelineCfg,
   type DebtClockCfg,
   type ForecastCfg,
   type TreemapCfg,
   wealthSplit,
-  timelineChart,
   debtClock,
   weatherForecast,
   treemap,

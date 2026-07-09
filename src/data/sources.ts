@@ -67,10 +67,20 @@ async function loadWeather(): Promise<void> {
 
 interface MeteoCurrent {
   current: { temperature_2m: number };
+  // Today's low/high at the same anchor (forecast_days=1), for the range list.
+  daily?: { temperature_2m_max: number[]; temperature_2m_min: number[] };
+}
+
+/** Current temp per ISO plus today's low/high, for the map and the range list. */
+interface WorldTemp {
+  byIso: Record<string, number>;
+  rangeByIso: Record<string, { min: number; max: number }>;
 }
 
 async function loadWorldTemp(): Promise<void> {
-  const byIso = await cached('world-temp', 30 * MIN, async () => {
+  // Cache key bumped (-v2) when the payload gained the daily min/max range, so a
+  // stale entry in the old {iso: temp} shape can't deserialize into the new one.
+  const { byIso, rangeByIso } = await cached<WorldTemp>('world-temp-v2', 30 * MIN, async () => {
     const CHUNK = 60;
     const chunks: TempAnchor[][] = [];
     for (let i = 0; i < TEMP_ANCHORS.length; i += CHUNK) {
@@ -82,22 +92,28 @@ async function loadWorldTemp(): Promise<void> {
           'https://api.open-meteo.com/v1/forecast' +
             `?latitude=${part.map((a) => a.lat.toFixed(2)).join(',')}` +
             `&longitude=${part.map((a) => a.lon.toFixed(2)).join(',')}` +
-            '&current=temperature_2m',
+            '&current=temperature_2m' +
+            '&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&timezone=auto',
         ),
       ),
     );
-    const out: Record<string, number> = {};
+    const temps: Record<string, number> = {};
+    const ranges: Record<string, { min: number; max: number }> = {};
     results.forEach((res, ci) => {
       // A single-location query returns an object, multi-location an array.
       const list = Array.isArray(res) ? res : [res];
       list.forEach((loc, j) => {
-        out[chunks[ci][j].iso] = loc.current.temperature_2m;
+        const iso = chunks[ci][j].iso;
+        temps[iso] = loc.current.temperature_2m;
+        const max = loc.daily?.temperature_2m_max?.[0];
+        const min = loc.daily?.temperature_2m_min?.[0];
+        if (max !== undefined && min !== undefined) ranges[iso] = { min, max };
       });
     });
-    return out;
+    return { byIso: temps, rangeByIso: ranges };
   });
 
-  live.worldTemp = { byIso, rows: hottestRows(byIso) };
+  live.worldTemp = { byIso, rows: hottestRows(byIso, rangeByIso) };
 }
 
 // ---------------------------------------------------------------------------

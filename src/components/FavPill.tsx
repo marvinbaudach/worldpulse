@@ -15,16 +15,18 @@ import { glassSurface } from './glass';
 // ping still play here — FavStar owns that; the pill just anchors it.
 const Pill = styled.button<{ $active: boolean }>`
   position: fixed;
-  /* One 42px button plus a gap to the left of the "⋯" menu (right: 16px). */
-  right: 68px;
+  /* One 56px button plus a 12px gap to the left of the "⋯" menu (right: 16px):
+     16 + 56 + 12 = 84. 56px keeps the tap target comfortably above the 44px
+     minimum and reads as an app-scale control on phones. */
+  right: 84px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
   z-index: 12;
-  width: 42px;
-  height: 42px;
+  width: 56px;
+  height: 56px;
   border: none;
   border-radius: 999px;
   color: ${(p) => (p.$active ? SERIES[2] : 'rgba(255, 255, 255, 0.7)')};
-  font: 600 18px/1 inherit;
+  font: 600 24px/1 inherit;
   cursor: pointer;
   transition: transform 120ms ease;
   ${glassSurface}

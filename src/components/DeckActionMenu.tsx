@@ -12,12 +12,12 @@ const MenuButton = styled.button`
   right: 16px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
   z-index: 12;
-  width: 42px;
-  height: 42px;
+  width: 56px;
+  height: 56px;
   border: none;
   border-radius: 999px;
   color: #cfe4ff;
-  font: 700 20px/1 inherit;
+  font: 700 26px/1 inherit;
   cursor: pointer;
   ${glassSurface}
 `;
@@ -26,7 +26,8 @@ const MenuButton = styled.button`
 const Menu = styled.div`
   position: fixed;
   right: 16px;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 68px);
+  /* Clears the 56px button (top at inset + 74px) with an 8px gap. */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 82px);
   z-index: 13;
   display: flex;
   flex-direction: column;

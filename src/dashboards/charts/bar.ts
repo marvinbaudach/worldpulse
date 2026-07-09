@@ -86,7 +86,9 @@ export interface HBarCfg {
   fmt?: (v: number) => string;
   /** Per-row value formatter (e.g. percentages); same fallback. */
   rowFmt?: (v: number) => string;
-  rows: { name: string; v: number }[];
+  /** `sub` is a small pre-translated annotation after the name (e.g. a
+      per-area density) — compose it with `tr()` in the card. */
+  rows: { name: string; v: number; sub?: string }[];
 }
 
 /** Horizontal top-N bars sliding in, every row direct-labeled. */
@@ -130,7 +132,10 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
       // tells us how much room the label has before it would collide with it.
       const labelX = pad + 9 * u;
       const labelMax = w - pad - 9 * u - ctx.measureText(valueStr).width - 10 * u - labelX;
-      ctx.fillText(ellipsize(ctx, withFlag(d.name), labelMax), labelX, ty);
+      // No room for a second line here — the annotation joins the label and
+      // shares its ellipsis budget.
+      const label = d.sub ? `${withFlag(d.name)} · ${d.sub}` : withFlag(d.name);
+      ctx.fillText(ellipsize(ctx, label, labelMax), labelX, ty);
       ctx.textAlign = 'right';
       ctx.fillText(valueStr, w - pad - 9 * u, ty);
       ctx.textAlign = 'left';
@@ -154,7 +159,18 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
     const labelMax = w - pad - ctx.measureText(valueStr).width - 12 * u - pad;
     ctx.fillStyle = INK_SECONDARY;
     ctx.font = `500 ${17 * u}px ${FONT}`;
-    ctx.fillText(ellipsize(ctx, withFlag(d.name), labelMax), pad, y + 14 * u);
+    const nameStr = ellipsize(ctx, withFlag(d.name), labelMax);
+    ctx.fillText(nameStr, pad, y + 14 * u);
+    // Secondary annotation trails the name, smaller and muted so the row
+    // still reads name → value first; it yields (ellipsizes to nothing)
+    // before ever pushing into the right-aligned value.
+    if (d.sub) {
+      const subX = pad + ctx.measureText(nameStr).width + 8 * u;
+      ctx.fillStyle = MUTED;
+      ctx.font = `500 ${13 * u}px ${FONT}`;
+      const subMax = pad + labelMax - subX;
+      if (subMax > 24 * u) ctx.fillText(ellipsize(ctx, d.sub, subMax), subX, y + 14 * u);
+    }
     ctx.fillStyle = INK;
     ctx.font = `600 ${17 * u}px ${FONT}`;
     ctx.textAlign = 'right';

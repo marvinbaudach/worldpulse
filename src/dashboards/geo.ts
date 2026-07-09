@@ -178,3 +178,80 @@ export const EXECUTIONS_2024: Record<string, number> = {
   CHN: 2000, IRN: 972, SAU: 345, IRQ: 63, SOM: 34, USA: 25,
   EGY: 13, SGP: 9, KWT: 6, AFG: 6, YEM: 1,
 };
+
+// ---------------------------------------------------------------------------
+// Menschenhandel / moderne Sklaverei. Estimated people living in modern
+// slavery per 1,000 population — Walk Free, Global Slavery Index 2023 (drawing
+// on 75 national surveys; the per-country table reproduced by World Population
+// Review). Prevalence shades every country, so the map shows a rate, not a
+// head-count: the belt runs North Korea → the Gulf → the Sahel, driven by
+// state-imposed forced labour (North Korea, Eritrea) and migrant-labour abuse
+// (Gulf states). No live API; rounded estimates, revised at best every ~5 yrs.
+// North Korea (104.6) and Eritrea (90.3) are extrapolated — no survey access.
+export const MODERN_SLAVERY_1K: Record<string, number> = {
+  // Extreme — state-imposed forced labour / no survey access
+  PRK: 104.6, ERI: 90.3,
+  // High
+  MRT: 32.0, SAU: 21.3, TUR: 15.6, TJK: 14.0, ARE: 13.4, RUS: 13.0,
+  AFG: 13.0, KWT: 13.0, UKR: 12.8, MMR: 12.1, LBY: 11.0, YEM: 11.0,
+  // Elevated
+  PAK: 10.6, SSD: 10.3, PNG: 10.3, IRN: 10.3, KHM: 10.0, IRQ: 10.0,
+  SYR: 10.0, THA: 8.8, IND: 8.0, COL: 7.8, JAM: 7.3, PER: 7.1,
+  BGD: 7.0, PHL: 7.0, QAT: 7.0, OMN: 7.0, JOR: 7.0, LBN: 7.0,
+  IDN: 6.7, MEX: 6.6, VEN: 6.5, HTI: 6.2, DOM: 6.0, COD: 6.0,
+  // Moderate
+  SDN: 5.9, NGA: 5.7, ZAF: 5.3, BOL: 5.0, BRA: 5.0, ECU: 5.0,
+  DZA: 5.0, VNM: 5.0, UZB: 5.0, KAZ: 5.0, EGY: 4.9, ETH: 4.6,
+  KEN: 4.5, GHA: 4.4, MAR: 4.2, CHN: 4.0, POL: 3.8, USA: 3.3,
+  ITA: 3.0, ARG: 3.0, CHL: 3.0,
+  // Lower
+  ESP: 2.3, FRA: 2.1, GBR: 1.8, CAN: 1.8, AUS: 1.6, DEU: 1.5,
+  JPN: 1.1, DNK: 0.6, SWE: 0.6, NLD: 0.6, NOR: 0.5, CHE: 0.5,
+};
+
+// Ranked list for the map — highest PREVALENCE (per 1,000), so the list sits on
+// the same scale as the choropleth shading. Absolute victim counts (India ~11
+// Mio etc.) live on the separate 'modern-slavery' bar card, not duplicated
+// here. North Korea and Eritrea are extrapolated (no survey access).
+export const MODERN_SLAVERY_TOP = [
+  { name: 'Nordkorea', v: 104.6 },
+  { name: 'Eritrea', v: 90.3 },
+  { name: 'Mauretanien', v: 32.0 },
+  { name: 'Saudi-Arabien', v: 21.3 },
+  { name: 'Türkei', v: 15.6 },
+];
+
+// ---------------------------------------------------------------------------
+// Drogenhandel / Drogentote. Age-standardised deaths from drug use disorders
+// per 100,000 population — IHME, Global Burden of Disease, latest estimate
+// (UNODC World Drug Report draws on the same GBD figures). Mapped on the
+// Americas + Europe window: the trade's mortality concentrates there and GBD
+// coverage is sparsest in much of Africa/Asia, so the regional crop is honest
+// rather than a mostly-grey world map. The United States (opioid/fentanyl
+// crisis) sits far above everyone; Canada, the Baltics, Russia and Ukraine
+// form a second tier. Rounded estimates. The card measures deaths, NOT
+// trafficking volume — the label says "Drogentote", not turnover.
+export const DRUG_DEATHS_100K: Record<string, number> = {
+  // North America — the outlier
+  USA: 27.0, CAN: 14.0,
+  // Eastern Europe / Baltics / post-Soviet
+  EST: 9.0, RUS: 9.0, UKR: 8.0, LVA: 6.0, LTU: 6.0, BLR: 5.0,
+  // Northern & Western Europe
+  FIN: 5.0, GBR: 5.0, SWE: 5.0, NOR: 4.0, IRL: 4.0, ISL: 4.0,
+  AUT: 3.0, CHE: 3.0, DNK: 3.0, NLD: 2.0, DEU: 2.0, BEL: 2.0,
+  // Southern & Central Europe
+  ESP: 2.0, ITA: 1.6, PRT: 1.6, FRA: 1.5, GRC: 2.0, HRV: 2.0,
+  SRB: 2.0, POL: 2.0, CZE: 2.0, HUN: 1.5, ROU: 1.2, BGR: 1.5,
+  // Latin America
+  BRA: 2.0, ARG: 2.0, COL: 2.0, CHL: 2.0, VEN: 2.0, ECU: 2.0,
+  SLV: 2.0, MEX: 1.5, PER: 1.2, GTM: 1.0, CUB: 1.0, BOL: 1.0,
+};
+
+// Highest-rate countries for the drug-map ranked list (deaths per 100k).
+export const DRUG_DEATHS_TOP = [
+  { name: 'USA', v: 27.0 },
+  { name: 'Kanada', v: 14.0 },
+  { name: 'Estland', v: 9.0 },
+  { name: 'Russland', v: 9.0 },
+  { name: 'Ukraine', v: 8.0 },
+];
