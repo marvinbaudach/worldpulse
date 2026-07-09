@@ -86,7 +86,7 @@ export interface HBarCfg {
   fmt?: (v: number) => string;
   /** Per-row value formatter (e.g. percentages); same fallback. */
   rowFmt?: (v: number) => string;
-  rows: { name: string; v: number }[];
+  rows: { name: string; v: number; sub?: string }[];
 }
 
 /** Horizontal top-N bars sliding in, every row direct-labeled. */
