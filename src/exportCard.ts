@@ -9,6 +9,16 @@ import type { Frame } from './dashboards/draw';
 const EXPORT_W = 1080;
 const EXPORT_H = 1350;
 
+/**
+ * A share image wants attribution, not methodology. Card sources follow the
+ * "Institution · details; caveats" convention, so the institution is the
+ * segment before the first separator. Registry names (CARD_SOURCES) take
+ * precedence and are never trimmed — this only shortens the fallback.
+ */
+function shortSource(source: string): string {
+  return source.split('·')[0].split(';')[0].split('—')[0].trim().replace(/\.$/, '');
+}
+
 /** Render a card's settled frame into a PNG blob (null if canvas is denied). */
 export function cardToPngBlob(dashboard: Dashboard): Promise<Blob | null> {
   const canvas = document.createElement('canvas');
@@ -22,10 +32,12 @@ export function cardToPngBlob(dashboard: Dashboard): Promise<Blob | null> {
   dashboard.draw(frame);
   // A shared PNG travels without the app UI, so it must carry its own
   // attribution: unless the chart painted a source line itself (maps/misc),
-  // stamp the institution — or, failing that, the card's caveat text —
-  // bottom-left in the same muted footer style.
+  // stamp the institution — or, failing that, the card's caveat text cut
+  // down to its institution — bottom-left in the same muted footer style.
   if (!frame.sourceDrawn) {
-    const source = CARD_SOURCES[dashboard.id]?.name ?? dashboard.source;
+    const source =
+      CARD_SOURCES[dashboard.id]?.name ??
+      (dashboard.source ? shortSource(dashboard.source) : undefined);
     if (source) drawSource(frame, source);
   }
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
