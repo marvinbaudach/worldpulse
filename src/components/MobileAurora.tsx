@@ -139,6 +139,12 @@ const FRAG = `
   }
 `;
 
+/** What the mobile background actually resolved to at runtime, for the
+    BuildBadge diagnostic line — framebuffer bit depth and GPU string when the
+    GL aurora runs, or the fallback reason when it doesn't. Lets a phone
+    report its rendering path without a devtools cable. */
+export const bgDiag = { info: 'css-blobs' };
+
 /** One-time capability probe for the caller's aurora-vs-blobs decision. */
 export function hasWebGL(): boolean {
   try {
@@ -199,8 +205,15 @@ export function MobileAurora({ accent, onFail, ref }: MobileAuroraProps) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const gl = canvas?.getContext('webgl', { alpha: false, antialias: false });
+    // alpha: true is load-bearing on Android: with alpha:false Chrome may hand
+    // out an RGB565 (16-bit) backbuffer on some devices — 32–64 levels per
+    // channel flatten the soft fbm clouds into big banded plateaus with hard
+    // seams (seen on a Pixel 10 Pro), while desktop always renders 888. An
+    // RGBA8888 buffer costs a whisker of compositing and fixes it outright;
+    // every fragment is written with alpha 1.0, so nothing shows through.
+    const gl = canvas?.getContext('webgl', { alpha: true, antialias: false });
     if (!canvas || !gl) {
+      bgDiag.info = 'gl-refused → blobs';
       onFail?.(); // caller probed hasWebGL(), but drivers can still refuse
       return;
     }
@@ -214,6 +227,7 @@ export function MobileAurora({ accent, onFail, ref }: MobileAuroraProps) {
     const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
     const prog = gl.createProgram();
     if (!vs || !fs || !prog) {
+      bgDiag.info = 'gl-compile-fail → blobs';
       onFail?.();
       return;
     }
@@ -222,10 +236,18 @@ export function MobileAurora({ accent, onFail, ref }: MobileAuroraProps) {
     gl.linkProgram(prog);
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
       console.warn('[aurora] program link failed', gl.getProgramInfoLog(prog));
+      bgDiag.info = 'gl-link-fail → blobs';
       onFail?.();
       return;
     }
     gl.useProgram(prog);
+
+    // Report the *actual* framebuffer depth and GPU — the two facts that
+    // decide how the nebula quantizes on a given phone.
+    const bits = [gl.getParameter(gl.RED_BITS), gl.getParameter(gl.GREEN_BITS), gl.getParameter(gl.BLUE_BITS)].join('');
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const gpu = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : '';
+    bgDiag.info = `gl ${bits}${gpu ? ` · ${gpu.slice(0, 28)}` : ''}`;
 
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -287,6 +309,7 @@ export function MobileAurora({ accent, onFail, ref }: MobileAuroraProps) {
     const onLost = (e: Event) => {
       e.preventDefault();
       cancelAnimationFrame(raf);
+      bgDiag.info = 'gl-context-lost → blobs';
       onFail?.();
     };
     canvas.addEventListener('webglcontextlost', onLost);

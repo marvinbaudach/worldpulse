@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { bgDiag } from './MobileAurora';
 import { glassSurface } from './glass';
 
 // Easter egg: an invisible tap target in the top-right corner. Tap it to flash
@@ -26,13 +27,20 @@ const Badge = styled.div`
   right: 16px;
   z-index: 13;
   padding: 8px 12px;
-  border-radius: 999px;
+  border-radius: 14px;
   color: #cfe4ff;
-  font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 600 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.06em;
+  text-align: right;
   /* Taps fall through to the hotspot beneath, so tapping the pill dismisses. */
   pointer-events: none;
   ${glassSurface}
+`;
+
+const Diag = styled.div`
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(207, 228, 255, 0.75);
 `;
 
 export function BuildBadge() {
@@ -47,7 +55,15 @@ export function BuildBadge() {
   return (
     <>
       <Hotspot aria-label="Build-Info" onClick={() => setShown((s) => !s)} />
-      {shown && <Badge>#{__COMMIT_ID__}</Badge>}
+      {shown && (
+        <Badge>
+          #{__COMMIT_ID__}
+          {/* Which background path this device actually resolved to (GL bit
+              depth + GPU, or the fallback reason) — read on tap, so it shows
+              the state after init rather than a stale module snapshot. */}
+          <Diag>{bgDiag.info}</Diag>
+        </Badge>
+      )}
     </>
   );
 }
