@@ -516,8 +516,15 @@ export interface BudgetSplitCfg {
   groups: { title: string; rows: { name: string; mrd: number; color: string }[] }[];
   /** The single dominant item, drawn full-width at the foot as the scale
       anchor — so the smallness of everything above reads honestly against the
-      one posten that actually dwarfs them. */
-  reference: { title: string; name: string; mrd: number; color: string };
+      one posten that actually dwarfs them. `marked` highlights a sub-slice of
+      it (e.g. the migration-related share) as an overlay plus a caption. */
+  reference: {
+    title: string;
+    name: string;
+    mrd: number;
+    color: string;
+    marked?: { mrd: number; label: string; color: string };
+  };
   source: string;
 }
 
@@ -546,7 +553,7 @@ export function budgetSplit(f: Frame, cfg: BudgetSplitCfg): void {
   ctx.fillText(tr(cfg.caption), x0, top);
 
   const footer = f.compact ? 16 * u : 46 * u;
-  const refH = 64 * u;
+  const refH = 78 * u;
   const zoneTop = top + 20 * u;
   const zoneBottom = h - footer - refH;
   const headH = 24 * u;
@@ -609,7 +616,29 @@ export function budgetSplit(f: Frame, cfg: BudgetSplitCfg): void {
   const rp = Math.max(0, stagger(t, idx, 0.08));
   heading(cfg.reference.title, ry + 14 * u);
   label(cfg.reference.name, cfg.reference.mrd, ry + 34 * u, rp);
-  bar(cfg.reference.mrd, cfg.reference.color, ry + 41 * u, rp);
+  const by = ry + 41 * u;
+  bar(cfg.reference.mrd, cfg.reference.color, by, rp);
+
+  // Optional marked sub-slice: an overlay on the left of the reference bar
+  // plus a swatched caption below it — used to flag the migration-related
+  // share sitting inside the pension/welfare item (which overlaps the asylum
+  // bar above, so it must not be read as additive).
+  const mk = cfg.reference.marked;
+  if (mk) {
+    ctx.fillStyle = mk.color;
+    roundRect(ctx, x0, by, Math.max(W * (mk.mrd / refMax) * rp, 4 * u), 11 * u, 5.5 * u);
+    ctx.fill();
+    const cy = by + 27 * u;
+    ctx.globalAlpha = rp;
+    ctx.fillStyle = mk.color;
+    roundRect(ctx, x0, cy - 9 * u, 14 * u, 10 * u, 2 * u);
+    ctx.fill();
+    ctx.fillStyle = INK_SECONDARY;
+    ctx.font = `500 ${13 * u}px ${FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`${tr(mk.label)} · ${localeNum(mk.mrd, 0)} ${tr('Mrd')}`, x0 + 20 * u, cy);
+    ctx.globalAlpha = 1;
+  }
 
   drawSource(f, cfg.source);
 }

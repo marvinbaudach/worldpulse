@@ -14,6 +14,7 @@ export const EN: Record<string, string> = {
   'Im Video genannt': 'Named in the clip',
   'Investition · Bund': 'Investment · federal',
   'Größter Posten': 'Biggest single item',
+  'davon migrationsbezogen (auch in Asyl)': 'of which migration-related (also in asylum)',
   'Verteidigung': 'Defence',
   'Asyl & Migration': 'Asylum & migration',
   'Ukraine-Hilfe': 'Ukraine aid',

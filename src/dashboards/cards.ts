@@ -21,6 +21,8 @@ import {
 import {
   CPI_INVERTED,
   DATA_CENTER_HUBS,
+  DATA_CENTER_POWER_MW,
+  DATA_CENTER_POWER_TOP,
   DRUG_DEATHS_100K,
   DRUG_DEATHS_TOP,
   EU_DEBT_GDP,
@@ -205,7 +207,7 @@ export const POOL: Dashboard[] = [
     id: 'de-budget-split',
     title: 'Bundeshaushalt: genannte Posten vs. Investition',
     source:
-      'Bundeshaushalt 2025 (Soll, ~488 Mrd €; eigene Einnahmen ~428 Mrd). Verteidigung = Einzelplan 14 + Sondervermögen Bundeswehr (~86 Mrd, 2,0 % BIP) — es gibt keinen „NATO-Beitrag" von 100 Mrd; die 223 Mrd sind ein hypothetisches 5-%-BIP-Ziel. Asyl/Migration: Bundesausgaben für Flucht & Migration ~28 Mrd (Länder zusätzlich ~7 Mrd), enger „asylbedingt" ~21 Mrd (Statistisches Bundesamt, bpb). Ukraine-Hilfe ~8–12 Mrd/Jahr aus dem Haushalt (∑ ~55 Mrd seit 2022). Infrastruktur: Bundesanteil des 500-Mrd-Sondervermögens, ~25 Mrd/Jahr. Renten & Soziales = Einzelplan 11, mit Abstand größter Posten. Anteile am Haushalt, gerundet, Stand 2025.',
+      'Bundeshaushalt 2025 (Soll, ~488 Mrd €; eigene Einnahmen ~428 Mrd). Verteidigung = Einzelplan 14 + Sondervermögen Bundeswehr (~86 Mrd, 2,0 % BIP) — es gibt keinen „NATO-Beitrag" von 100 Mrd; die 223 Mrd sind ein hypothetisches 5-%-BIP-Ziel. Asyl/Migration: Bundesausgaben für Flucht & Migration ~28 Mrd (Länder zusätzlich ~7 Mrd), enger „asylbedingt" ~21 Mrd (Statistisches Bundesamt, bpb). Ukraine-Hilfe ~8–12 Mrd/Jahr aus dem Haushalt (∑ ~55 Mrd seit 2022). Infrastruktur: Bundesanteil des 500-Mrd-Sondervermögens, ~25 Mrd/Jahr. Renten & Soziales = Einzelplan 11, mit Abstand größter Posten; enthält ~13 Mrd migrationsbezogenes Bürgergeld (SGB II, u.a. Ukrainer seit 2022), das sich mit dem Asyl-Posten überschneidet — nicht additiv. Anteile am Haushalt, gerundet, Stand 2025.',
     draw: (f) =>
       budgetSplit(f, {
         // The clip frames Asyl/Ukraine/NATO as "waste"; the real budget shares
@@ -234,7 +236,17 @@ export const POOL: Dashboard[] = [
             ],
           },
         ],
-        reference: { title: 'Größter Posten', name: 'Renten & Soziales', mrd: 179, color: magenta },
+        reference: {
+          title: 'Größter Posten',
+          name: 'Renten & Soziales',
+          mrd: 179,
+          color: magenta,
+          // The migration-related slice of Einzelplan 11 is Bürgergeld/SGB II
+          // for non-Germans (Ukrainers routed in since 2022, asylum background)
+          // — order of magnitude ~13 Mrd. It overlaps the asylum bar above, so
+          // the caption flags "auch in Asyl" to stop it being read as additive.
+          marked: { mrd: 13, label: 'davon migrationsbezogen (auch in Asyl)', color: orange },
+        },
         source: 'Bundesfinanzministerium · Statistisches Bundesamt · bpb · Bundeshaushalt 2025',
       }),
   },
