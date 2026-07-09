@@ -18,6 +18,7 @@ import {
 import { CPI_INVERTED, EU_DEBT_GDP, EXECUTIONS_2024, LGBT_CRIMINAL, NUKE_STATES, NUKE_TOTAL, US_TROOPS_ABROAD } from './geo';
 import type { Dashboard } from './types';
 import { live } from '../data/store';
+import { EXCESS_100K_BY_ISO, VAX_RATE_BY_ISO } from '../data/covidWorld';
 import { FALLBACK_TEMPS, FALLBACK_TEMP_ROWS, HOLOCENE_PANEL } from '../data/climate';
 import {
   AFRICA_ROUTES_COMPARE,
@@ -45,6 +46,7 @@ import {
   CONTINENT_FERTILITY,
   INTERNET_PANEL,
   AI_COMPUTE_PANEL,
+  AI_TRAIN_COST_PANEL,
   CHATGPT_USERS_PANEL,
   DATACENTER_POWER_PANEL,
   pow10Label,
@@ -2978,6 +2980,14 @@ export const POOL: Dashboard[] = [
     [2020, 'GPT-3'],
     [2022, '💬 ChatGPT'],
   ]), 'Epoch AI · Trainingsrechenleistung führender KI-Modelle in FLOP, logarithmische Achse; 2025 geschätzt.'),
+  trendCard('ai-training-cost', 'KI-Training · Kosten explodieren', 'Teuerster KI-Trainingslauf · Mio. $', AI_TRAIN_COST_PANEL, violet, (v) => (v >= 950 ? `${localeNum(v / 1000, 1)} ${tr('Mrd')} $` : `${localeNum(v, 0)} ${tr('Mio')} $`), 457, eraMarkers(2017, 2027, [
+    // Cloud-rental compute estimates per milestone run; the projection leg
+    // carries Epoch's ">$1B by 2027" headline (costs grew ~2.4x/year).
+    [2020, 'GPT-3 · $4 Mio'],
+    [2023, 'Gemini Ultra · $191 Mio'],
+  ]), 'Epoch AI / Stanford AI Index · Rechenkosten des jeweils teuersten Trainingslaufs pro Jahr (Cloud-Mietpreise): GPT-3 ~4 Mio $, GPT-4 ~78 Mio $, Gemini Ultra ~191 Mio $. Ab 2024 Epoch-Projektion: über 1 Mrd $ bis 2027 — Kosten wachsen ~2,4× pro Jahr.',
+  // Projection leg on the 2017–2027 axis: dashed + arrow from 2024 on.
+  (2024 - 2017) / (2027 - 2017)),
   {
     id: 'ai-investment',
     title: 'KI-Investitionen international',
@@ -3301,6 +3311,60 @@ export const POOL: Dashboard[] = [
           { name: 'Deutschland 🇩🇪', v: 5.6 },
           { name: 'Schweden 🇸🇪 · ohne Lockdown', v: 3 },
         ],
+      }),
+  },
+  {
+    id: 'excess-mortality-map',
+    title: 'Übersterblichkeit · Welt',
+    source:
+      'The Economist Excess-Mortality-Modell via Our World in Data · kumulierte Übersterblichkeit 2020 bis Mitte 2024 je 100.000 Einwohner, zentrale Schätzung. Die höchste Last trägt Osteuropa — die Weltkarte liest sich fast als Negativ der Impfquoten-Karte.',
+    draw: (f) =>
+      choroplethMap(f, {
+        // Cumulative excess deaths per 100k (Economist model, central
+        // estimate, through mid-2024). The pattern inverts the vaccination
+        // map: the low-uptake belt across Eastern Europe carries the highest
+        // cumulative toll, the high-uptake states the lowest.
+        label: 'Übersterblichkeit · 2020–24 · je 100k Einw.',
+        value: 344,
+        fmt: (v) => `+${localeNum(v, 0)}`,
+        valueByIso: EXCESS_100K_BY_ISO,
+        world: live.worldMap,
+        rows: [
+          { name: 'Litauen 🇱🇹', v: 1096 },
+          { name: 'Russland 🇷🇺', v: 1016 },
+          { name: 'Bulgarien 🇧🇬', v: 965 },
+          { name: 'Serbien 🇷🇸', v: 857 },
+          { name: 'Belarus 🇧🇾', v: 852 },
+        ],
+        rowFmt: (v) => `+${localeNum(v, 0)}`,
+        source: 'OWID/Economist · je 100k Einw. · 2020–Mitte 24',
+      }),
+  },
+  {
+    id: 'covid-vax-map',
+    title: 'Durchimpfung · Welt',
+    source:
+      'Our World in Data · Anteil der Bevölkerung mit vollständiger Erstimpfserie gegen COVID-19, Serienmaximum je Land; die Kampagnen sind seit Mitte 2024 weitgehend beendet. Liste: Spitzenreiter über 1 Mio. Einwohner.',
+    draw: (f) =>
+      choroplethMap(f, {
+        // Share of the population with a complete initial protocol (OWID).
+        // Green ramp: unlike the other choropleths a high value is the good
+        // outcome here, so the alert red would mislead.
+        label: 'Corona-Impfquote · vollständig geimpft',
+        value: 65.1,
+        fmt: (v) => localePct(v, 0),
+        valueByIso: VAX_RATE_BY_ISO,
+        world: live.worldMap,
+        ramp: aqua,
+        rows: [
+          { name: 'Katar 🇶🇦', v: 98.6 },
+          { name: 'VAE 🇦🇪', v: 95.6 },
+          { name: 'Singapur 🇸🇬', v: 92.9 },
+          { name: 'Kuba 🇨🇺', v: 90.9 },
+          { name: 'Chile 🇨🇱', v: 90.5 },
+        ],
+        rowFmt: (v) => localePct(v, 0),
+        source: 'OWID · % vollständig geimpft · Stand Mitte 24',
       }),
   },
   trendCard('cb-gold', 'Zentralbanken kaufen Gold', 'Zentralbanken · Netto-Goldkäufe · Tonnen/Jahr', CB_GOLD_PANEL, yellow, (v) => `${localeNum(v, 0)} t`, 443, eraMarkers(2000, 2025, [

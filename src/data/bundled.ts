@@ -1655,6 +1655,22 @@ export const AI_COMPUTE_PANEL: TrendSeries = trend(
   ['2012', '2017', '2021', 'heute'],
 );
 
+// Training cost of the most expensive AI run per year, million USD on a
+// cloud-rental compute basis (Epoch AI via Stanford AI Index): Transformer
+// 2017 ≈ $930, GPT-3 2020 ≈ $4.3M, Megatron-Turing 2021 ≈ $6.4M, PaLM 2022
+// ≈ $12.4M, Gemini Ultra late 2023 ≈ $191M. From 2024 on the points follow
+// Epoch's projection — costs grew ~2.4x/year since 2016, putting the largest
+// runs past $1B by 2027 — interpolated geometrically, not measurements.
+export const AI_TRAIN_COST_PANEL: TrendSeries = trend(
+  [
+    [2017, 0.001], [2019, 0.16], [2020, 4.3], [2021, 6.4], [2022, 12.4],
+    [2023, 191], [2024, 290], [2025, 440], [2026, 660], [2027, 1000],
+  ],
+  (v) => (v >= 950 ? `${localeNum(v / 1000, 1)} ${tr('Mrd')} $` : `${localeNum(v, 0)} ${tr('Mio')} $`),
+  ['2017', '2020', '2023', '2027'],
+  40,
+);
+
 // Global data-centre electricity use, TWh/year (IEA "Energy and AI", 2025).
 // ~415 TWh in 2024 — around 1.5% of world electricity — with the IEA base
 // case near-doubling to ~945 TWh by 2030 as AI accelerators dominate new

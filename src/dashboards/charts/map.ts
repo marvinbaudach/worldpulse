@@ -5,7 +5,7 @@
 import { t as tr } from '../../i18n';
 import { drawHeader, drawSurface, easeOut, fmtCompact, stagger, type Frame } from '../draw';
 import { CRITICAL, FONT, GRID, INK_SECONDARY, MUTED } from '../theme';
-import { drawRankedList, drawSource } from './shared';
+import { drawRankedList, drawSource, withAlpha } from './shared';
 
 export interface NukeMapCfg {
   label: string;
@@ -131,6 +131,10 @@ export interface ChoroplethCfg {
   rowFmt: (v: number) => string;
   /** In-card source footer; omit when the source is shown separately. */
   source?: string;
+  /** Ramp color as a #rrggbb hex (use a theme series color); defaults to the
+      map-local alert red. Use a calmer hue when a high value is good news
+      (e.g. vaccination coverage), so the shading doesn't read as a warning. */
+  ramp?: string;
 }
 
 /**
@@ -181,10 +185,13 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
       // visible 0.22 so faint-data countries stay legibly red instead of sinking
       // into the no-data grey, and climbs to a punchy 0.98 so the worst cases
       // clearly stand out. No-data countries render as a flat neutral grey.
+      // Negative values (e.g. below-baseline excess mortality) clamp to the
+      // faint base alpha — an alpha below zero would invalidate the fillStyle
+      // and silently reuse the previous country's color.
       ctx.fillStyle =
         v === undefined
           ? 'rgba(214,222,236,0.05)'
-          : `rgba(255,74,64,${(0.22 + 0.76 * Math.min(1, v / ref) * p).toFixed(2)})`;
+          : withAlpha(cfg.ramp ?? '#ff4a40', 0.22 + 0.76 * Math.min(1, Math.max(0, v / ref)) * p);
       for (const ring of country.rings) {
         ctx.beginPath();
         ring.forEach(([lon, lat], i) => {
@@ -203,7 +210,8 @@ export function choroplethMap(f: Frame, cfg: ChoroplethCfg): void {
     rows: cfg.rows,
     top: my0 + mh + 18 * u,
     rowFmt: cfg.rowFmt,
-    color: CRITICAL,
+    // The list mirrors the map's ramp so bars and shading read as one scale.
+    color: cfg.ramp ?? CRITICAL,
   });
 
   if (cfg.source) drawSource(f, cfg.source);
