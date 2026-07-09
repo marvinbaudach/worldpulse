@@ -66,6 +66,10 @@ import {
   CONTINENT_FERTILITY,
   INTERNET_PANEL,
   AI_COMPUTE_PANEL,
+  MOORE_PANEL,
+  PROCESS_NODE_PANEL,
+  COMPUTE_COST_PANEL,
+  GENOME_COST_PANEL,
   AI_TRAIN_COST_PANEL,
   CHATGPT_USERS_PANEL,
   DATACENTER_POWER_PANEL,
@@ -3084,6 +3088,32 @@ export const POOL: Dashboard[] = [
     [2020, 'GPT-3'],
     [2022, '💬 ChatGPT'],
   ]), 'Epoch AI · Trainingsrechenleistung führender KI-Modelle in FLOP, logarithmische Achse; 2025 geschätzt.'),
+  trendCard('moore', 'Moores Gesetz · Transistoren pro Chip', 'Transistoren pro Chip · seit 1971', MOORE_PANEL, blue, (v) => `${localeNum(v / 1e9, 0)} ${tr('Mrd')}`, 521, eraMarkers(1971, 2024, [
+    // Every gridline is a factor of a thousand — from 2.300 (Intel 4004) to
+    // 208 Mrd. (Nvidia B200), the near-straight line is the doubling.
+    [1993, '💻 Pentium'],
+    [2006, '🖥️ Core 2'],
+    [2020, '🍎 Apple M1'],
+    [2024, '🟩 Nvidia B200'],
+  ]), 'Wikipedia „Transistor count" · repräsentative Flaggschiff-Chips, keine lückenlose Reihe. Vom Intel 4004 (2.300, 1971) bis Nvidia B200 (208 Mrd., 2024) — eine Verdopplung etwa alle zwei Jahre über ein halbes Jahrhundert.'),
+  trendCard('process-node', 'Strukturbreite · Chip-Fertigung', 'Fertigungsstruktur · seit 1971', PROCESS_NODE_PANEL, aqua, (v) => `${localeNum(v, 0)} nm`, 523, eraMarkers(1971, 2025, [
+    // The falling twin of Moore's law: smaller structures, more transistors.
+    [1985, '📐 1 µm'],
+    [2007, '45 nm'],
+    [2020, '5 nm'],
+    [2025, '⚛️ 2 nm'],
+  ]), 'Intel/TSMC-Node-Roadmap · kleinste Fertigungsstruktur in der Serienproduktion, von 10 µm (1971) auf 2 nm (2025). Achtung: Ab etwa 22 nm sind die „nm"-Namen Marketing-Bezeichnungen, keine physische Gate-Länge mehr.'),
+  trendCard('compute-cost', 'Rechenkosten · Dollar pro GFLOPS', 'Kosten pro GFLOPS · seit 1961', COMPUTE_COST_PANEL, yellow, (v) => (v < 1 ? `${localeNum(v * 100, 1)} ¢` : `$${localeNum(v, 2)}`), 527, eraMarkers(1961, 2023, [
+    // ~12 orders of magnitude down: a GFLOPS went from $19 Mrd. to fractions
+    // of a cent as the mainframe gave way to the PC and then the GPU.
+    [1976, '🖥️ Cray-1'],
+    [2007, '🎮 GPU-Ära'],
+  ]), 'Wikipedia „FLOPS" · Hardwarekosten je GFLOPS, gerundet, nicht inflationsbereinigt. Von ~19 Mrd. $ (1961) auf Bruchteile eines Cents (2023) — der ökonomische Zwilling von Moores Gesetz.'),
+  trendCard('genome-cost', 'Kosten · ein Genom sequenzieren', 'Kosten pro Genom · seit 2001', GENOME_COST_PANEL, green, (v) => `$${localeNum(v, 0)}`, 529, eraMarkers(2001, 2024, [
+    [2003, '🧬 Humangenom-Projekt'],
+    [2008, '⚡ Next-Gen-Sequenzierung'],
+    [2014, '💵 1000-$-Genom'],
+  ]), 'NHGRI „Sequencing Cost" · Kosten für ein komplettes menschliches Genom, von 95 Mio. $ (2001) auf ~200 $ (2024). Der Absturz 2008 ist der Umstieg auf Next-Generation-Sequenzierung; die Kurve fällt schneller als Moores Gesetz.'),
   trendCard('ai-training-cost', 'KI-Training · Kosten explodieren', 'Teuerster KI-Trainingslauf', AI_TRAIN_COST_PANEL, violet, (v) => (v >= 950 ? `${localeNum(v / 1000, 1)} ${tr('Mrd')} $` : `${localeNum(v, 0)} ${tr('Mio')} $`), 457, eraMarkers(2017, 2027, [
     // Cloud-rental compute estimates per milestone run; the projection leg
     // carries Epoch's ">$1B by 2027" headline (costs grew ~2.4x/year).

@@ -775,6 +775,27 @@ export const IT: Record<string, string> = {
   'KI-Training · Rechenleistung': 'Addestramento IA · potenza di calcolo',
   'KI-Training · Frontier-Modelle · FLOP': 'Addestramento IA · modelli di frontiera · FLOP',
   'Epoch AI · Trainingsrechenleistung führender KI-Modelle in FLOP, logarithmische Achse; 2025 geschätzt.': 'Epoch AI · potenza di calcolo per l\'addestramento dei principali modelli IA in FLOP, asse logaritmico; 2025 stimato.',
+  'Moores Gesetz · Transistoren pro Chip': 'Legge di Moore · transistor per chip',
+  'Transistoren pro Chip · seit 1971': 'Transistor per chip · dal 1971',
+  'Wikipedia „Transistor count" · repräsentative Flaggschiff-Chips, keine lückenlose Reihe. Vom Intel 4004 (2.300, 1971) bis Nvidia B200 (208 Mrd., 2024) — eine Verdopplung etwa alle zwei Jahre über ein halbes Jahrhundert.':
+    'Wikipedia «Transistor count» · chip di punta rappresentativi, non una serie completa. Dall\'Intel 4004 (2.300, 1971) al Nvidia B200 (208 mld, 2024) — un raddoppio circa ogni due anni per mezzo secolo.',
+  'Strukturbreite · Chip-Fertigung': 'Dimensione dei transistor · produzione di chip',
+  'Fertigungsstruktur · seit 1971': 'Nodo produttivo · dal 1971',
+  'Intel/TSMC-Node-Roadmap · kleinste Fertigungsstruktur in der Serienproduktion, von 10 µm (1971) auf 2 nm (2025). Achtung: Ab etwa 22 nm sind die „nm"-Namen Marketing-Bezeichnungen, keine physische Gate-Länge mehr.':
+    'Roadmap dei nodi Intel/TSMC · dimensione minima in produzione di serie, da 10 µm (1971) a 2 nm (2025). Nota: sotto i ~22 nm i nomi «nm» sono etichette di marketing, non più una lunghezza fisica di gate.',
+  '📐 1 µm': '📐 1 µm',
+  '🎮 GPU-Ära': '🎮 era GPU',
+  'Rechenkosten · Dollar pro GFLOPS': 'Costo del calcolo · dollari per GFLOPS',
+  'Kosten pro GFLOPS · seit 1961': 'Costo per GFLOPS · dal 1961',
+  'Wikipedia „FLOPS" · Hardwarekosten je GFLOPS, gerundet, nicht inflationsbereinigt. Von ~19 Mrd. $ (1961) auf Bruchteile eines Cents (2023) — der ökonomische Zwilling von Moores Gesetz.':
+    'Wikipedia «FLOPS» · costo hardware per GFLOPS, arrotondato, non corretto per l\'inflazione. Da ~19 mld $ (1961) a una frazione di centesimo (2023) — il gemello economico della legge di Moore.',
+  'Kosten · ein Genom sequenzieren': 'Costo · sequenziare un genoma',
+  'Kosten pro Genom · seit 2001': 'Costo per genoma · dal 2001',
+  '🧬 Humangenom-Projekt': '🧬 Progetto genoma umano',
+  '⚡ Next-Gen-Sequenzierung': '⚡ Sequenziamento next-gen',
+  '💵 1000-$-Genom': '💵 genoma da 1000 $',
+  'NHGRI „Sequencing Cost" · Kosten für ein komplettes menschliches Genom, von 95 Mio. $ (2001) auf ~200 $ (2024). Der Absturz 2008 ist der Umstieg auf Next-Generation-Sequenzierung; die Kurve fällt schneller als Moores Gesetz.':
+    'NHGRI «Sequencing Cost» · costo di un genoma umano completo, da 95 mln $ (2001) a ~200 $ (2024). Il crollo del 2008 è il passaggio al sequenziamento di nuova generazione; la curva scende più in fretta della legge di Moore.',
   'KI-Investitionen international': 'Investimenti IA nel mondo',
   'Private KI-Investitionen · 2024': 'Investimenti privati in IA · 2024',
   'Stanford AI Index 2025 · private KI-Investitionen 2024, Mrd. US-Dollar, gerundet.': 'Stanford AI Index 2025 · investimenti privati in IA 2024, miliardi di dollari, arrotondati.',

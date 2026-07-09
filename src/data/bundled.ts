@@ -1658,6 +1658,138 @@ export const AI_COMPUTE_PANEL: TrendSeries = trend(
   ['2012', '2017', '2021', 'heute'],
 );
 
+// ---------------------------------------------------------------------------
+// Technological-progress log panels. Each spans 8–15 orders of magnitude, so a
+// linear axis would flatten everything before the last few years against the
+// baseline. They ride the same idea as AI_COMPUTE_PANEL — interpolate in log10
+// space so geometric growth reads as the straight line it is — but through one
+// shared helper that pins explicit decade bounds and formats one tick per few
+// decades from the real (un-logged) value. The area/line renderers ignore the
+// headline `value`/`fmt`; magnitude is carried entirely by these y-axis ticks.
+
+/**
+ * Log-axis trend panel from sparse [year, value] anchors: interpolate in log10
+ * space, normalise against the [loDec, hiDec] decade window, and label every
+ * `stepDec` decades via `tickFmt` (which receives the real decade value, e.g.
+ * 1e6, not the exponent). Returns the same shape trend() does, so trendCard()
+ * consumes it unchanged. `latest` holds the real last value (renderer-inert).
+ */
+function logPanel(
+  points: [number, number][],
+  loDec: number,
+  hiDec: number,
+  stepDec: number,
+  tickFmt: (real: number) => string,
+  xLabels: string[],
+): TrendSeries {
+  const series = yearly(points.map(([yr, v]) => [yr, Math.log10(v)] as [number, number]));
+  const ticks: string[] = [];
+  for (let d = loDec; d <= hiDec + 1e-9; d += stepDec) ticks.push(tickFmt(10 ** d));
+  return {
+    series: norm(resample(series, 40), loDec, hiDec),
+    ticks,
+    latest: 10 ** series[series.length - 1],
+    yoyPct: 0,
+    xLabels,
+  };
+}
+
+/** Count with a magnitude suffix (1e6 → "1 Mio", 1e9 → "1 Mrd"). */
+function countFmt(real: number): string {
+  if (real >= 1e12) return `${localeNum(real / 1e12, 0)} ${tr('Bio.')}`;
+  if (real >= 1e9) return `${localeNum(real / 1e9, 0)} ${tr('Mrd')}`;
+  if (real >= 1e6) return `${localeNum(real / 1e6, 0)} ${tr('Mio')}`;
+  if (real >= 1e3) return `${localeNum(real / 1e3, 0)}k`;
+  return `${localeNum(real, 0)}`;
+}
+
+/** Dollar amount across the whole range, cents below $1. */
+function dollarFmt(real: number): string {
+  if (real >= 1e12) return `$${localeNum(real / 1e12, 0)} ${tr('Bio.')}`;
+  if (real >= 1e9) return `$${localeNum(real / 1e9, 0)} ${tr('Mrd')}`;
+  if (real >= 1e6) return `$${localeNum(real / 1e6, 0)} ${tr('Mio')}`;
+  if (real >= 1e3) return `$${localeNum(real / 1e3, 0)}k`;
+  if (real >= 1) return `$${localeNum(real, 0)}`;
+  return `${localeNum(real * 100, 1)} ¢`;
+}
+
+/** Feature size in nm, switching to µm at 1000 nm. */
+function nmFmt(real: number): string {
+  return real >= 1000 ? `${localeNum(real / 1000, 0)} µm` : `${localeNum(real, 0)} nm`;
+}
+
+// Moore's law: transistors on a single commercial chip, from the Intel 4004
+// (2,300, 1971) to Nvidia's B200 (208 billion, 2024) — a representative rising
+// envelope of flagship parts, not an exhaustive series. ~8 orders of magnitude,
+// a doubling roughly every two years for half a century. Wikipedia "Transistor
+// count". Ticks 1k / 1 Mio / 1 Mrd / 1 Bio.
+export const MOORE_PANEL: TrendSeries = logPanel(
+  [
+    [1971, 2_300], [1978, 29_000], [1982, 134_000], [1985, 275_000],
+    [1989, 1_180_000], [1993, 3_100_000], [1997, 7_500_000], [2000, 42_000_000],
+    [2006, 291_000_000], [2010, 1_170_000_000], [2016, 7_200_000_000],
+    [2020, 16_000_000_000], [2022, 114_000_000_000], [2024, 208_000_000_000],
+  ],
+  3,
+  12,
+  3,
+  countFmt,
+  ['1971', '1989', '2007', 'heute'],
+);
+
+// Chip feature size (process node) shrinking from 10 µm (1971) to 2 nm (2025),
+// log10(nm). The falling twin of Moore's law: smaller structures pack more
+// transistors. Node names below ~22 nm are marketing labels, not physical gate
+// lengths — flagged in the card source. Ticks 1 nm / 10 nm / 100 nm / 1 µm / 10 µm.
+export const PROCESS_NODE_PANEL: TrendSeries = logPanel(
+  [
+    [1971, 10_000], [1975, 3_000], [1982, 1_500], [1985, 1_000], [1989, 800],
+    [1994, 600], [1997, 250], [1999, 180], [2001, 130], [2004, 90], [2006, 65],
+    [2008, 45], [2010, 32], [2012, 22], [2014, 14], [2017, 10], [2018, 7],
+    [2020, 5], [2022, 3], [2025, 2],
+  ],
+  0,
+  4,
+  1,
+  nmFmt,
+  ['1971', '1989', '2007', 'heute'],
+);
+
+// Cost of computing: US dollars per GFLOPS, ~$19 billion (1961) to fractions of
+// a cent (2023) — ~12 orders of magnitude, hardware cost, not inflation
+// adjusted. Wikipedia "FLOPS", rounded milestones. Ticks 0,1 ¢ / $1 / $1k /
+// $1 Mio / $1 Mrd / $1 Bio.
+export const COMPUTE_COST_PANEL: TrendSeries = logPanel(
+  [
+    [1961, 1.87e10], [1984, 1.87e7], [1997, 42_000], [2000, 1_000], [2003, 100],
+    [2007, 52], [2011, 1.8], [2013, 0.22], [2015, 0.08], [2017, 0.03],
+    [2020, 0.013], [2023, 0.006],
+  ],
+  -3,
+  12,
+  3,
+  dollarFmt,
+  ['1961', '1982', '2003', 'heute'],
+);
+
+// Cost to sequence one human genome, US dollars: $95 M in 2001 to ~$200 today
+// (NHGRI "Sequencing Cost"). The 2008 cliff is the switch to next-generation
+// sequencing; the curve falls faster than Moore's law — noted in the card
+// source. Ticks $100 / $10k / $1 Mio / $100 Mio.
+export const GENOME_COST_PANEL: TrendSeries = logPanel(
+  [
+    [2001, 95_263_072], [2003, 50_000_000], [2004, 20_000_000], [2006, 14_000_000],
+    [2007, 10_000_000], [2008, 3_000_000], [2009, 100_000], [2010, 50_000],
+    [2012, 7_000], [2014, 4_900], [2015, 1_400], [2016, 1_100], [2019, 942],
+    [2021, 562], [2022, 525], [2024, 200],
+  ],
+  2,
+  8,
+  2,
+  dollarFmt,
+  ['2001', '2009', '2017', 'heute'],
+);
+
 // Training cost of the most expensive AI run per year, million USD on a
 // cloud-rental compute basis (Epoch AI via Stanford AI Index): Transformer
 // Transformer 2017 ≈ $930, BERT-Large 2018 ≈ $3.3k, RoBERTa Large 2019
