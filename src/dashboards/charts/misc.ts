@@ -25,7 +25,7 @@ import {
   SEQ,
   SERIES,
 } from '../theme';
-import { barGradient, drawSource, ellipsize, plotRect, xAxisLabels } from './shared';
+import { barGradient, drawSource, ellipsize, plotRect, withAlpha, xAxisLabels } from './shared';
 import { curveYFn, drawEraMarkers, markerInsetRange } from './line';
 
 export interface WealthSplitCfg {
@@ -639,6 +639,85 @@ export function budgetSplit(f: Frame, cfg: BudgetSplitCfg): void {
     ctx.fillText(`${tr(mk.label)} · ${localeNum(mk.mrd, 0)} ${tr('Mrd')}`, x0 + 20 * u, cy);
     ctx.globalAlpha = 1;
   }
+
+  drawSource(f, cfg.source);
+}
+
+export interface FactCheckCfg {
+  label: string;
+  /** Unit appended to both headline values, e.g. "Mio €". */
+  unit: string;
+  /** The viral claim (drawn red on top) and the documented value (green). */
+  claim: { tag: string; name: string; v: number };
+  fact: { tag: string; name: string; v: number };
+  /** Short context lines under the two blocks (arrow-bulleted). */
+  notes: string[];
+  source: string;
+}
+
+/**
+ * Claim-vs-reality fact check: a red "Behauptung" block over a green "belegt"
+ * block, each with a headline figure and a bar on a shared scale, then a few
+ * context notes. Built so a false viral number never renders as the biggest,
+ * brightest bar — the colour, not the length, tells you which one is real.
+ */
+export function factCheck(f: Frame, cfg: FactCheckCfg): void {
+  const { ctx, u, t, w } = f;
+  drawSurface(f);
+  const top = drawHeader(f, cfg.label);
+  const pad = 36 * u;
+  const x0 = pad;
+  const x1 = w - pad;
+  const W = x1 - x0;
+  const reveal = easeOut(t / 0.9);
+  const max = Math.max(cfg.claim.v, cfg.fact.v, 1);
+
+  const block = (d: { tag: string; name: string; v: number }, color: string, y: number): void => {
+    // Tag pill.
+    ctx.textAlign = 'left';
+    ctx.font = `700 ${12 * u}px ${FONT}`;
+    const tag = tr(d.tag).toUpperCase();
+    const tagW = ctx.measureText(tag).width + 18 * u;
+    ctx.fillStyle = withAlpha(color, 0.18);
+    roundRect(ctx, x0, y, tagW, 21 * u, 10.5 * u);
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.fillText(tag, x0 + 9 * u, y + 15 * u);
+    // Descriptor trailing the pill.
+    ctx.fillStyle = MUTED;
+    ctx.font = `500 ${14 * u}px ${FONT}`;
+    ctx.fillText(ellipsize(ctx, tr(d.name), W - tagW - 12 * u), x0 + tagW + 12 * u, y + 15 * u);
+    // Headline figure, counting up with the reveal.
+    ctx.fillStyle = INK;
+    ctx.font = `800 ${34 * u}px ${FONT}`;
+    ctx.fillText(`${localeNum(d.v * reveal, 0)} ${tr(cfg.unit)}`, x0, y + 52 * u);
+    // Bar on the shared scale.
+    const by = y + 64 * u;
+    ctx.fillStyle = GRID;
+    roundRect(ctx, x0, by, W, 12 * u, 6 * u);
+    ctx.fill();
+    ctx.fillStyle = barGradient(ctx, x0, x1, color);
+    roundRect(ctx, x0, by, Math.max(W * (d.v / max) * reveal, 12 * u), 12 * u, 6 * u);
+    ctx.fill();
+  };
+
+  const blockH = 92 * u;
+  block(cfg.claim, CRITICAL, top + 6 * u);
+  block(cfg.fact, GOOD, top + 6 * u + blockH);
+
+  let ny = top + 6 * u + 2 * blockH + 24 * u;
+  ctx.font = `500 ${14.5 * u}px ${FONT}`;
+  cfg.notes.forEach((n, i) => {
+    const p = Math.max(0, stagger(t, i + 2, 0.1));
+    ctx.globalAlpha = p;
+    ctx.fillStyle = MUTED;
+    ctx.textAlign = 'left';
+    ctx.fillText('→', x0, ny);
+    ctx.fillStyle = INK_SECONDARY;
+    ctx.fillText(ellipsize(ctx, tr(n), W - 24 * u), x0 + 24 * u, ny);
+    ctx.globalAlpha = 1;
+    ny += 27 * u;
+  });
 
   drawSource(f, cfg.source);
 }

@@ -9,6 +9,7 @@ import {
   choroplethMap,
   dataCenterMap,
   debtClock,
+  factCheck,
   hBarChart,
   lineChart,
   mideastMap,
@@ -248,6 +249,53 @@ export const POOL: Dashboard[] = [
           marked: { mrd: 13, label: 'davon migrationsbezogen (auch in Asyl)', color: orange },
         },
         source: 'Bundesfinanzministerium · Statistisches Bundesamt · bpb · Bundeshaushalt 2025',
+      }),
+  },
+  {
+    id: 'de-aid-peru',
+    title: 'Radwege in Peru · Behauptung vs. Realität',
+    source:
+      'BMZ-Faktencheck. Die „315 Mio €" stammen aus einer Bundestagsrede (J. Cotar, AfD) und wurden vom BMZ und Faktencheckern (vorwärts, Volksverpetzer) widerlegt. Real: 44 Mio € Zuschüsse (2020: 20 + 2022: 24) für ein Radschnellwegenetz in Lima, dazu ~155 Mio € Kredite (Rückzahlung, keine Ausgabe); läuft als internationale Klimafinanzierung. BMZ-Entwicklungsetat 2025: 10,27 Mrd €. Stand 2024/25.',
+    draw: (f) =>
+      // A worked example of how a viral "Verschwendung" number is built: the
+      // claim (315) is ~7x the actual grant (44), the bulk is repayable loans,
+      // and even the claim is a rounding error next to the aid budget. Colour,
+      // not bar length, marks which figure is real.
+      factCheck(f, {
+        label: 'Radwege in Peru · Behauptung vs. Realität',
+        unit: 'Mio €',
+        claim: { tag: 'Behauptung', name: 'Cotar/AfD, viral', v: 315 },
+        fact: { tag: 'belegt', name: 'BMZ-Zuschüsse 2020+2022', v: 44 },
+        notes: [
+          '+155 Mio € Kredite — Rückzahlung, keine Ausgabe',
+          'läuft als Klimafinanzierung (int. Verpflichtung)',
+          '44 Mio = 0,4 % des Entwicklungsetats (10,3 Mrd €)',
+        ],
+        source: 'BMZ-Faktencheck · Bundestag · vorwärts / Volksverpetzer · 2024/25',
+      }),
+  },
+  {
+    id: 'de-megaprojects',
+    title: 'Milliardengräber · geplant vs. tatsächlich',
+    source:
+      'Bund der Steuerzahler / öffentliche Baubilanzen · tatsächliche bzw. prognostizierte Endkosten gegen die ursprüngliche Planung. Stuttgart 21 ~4,5 → 14,5 Mrd € (Eröffnung 2031), Flughafen BER 2 → 7 Mrd € (9 Jahre Verzug), Elbphilharmonie 77 Mio → 866 Mio €. Öffentliche Großprojekte überschreiten ihr Budget im Schnitt um rund 70 %. Werte gerundet, Stand 2025.',
+    draw: (f) =>
+      hBarChart(f, {
+        // Real, documented overruns — the sub carries the plan and the
+        // multiplier so the row shows both the absolute cost and how far it
+        // blew past budget (Elbphilharmonie is small in € but ×11).
+        label: 'Kostenexplosion · Großprojekte · Endkosten',
+        value: 14.5,
+        fmt: (v) => `${localeNum(v, 1)} Mrd €`,
+        rowFmt: (v) => `${localeNum(v, 1)} Mrd €`,
+        delta: null,
+        color: red,
+        unit: '',
+        rows: [
+          { name: 'Stuttgart 21', v: 14.5, sub: 'geplant 4,5 · ×3,2' },
+          { name: 'Flughafen BER', v: 7.0, sub: 'geplant 2 · ×3,5' },
+          { name: 'Elbphilharmonie', v: 0.87, sub: 'geplant 0,08 · ×11' },
+        ],
       }),
   },
   {

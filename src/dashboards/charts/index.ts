@@ -11,9 +11,11 @@ export {
   type ForecastCfg,
   type TreemapCfg,
   type BudgetSplitCfg,
+  type FactCheckCfg,
   wealthSplit,
   debtClock,
   weatherForecast,
   treemap,
   budgetSplit,
+  factCheck,
 } from './misc';

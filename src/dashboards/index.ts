@@ -60,6 +60,8 @@ function shuffled<T>(list: T[]): T[] {
 // right below; clustering and the theme chips both key off tags[0].
 const TAGS_BY_ID: Record<string, string[]> = {
   'de-budget-split': ['deutschland'],
+  'de-aid-peru': ['deutschland'],
+  'de-megaprojects': ['deutschland'],
   military: ['krieg'],
   mideast: ['krieg'],
   'military-per-soldier': ['krieg'],
@@ -278,6 +280,8 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 const ADDED_BY_ID: Record<string, string> = {
   'datacenter-map': '2026-07-09T22:30:00+02:00',
   'de-budget-split': '2026-07-09T20:00:00+02:00',
+  'de-aid-peru': '2026-07-09T21:30:00+02:00',
+  'de-megaprojects': '2026-07-09T21:31:00+02:00',
   'military': '2026-07-07T07:48:18+02:00',
   'mideast': '2026-07-09T12:00:00+02:00',
   'hormuz-oil': '2026-07-09T14:05:00+02:00',
@@ -524,7 +528,7 @@ const FEATURED = new Set([
   'gender-language', 'gender-divide', 'self-id-laws', 'rainbow-camps', 'lgbt-criminal-map', 'executions-map', 'slavery-map', 'drug-deaths-map', 'genocides', 'trans-youth',
   'sdg-progress', 'who-funding', 'excess-mortality', 'cb-gold', 'gold-reserves', 'farm-decline', 'pisa', 'free-speech-feeling', 'birth-collapse', 'big-three',
   'de-bank-branches', 'us-middle-wealth', 'us-consumer-debt',
-  'de-budget-split',
+  'de-budget-split', 'de-aid-peru', 'de-megaprojects',
 ]);
 
 /**
