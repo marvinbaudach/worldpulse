@@ -10,6 +10,12 @@ export const DotsDock = styled.div`
   transform: translateX(-50%);
   z-index: 12;
   pointer-events: none;
+
+  /* Landscape phones: vertical space is scarce and the card reaches deeper
+     down — hug the screen edge so the dots keep clear of the card. */
+  @media (max-height: 520px) {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  }
 `;
 
 const DotsRow = styled.div`

@@ -38,6 +38,17 @@ const Card = styled.div`
      overruns the header or the pager band; the subtracted margin is the
      top+bottom gap. */
   height: min(76vh, calc(100% - 88px));
+
+  /* Landscape phones: the portrait caps (width keyed to vh) shrink the card
+     to a stamp. Widen it — but only moderately: the chart renderers scale
+     their type with the card WIDTH (u = width/512) against a fixed height,
+     so past ~1.25:1 the titles balloon and the y-axis collapses. The 92vh
+     cap keeps the aspect in the renderers' comfort zone. */
+  @media (max-height: 520px) {
+    top: calc(50% - 10px);
+    width: min(72vw, 640px, 92vh);
+    height: min(80vh, calc(100% - 40px));
+  }
   border-radius: 18px;
   overflow: hidden;
   touch-action: none;
