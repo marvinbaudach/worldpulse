@@ -67,6 +67,18 @@ export function xAxisLabels(f: Frame, labels: string[], x0: number, x1: number, 
   ctx.textAlign = 'left';
 }
 
+/**
+ * Truncate `text` with a trailing ellipsis so it fits within `max` px at the
+ * context's *current* font — set the font before calling. Returns the text
+ * unchanged when it already fits (or when there's no room at all).
+ */
+export function ellipsize(ctx: CanvasRenderingContext2D, text: string, max: number): string {
+  if (max <= 0 || ctx.measureText(text).width <= max) return text;
+  let t = text;
+  while (t.length > 1 && ctx.measureText(`${t}…`).width > max) t = t.slice(0, -1);
+  return `${t.trimEnd()}…`;
+}
+
 /** Muted source/attribution line pinned to the panel's bottom-left. */
 export function drawSource(f: Frame, source: string): void {
   if (f.compact) return; // mobile shows the source behind the info button
@@ -76,13 +88,7 @@ export function drawSource(f: Frame, source: string): void {
   ctx.textAlign = 'left';
   // Long captions (the export can fall back to a card's full caveat text) are
   // ellipsized to the panel width instead of running off the edge.
-  const max = w - 72 * u;
-  let text = tr(source);
-  if (ctx.measureText(text).width > max) {
-    while (text.length > 1 && ctx.measureText(`${text}…`).width > max) text = text.slice(0, -1);
-    text = `${text.trimEnd()}…`;
-  }
-  ctx.fillText(text, 36 * u, h - 22 * u);
+  ctx.fillText(ellipsize(ctx, tr(source), w - 72 * u), 36 * u, h - 22 * u);
   f.sourceDrawn = true;
 }
 

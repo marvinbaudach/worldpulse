@@ -189,6 +189,8 @@ export const POOL: Dashboard[] = [
           { name: 'Großbritannien', v: 89e9 },
           { name: 'Saudi-Arabien', v: 83e9 },
         ],
+        // Rounded to whole billions — the tenths add no signal at this scale.
+        rowFmt: (v) => `$${localeNum(v / 1e9, 0)} ${tr('Mrd')}`,
       });
     },
   },

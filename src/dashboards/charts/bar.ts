@@ -14,7 +14,7 @@ import {
   type Frame,
 } from '../draw';
 import { FONT, GRID, INK, INK_SECONDARY } from '../theme';
-import { MONTHS, barGradient, lighten, plotRect, withAlpha, withFlag } from './shared';
+import { MONTHS, barGradient, ellipsize, lighten, plotRect, withAlpha, withFlag } from './shared';
 
 export interface BarCfg {
   label: string;
@@ -119,14 +119,19 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
       // Text rides on the bar; a soft shadow keeps it legible over the
       // bright end of the magnitude ramp.
       const ty = y + barH / 2 + 5 * u;
+      const valueStr = rowFmt(d.v * p);
       ctx.save();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
       ctx.shadowBlur = 3 * u;
       ctx.fillStyle = INK;
       ctx.font = `600 ${13.5 * u}px ${FONT}`;
-      ctx.fillText(withFlag(d.name), pad + 9 * u, ty);
+      // Label and value share this font, so measuring the value here also
+      // tells us how much room the label has before it would collide with it.
+      const labelX = pad + 9 * u;
+      const labelMax = w - pad - 9 * u - ctx.measureText(valueStr).width - 10 * u - labelX;
+      ctx.fillText(ellipsize(ctx, withFlag(d.name), labelMax), labelX, ty);
       ctx.textAlign = 'right';
-      ctx.fillText(rowFmt(d.v * p), w - pad - 9 * u, ty);
+      ctx.fillText(valueStr, w - pad - 9 * u, ty);
       ctx.textAlign = 'left';
       ctx.restore();
     });
@@ -141,13 +146,18 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
   cfg.rows.forEach((d, i) => {
     const p = stagger(t, i, 0.08);
     const y = top + 10 * u + rowH * i + Math.max(0, (rowH - groupH) / 2);
+    const valueStr = rowFmt(d.v * p);
+    // Measure the value in its own weight, then cap the label so it can't run
+    // under the right-aligned value on a narrow panel.
+    ctx.font = `600 ${17 * u}px ${FONT}`;
+    const labelMax = w - pad - ctx.measureText(valueStr).width - 12 * u - pad;
     ctx.fillStyle = INK_SECONDARY;
     ctx.font = `500 ${17 * u}px ${FONT}`;
-    ctx.fillText(withFlag(d.name), pad, y + 14 * u);
+    ctx.fillText(ellipsize(ctx, withFlag(d.name), labelMax), pad, y + 14 * u);
     ctx.fillStyle = INK;
     ctx.font = `600 ${17 * u}px ${FONT}`;
     ctx.textAlign = 'right';
-    ctx.fillText(rowFmt(d.v * p), w - pad, y + 14 * u);
+    ctx.fillText(valueStr, w - pad, y + 14 * u);
     ctx.textAlign = 'left';
 
     const bw = (w - 2 * pad) * (d.v / max) * p;
