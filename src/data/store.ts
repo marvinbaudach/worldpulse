@@ -13,6 +13,22 @@ export interface TrendSeries {
   xLabels: string[];
 }
 
+/** A measured daily series co-normalized against a flat reference baseline
+    (e.g. a pre-crisis average), for a two-line "now vs. normal" chart. Both
+    arrays share one nice y-scale so the gap between them reads truthfully. */
+export interface BaselineTrend {
+  /** Measured series, normalized 0..1, chronological. */
+  daily: number[];
+  /** Flat reference at `baselineRaw`, same length as `daily`, normalized 0..1. */
+  baseline: number[];
+  ticks: string[];
+  xLabels: string[];
+  /** Latest raw measured value. */
+  latest: number;
+  /** Raw baseline value (for the legend label). */
+  baselineRaw: number;
+}
+
 export interface LiveData {
   weather?: {
     currentTemp: number;
@@ -103,6 +119,9 @@ export interface LiveData {
     rows: { name: string; v: number }[];
     world: number;
   };
+  /** Strait of Hormuz daily tanker transits (IMF PortWatch, satellite AIS)
+      against the pre-crisis average — the live "now vs. normal" tanker curve. */
+  hormuzTankers?: BaselineTrend;
 }
 
 export const live: LiveData = {};

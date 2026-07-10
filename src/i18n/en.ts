@@ -85,6 +85,12 @@ export const EN = {
   'Autojobs · 🇩🇪': 'Auto jobs · 🇩🇪',
   'Öl durch Hormuz · Mio Barrel/Tag': 'Oil through Hormuz · million barrels/day',
   'Hormuz · Öl · Mio bbl/Tag': 'Hormuz · oil · million bbl/day',
+  // hormuz-tankers card (live IMF PortWatch)
+  'Tanker durch Hormuz': 'Tankers through Hormuz',
+  'Tanker/Tag': 'tankers/day',
+  'Vorkrise Ø': 'pre-crisis avg',
+  'IMF PortWatch (Satelliten-AIS, IMF/Univ. Oxford) · tägliche Tanker-Transite durch die Straße von Hormuz. Baseline = Vorkriegs-Durchschnitt ~54 Tanker/Tag (Tageswerte vor dem 28.02.2026). Wöchentlich aktualisiert. Stand Juli 2026.':
+    'IMF PortWatch (satellite AIS, IMF/Univ. of Oxford) · daily tanker transits through the Strait of Hormuz. Baseline = pre-war average ~54 tankers/day (daily records before 28 Feb 2026). Updated weekly. As of July 2026.',
   '🛢️ Dieselgate': '🛢️ Dieselgate',
   '🏭 VW: −35.000 Jobs': '🏭 VW: −35,000 jobs',
   '💥 Krieg 2026': '💥 War 2026',
@@ -483,6 +489,9 @@ export const EN = {
   'Zürich 🇨🇭': 'Zurich 🇨🇭',
   'ab 21 J.': 'from age 21',
   'heute': 'today',
+  // Month abbreviations (x-axis, e.g. the live Hormuz tanker curve)
+  'Jan': 'Jan', 'Feb': 'Feb', 'Mär': 'Mar', 'Apr': 'Apr', 'Mai': 'May', 'Jun': 'Jun',
+  'Jul': 'Jul', 'Aug': 'Aug', 'Sep': 'Sep', 'Okt': 'Oct', 'Nov': 'Nov', 'Dez': 'Dec',
   'nach Daniele Ganser · Schätzwerte, teils umstritten': 'after Daniele Ganser · estimates, partly disputed',
   'Ägypten': 'Egypt',
   'Ägypten 🇪🇬': 'Egypt 🇪🇬',

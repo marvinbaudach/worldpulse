@@ -5,8 +5,9 @@
 // ring keeps its true curves even with every API unreachable.
 
 import { localeNum, localePct, t as tr } from '../i18n';
-import type { TrendSeries } from './store';
+import type { BaselineTrend, TrendSeries } from './store';
 import {
+  baselineTrend,
   compareSeries,
   compareSeriesLog,
   interpAt,
@@ -497,6 +498,32 @@ export const HORMUZ_OIL_PANEL: TrendSeries = rawTrend(
   ],
   (v) => `${localeNum(v, 0)}`,
   ['2024', '2025', '2026', 'heute'],
+);
+
+// Strait of Hormuz daily TANKER transits, IMF PortWatch (satellite AIS, IMF /
+// Univ. of Oxford) — the live-fetched counterpart to the monthly oil-volume
+// panel above. Offline fallback: the Feb→Jul 2026 collapse-and-recovery, with
+// the pre-crisis average (~54 tankers/day, PortWatch daily record before the
+// 28 Feb 2026 war start) as the flat "normal" reference. loadHormuzTankers
+// overwrites this with the real daily series the moment it resolves.
+export const HORMUZ_TANKERS_FALLBACK: BaselineTrend = baselineTrend(
+  [
+    // early Feb — still near normal
+    52, 50, 48, 44, 38,
+    // late Feb–Mar — war, transits collapse (transponders run dark)
+    30, 22, 14, 9, 6, 5,
+    // Apr — trough (~5/day, a trickle)
+    5, 4, 6, 7,
+    // May — creeping back
+    9, 11, 12, 14,
+    // Jun — mid-month US–Iran deal, recovery accelerates
+    13, 15, 16, 18, 19,
+    // Jul — recovering, still only ~⅓ of normal
+    18, 21, 17, 11, 17,
+  ],
+  54,
+  ['Feb', 'Apr', 'Jun', 'heute'],
+  (v) => `${localeNum(v, 0)}`,
 );
 
 // Share of Germany's population with a migration background, %

@@ -2,7 +2,7 @@
 // normalization, nice axis scales, resampling and interpolation of sparse
 // year->value anchors into the draw-ready shapes the charts expect.
 
-import type { TrendSeries } from './store';
+import type { BaselineTrend, TrendSeries } from './store';
 
 /** Normalize a series into 0..1 against a (lo, hi) range. */
 export function norm(series: number[], lo: number, hi: number): number[] {
@@ -140,6 +140,32 @@ export function rawTrend(
         ? ((values[values.length - 1] - values[values.length - 2]) / values[values.length - 2]) * 100
         : 0,
     xLabels,
+  };
+}
+
+/**
+ * Build a "now vs. normal" panel from a dense measured series (e.g. daily
+ * counts) and a single flat `baseline` value. Both are normalized onto one
+ * shared nice scale anchored at 0, so the vertical gap between the live line
+ * and the reference reads truthfully. Label the x-axis by hand.
+ */
+export function baselineTrend(
+  values: number[],
+  baseline: number,
+  xLabels: string[],
+  fmt: (v: number) => string,
+  samples = 40,
+): BaselineTrend {
+  const s = niceScale(0, Math.max(baseline, ...values), fmt);
+  const daily = norm(resample(values, samples), s.lo, s.hi);
+  const bnorm = (baseline - s.lo) / Math.max(1e-9, s.hi - s.lo);
+  return {
+    daily,
+    baseline: Array.from({ length: daily.length }, () => bnorm),
+    ticks: s.ticks,
+    xLabels,
+    latest: values[values.length - 1],
+    baselineRaw: baseline,
   };
 }
 

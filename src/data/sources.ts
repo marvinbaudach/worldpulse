@@ -8,7 +8,7 @@
 
 import { localeNum, t as tr } from '../i18n';
 import { cached, fetchJson } from './cache';
-import { niceScale, norm, trend } from './series';
+import { baselineTrend, niceScale, norm, trend } from './series';
 import { CH_CENSUS, WORLD_HISTORY, debtTrend } from './bundled';
 import { emitLiveUpdate, live } from './store';
 import { TEMP_ANCHORS, hottestRows, type TempAnchor } from './climate';
@@ -469,6 +469,76 @@ async function loadMideast(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// IMF PortWatch — daily TANKER transits through the Strait of Hormuz. Keyless,
+// CORS-enabled ArcGIS feature service (satellite AIS on ~90k ships, IMF / Univ.
+// of Oxford). One query pulls the recent daily series (the crisis/recovery
+// curve); a second computes the pre-crisis average tanker/day (records before
+// the 28 Feb 2026 war) as the flat "normal" reference. Weekly-updated daily
+// data — so the card is `dynamic`, not `live`. The bundled counterpart is the
+// monthly oil-volume panel (HORMUZ_OIL_PANEL); this one is live and by ship count.
+
+const PORTWATCH_CHOKE =
+  'https://services9.arcgis.com/weJ1QsnbMYJlCHdG/ArcGIS/rest/services' +
+  '/Daily_Chokepoints_Data/FeatureServer/0/query';
+
+// Strait of Hormuz is portid "chokepoint6"; n_tanker is the daily tanker count.
+const HORMUZ_WHERE = "portid='chokepoint6'";
+const HORMUZ_WAR_START = '2026-02-28';
+
+interface ChokepointRow {
+  attributes: { date: string; n_tanker: number };
+}
+interface ChokepointResp {
+  features: ChokepointRow[];
+}
+interface AvgResp {
+  features: { attributes: { avg_tanker: number | null } }[];
+}
+
+const MONTH_SHORT = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+const monthOf = (isoDate: string) => MONTH_SHORT[Number(isoDate.slice(5, 7)) - 1] ?? '';
+
+async function loadHormuzTankers(): Promise<void> {
+  const { values, baseline, xLabels } = await cached('hormuz-tankers', 6 * 60 * MIN, async () => {
+    const avgStat = JSON.stringify([
+      { statisticType: 'avg', onStatisticField: 'n_tanker', outStatisticFieldName: 'avg_tanker' },
+    ]);
+    const [recent, pre] = await Promise.all([
+      fetchJson<ChokepointResp>(
+        `${PORTWATCH_CHOKE}?where=${encodeURIComponent(HORMUZ_WHERE)}` +
+          '&outFields=date,n_tanker&orderByFields=date%20DESC&resultRecordCount=140&f=json',
+      ),
+      fetchJson<AvgResp>(
+        `${PORTWATCH_CHOKE}?where=${encodeURIComponent(`${HORMUZ_WHERE} AND date < DATE '${HORMUZ_WAR_START}'`)}` +
+          `&outStatistics=${encodeURIComponent(avgStat)}&f=json`,
+      ),
+    ]);
+
+    // Query is date DESC → reverse to chronological. Guard the daily count.
+    const rows = (recent.features ?? [])
+      .filter((ft) => ft.attributes?.date && typeof ft.attributes.n_tanker === 'number')
+      .map((ft) => ({ date: ft.attributes.date, v: ft.attributes.n_tanker }))
+      .toReversed();
+    if (rows.length < 2) throw new Error('PortWatch: no Hormuz daily tanker rows');
+
+    const n = rows.length;
+    const labels = [
+      monthOf(rows[0].date),
+      monthOf(rows[Math.floor(n / 3)].date),
+      monthOf(rows[Math.floor((2 * n) / 3)].date),
+      'heute',
+    ];
+    return {
+      values: rows.map((r) => r.v),
+      baseline: Math.round(pre.features[0]?.attributes.avg_tanker ?? 54),
+      xLabels: labels,
+    };
+  });
+
+  live.hormuzTankers = baselineTrend(values, baseline, xLabels, (v) => localeNum(v, 0));
+}
+
+// ---------------------------------------------------------------------------
 
 export interface LiveFeed {
   /** Uplink station code on the loading screen's route strip. */
@@ -498,6 +568,7 @@ export const LIVE_FEEDS: LiveFeed[] = [
   { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Mordrate', load: loadHomicide },
   { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Suizidrate', load: loadSuicide },
   { code: 'GZA', source: 'TECH FOR PALESTINE', city: 'GAZA', item: 'Opferzahlen', load: loadMideast },
+  { code: 'HOR', source: 'IMF PORTWATCH', city: 'STRASSE VON HORMUS', item: 'Tanker-Transite', load: loadHormuzTankers },
 ];
 
 let started = false;

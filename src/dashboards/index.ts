@@ -122,6 +122,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'de-industry': ['deutschland'],
   'de-auto-jobs': ['deutschland'],
   'hormuz-oil': ['krieg'],
+  'hormuz-tankers': ['krieg'],
   'de-migration': ['deutschland'],
   'de-migration-flows': ['deutschland'],
   'pl-migration': ['deutschland'],
@@ -300,7 +301,9 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
  * the pool ordered newest-first so fresh cards are easy to review.
  */
 const ADDED_BY_ID: Record<string, string> = {
-  // Corona-critical dossier — newest, so it leads the NEU chip.
+  // Live Hormuz tanker traffic (IMF PortWatch) — newest, leads the NEU chip.
+  'hormuz-tankers': '2026-07-10T12:30:00+02:00',
+  // Corona-critical dossier.
   'covid-vax-reports-de': '2026-07-10T11:03:00+02:00',
   'excess-age-adjusted': '2026-07-10T11:02:00+02:00',
   'de-corona-massnahmen': '2026-07-10T11:01:00+02:00',

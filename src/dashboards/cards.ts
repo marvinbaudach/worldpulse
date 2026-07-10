@@ -38,6 +38,7 @@ import {
   US_TROOPS_ABROAD,
 } from './geo';
 import type { Dashboard } from './types';
+import { BASELINE } from './theme';
 import { EU_FREEDOM_CARDS } from './euFreedom';
 import { COVID_CRITICAL_CARDS } from './covidCritical';
 import { live } from '../data/store';
@@ -62,6 +63,7 @@ import {
   AI_JOBS_COMPARE,
   DE_AUTO_JOBS_PANEL,
   HORMUZ_OIL_PANEL,
+  HORMUZ_TANKERS_FALLBACK,
   CAMERAS_PANEL,
   CB_BALANCE_COMPARE,
   CONFLICT_PANEL,
@@ -1451,6 +1453,34 @@ export const POOL: Dashboard[] = [
     ]),
     'EIA/IEA/Kpler · Rohöl + Produkte durch die Straße von Hormuz, ~20 % des Welt-Öls. Normal ~3.000 Schiffe/Monat (~100/Tag), 50–60 % Tanker; April 2026 nur ~191 Schiffe. Kriegsmonate grob geschätzt. Stand Juli 2026.',
   ),
+  // Live daily TANKER transits through the Strait of Hormuz (IMF PortWatch,
+  // satellite AIS) against the pre-crisis average — the "now vs. normal"
+  // recovery curve after the 2026 war. Live, by-ship-count counterpart to the
+  // bundled monthly oil-volume card above (hormuz-oil).
+  {
+    id: 'hormuz-tankers',
+    title: 'Tanker durch Hormuz · Schiffe/Tag',
+    source:
+      'IMF PortWatch (Satelliten-AIS, IMF/Univ. Oxford) · tägliche Tanker-Transite durch die Straße von Hormuz. Baseline = Vorkriegs-Durchschnitt ~54 Tanker/Tag (Tageswerte vor dem 28.02.2026). Wöchentlich aktualisiert. Stand Juli 2026.',
+    dynamic: true,
+    draw: (f) => {
+      // Live shape wins; the bundled Feb→Jul 2026 curve backs it offline.
+      const h = live.hormuzTankers ?? HORMUZ_TANKERS_FALLBACK;
+      lineChart(f, {
+        label: 'Tanker durch Hormuz · Schiffe/Tag',
+        value: h.latest,
+        unit: '',
+        delta: null,
+        seed: 617,
+        series: [
+          { name: 'Tanker/Tag', color: orange, data: h.daily },
+          { name: 'Vorkrise Ø', color: BASELINE, data: h.baseline },
+        ],
+        ticks: h.ticks,
+        xLabels: h.xLabels,
+      });
+    },
+  },
   trendCard('de-migration', 'Migrationsanteil Deutschland', 'Migrationshintergrund · 🇩🇪', DE_MIGRATION_PANEL, aqua, (v) => `${localePct(v, 1)}`, 149, eraMarkers(1950, 2024, [
     // The four big waves on the 1950–2024 axis: guest-worker recruitment, the
     // post-1990 Aussiedler/Balkan influx, the 2015 asylum wave, and Ukraine.

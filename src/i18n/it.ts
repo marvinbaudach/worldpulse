@@ -88,6 +88,12 @@ export const IT: Record<MessageKey, string> & Record<string, string> = {
   'Autojobs · 🇩🇪': 'Posti auto · 🇩🇪',
   'Öl durch Hormuz · Mio Barrel/Tag': 'Petrolio via Hormuz · Mln barili/g',
   'Hormuz · Öl · Mio bbl/Tag': 'Hormuz · petrolio · Mln bbl/g',
+  // hormuz-tankers card (live IMF PortWatch)
+  'Tanker durch Hormuz': 'Petroliere via Hormuz',
+  'Tanker/Tag': 'petroliere/g',
+  'Vorkrise Ø': 'media pre-crisi',
+  'IMF PortWatch (Satelliten-AIS, IMF/Univ. Oxford) · tägliche Tanker-Transite durch die Straße von Hormuz. Baseline = Vorkriegs-Durchschnitt ~54 Tanker/Tag (Tageswerte vor dem 28.02.2026). Wöchentlich aktualisiert. Stand Juli 2026.':
+    'IMF PortWatch (AIS satellitare, FMI/Univ. di Oxford) · transiti giornalieri di petroliere attraverso lo Stretto di Hormuz. Riferimento = media pre-guerra ~54 petroliere/g (dati giornalieri prima del 28/02/2026). Aggiornato settimanalmente. Al luglio 2026.',
   '🛢️ Dieselgate': '🛢️ Dieselgate',
   '🏭 VW: −35.000 Jobs': '🏭 VW: −35.000 posti',
   '💥 Krieg 2026': '💥 Guerra 2026',
@@ -522,6 +528,9 @@ export const IT: Record<MessageKey, string> & Record<string, string> = {
   'Zürich 🇨🇭': 'Zurigo 🇨🇭',
   'ab 21 J.': 'dai 21 anni',
   'heute': 'oggi',
+  // Month abbreviations (x-axis, e.g. the live Hormuz tanker curve)
+  'Jan': 'gen', 'Feb': 'feb', 'Mär': 'mar', 'Apr': 'apr', 'Mai': 'mag', 'Jun': 'giu',
+  'Jul': 'lug', 'Aug': 'ago', 'Sep': 'set', 'Okt': 'ott', 'Nov': 'nov', 'Dez': 'dic',
   'nach Daniele Ganser · Schätzwerte, teils umstritten': 'secondo Daniele Ganser · stime, in parte controverse',
   'Ägypten': 'Egitto',
   'Ägypten 🇪🇬': 'Egitto 🇪🇬',
