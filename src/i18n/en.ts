@@ -462,7 +462,6 @@ export const EN = {
   'Vertriebene': 'Displaced people',
   'Vertriebene · mit Militäreinsätzen': 'Displaced people · with military interventions',
   'WELT': 'WORLD',
-  'NEU': 'NEW',
   'WHO / NCD-RisC 2022 · Adipositas-Prävalenz Erwachsener (BMI ≥ 30), Schätzwerte.': 'WHO / NCD-RisC 2022 · adult obesity prevalence (BMI ≥ 30), estimates.',
   'WHO 2019 · registrierter Alkoholkonsum, Liter Reinalkohol pro Kopf (15+).': 'WHO 2019 · recorded alcohol consumption, litres of pure alcohol per capita (15+).',
   'WTO · Anteile an den Weltwarenexporten, gerundet.': 'WTO · shares of world merchandise exports, rounded.',

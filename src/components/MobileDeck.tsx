@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { ALL_DASHBOARDS, NEWEST } from '../dashboards';
+import { ALL_DASHBOARDS } from '../dashboards';
 import { favoriteDashboards } from '../favorites';
 import { refreshLiveData } from '../data/refresh';
 import { useDeviceTilt } from '../hooks/useDeviceTilt';
@@ -147,11 +147,11 @@ export function MobileDeck() {
   const { tag, setTag, visibleTags } = useThemeFilter();
 
   // FAVORITEN is a snapshot taken when the chip is picked: un-starring while
-  // browsing must not yank cards out from under the swipe. NEU shows the whole
-  // pool newest-first; every other chip filters the clustered deck as usual.
+  // browsing must not yank cards out from under the swipe. Every other chip
+  // filters the clustered deck as usual.
   const dashboards = useMemo(() => {
     if (tag === 'favoriten') return favoriteDashboards();
-    return tag === 'neu' ? NEWEST : ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag));
+    return ALL_DASHBOARDS.filter((d) => d.tags?.includes(tag));
   }, [tag]);
 
   const reducedMotion = useReducedMotion();

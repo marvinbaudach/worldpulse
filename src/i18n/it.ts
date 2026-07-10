@@ -498,7 +498,6 @@ export const IT: Record<MessageKey, string> & Record<string, string> = {
   'Vertriebene': 'Sfollati',
   'Vertriebene · mit Militäreinsätzen': 'Sfollati · con interventi militari',
   'WELT': 'MONDO',
-  'NEU': 'NUOVO',
   'WHO / NCD-RisC 2022 · Adipositas-Prävalenz Erwachsener (BMI ≥ 30), Schätzwerte.': 'WHO / NCD-RisC 2022 · prevalenza dell\'obesità negli adulti (BMI ≥ 30), stime.',
   'WHO 2019 · registrierter Alkoholkonsum, Liter Reinalkohol pro Kopf (15+).': 'WHO 2019 · consumo di alcol registrato, litri di alcol puro pro capite (15+).',
   'WTO · Anteile an den Weltwarenexporten, gerundet.': 'WTO · quote delle esportazioni mondiali di merci, arrotondate.',

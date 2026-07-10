@@ -503,7 +503,6 @@ export const FR: Record<MessageKey, string> & Record<string, string> = {
   'Vertriebene': 'Déplacés',
   'Vertriebene · mit Militäreinsätzen': 'Déplacés · avec interventions militaires',
   'WELT': 'MONDE',
-  'NEU': 'NOUVEAU',
   'WHO / NCD-RisC 2022 · Adipositas-Prävalenz Erwachsener (BMI ≥ 30), Schätzwerte.': 'OMS / NCD-RisC 2022 · prévalence de l\'obésité chez les adultes (IMC ≥ 30), estimations.',
   'WHO 2019 · registrierter Alkoholkonsum, Liter Reinalkohol pro Kopf (15+).': 'OMS 2019 · consommation d\'alcool enregistrée, litres d\'alcool pur par habitant (15+).',
   'WTO · Anteile an den Weltwarenexporten, gerundet.': 'OMC · parts des exportations mondiales de marchandises, arrondies.',

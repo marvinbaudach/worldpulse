@@ -38,9 +38,6 @@ export const TAGS: { id: string; label: string; accent: string; primary?: boolea
   // paleoclimate panels. Shares aqua with GESUNDHEIT — the palette is fixed
   // (CVD-validated), and aqua reads cold/ice for a climate theme.
   { id: 'klima', label: 'KLIMA', accent: SERIES[1] }, // aqua
-  // Review chip: the whole pool ordered newest-first (see ADDED_BY_ID) instead
-  // of the usual clustered shuffle, so freshly added cards are easy to check.
-  { id: 'neu', label: 'NEU', accent: SERIES[3] }, // green
   // Personal stack: gets its cards from the favorites store at runtime, so it
   // has no static pool entry (see RING_BY_TAG below). Shares gold with GELD —
   // the palette is fixed (CVD-validated), and gold matches the star.
@@ -297,8 +294,8 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 
 /**
  * When each card entered the pool (first commit touching its id in cards.ts;
- * uncommitted cards get the current date). Drives the NEU chip, which shows
- * the pool ordered newest-first so fresh cards are easy to review.
+ * uncommitted cards get the current date). Powers the "newest" sort in the dev
+ * review gallery (src/dev/gallery.ts) so freshly added cards are easy to find.
  */
 const ADDED_BY_ID: Record<string, string> = {
   // Live Hormuz tanker traffic (IMF PortWatch) — newest, leads the NEU chip.
@@ -538,7 +535,8 @@ const ADDED_BY_ID: Record<string, string> = {
 };
 for (const d of POOL) d.added = ADDED_BY_ID[d.id];
 
-/** Full pool ordered newest-first (cards without a date trail at the end). */
+/** Full pool ordered newest-first (cards without a date trail at the end).
+    Consumed by the dev review gallery's "newest" sort. */
 export const NEWEST: Dashboard[] = [...POOL].sort((a, b) =>
   (b.added ?? '').localeCompare(a.added ?? ''),
 );
@@ -616,9 +614,7 @@ export const RING_MAX = 20;
 export const RING_BY_TAG: Record<string, Dashboard[]> = Object.fromEntries(
   TAGS.filter((t) => t.id !== 'favoriten').map((t) => [
     t.id,
-    t.id === 'neu'
-      ? NEWEST.slice(0, RING_MAX)
-      : clustered(POOL.filter((d) => d.tags?.includes(t.id))).slice(0, RING_MAX),
+    clustered(POOL.filter((d) => d.tags?.includes(t.id))).slice(0, RING_MAX),
   ]),
 );
 
