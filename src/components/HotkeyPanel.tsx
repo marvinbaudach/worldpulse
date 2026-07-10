@@ -92,15 +92,21 @@ const Chevron = styled.span<{ $open: boolean }>`
   transition: transform 0.2s ease;
 `;
 
-// Fold body: rows collapse to zero height when the section is closed.
+// Fold body: rows collapse to zero height when the section is closed. Height is
+// driven by an explicit max-height cap, not the grid-template-rows: 0fr/1fr
+// trick — that trick leaves the row a *fractional* height in some browsers
+// (notably Firefox), so the lower rows (the FR/IT language buttons) rendered
+// clipped and unclickable while DE/EN stayed selectable, and the full-screen
+// scene canvas behind the panel swallowed the missed taps. The cap sits well
+// above the tallest fold (a four-row language/hint list) so an open section is
+// never clipped.
 const GroupBody = styled.div<{ $open: boolean }>`
-  display: grid;
-  grid-template-rows: ${(p) => (p.$open ? '1fr' : '0fr')};
-  transition: grid-template-rows 0.22s ease;
-
-  & > div {
-    overflow: hidden;
-  }
+  overflow: hidden;
+  max-height: ${(p) => (p.$open ? '260px' : '0')};
+  opacity: ${(p) => (p.$open ? 1 : 0)};
+  transition:
+    max-height 0.24s ease,
+    opacity 0.2s ease;
 `;
 
 // A shortcut line: key badge on the left, description on the right. Formation
