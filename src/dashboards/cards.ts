@@ -39,6 +39,7 @@ import {
 } from './geo';
 import type { Dashboard } from './types';
 import { EU_FREEDOM_CARDS } from './euFreedom';
+import { COVID_CRITICAL_CARDS } from './covidCritical';
 import { live } from '../data/store';
 import { EXCESS_100K_BY_ISO, VAX_RATE_BY_ISO } from '../data/covidWorld';
 import {
@@ -213,6 +214,7 @@ import {
  * in geo.ts, the bundled historical series in ../data/bundled.
  */
 export const POOL: Dashboard[] = [
+  ...COVID_CRITICAL_CARDS,
   ...EU_FREEDOM_CARDS,
   {
     id: 'de-budget-split',

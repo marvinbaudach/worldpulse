@@ -1404,4 +1404,48 @@ export const IT: Record<MessageKey, string> & Record<string, string> = {
   'CO₂-Konzentration · ppm': 'Concentrazione di CO₂ · ppm',
   'EPICA Dome C · Lüthi et al. 2008 / Bereiter et al. 2015 · atmosphärisches CO₂ aus antarktischen Eiskernen (Luftblasen), letzte 800.000 Jahre. In acht Eiszeit-Zyklen blieb CO₂ zwischen ~180 ppm (Eiszeit) und ~300 ppm (Warmzeit). Heute: 424 ppm — rund 40 % über jedem natürlichen Höchstwert des Zeitraums, erreicht in ~150 Jahren.':
     "EPICA Dome C · Lüthi et al. 2008 / Bereiter et al. 2015 · CO₂ atmosferica dalle carote di ghiaccio antartiche (bolle d'aria intrappolate), gli ultimi 800.000 anni. In otto cicli glaciali la CO₂ è rimasta tra ~180 ppm (glaciale) e ~300 ppm (interglaciale). Oggi: 424 ppm — circa il 40% sopra ogni massimo naturale del periodo, raggiunto in ~150 anni.",
+  // Corona-critical dossier — see covidCritical.ts
+  'Event 201 · Pandemie-Planübung': "Event 201 · esercitazione pandemica",
+  'Planübung · Okt 2019': "Esercitazione · ott. 2019",
+  'Vorläuferübung „Clade X" (JHCHS)': "Esercitazione precedente „Clade X\" (JHCHS)",
+  'Event 201 · Johns Hopkins, WEF, Gates-Stiftung': "Event 201 · Johns Hopkins, WEF, Fondazione Gates",
+  'Szenario: neues Coronavirus, Schwein → Mensch': "Scenario: nuovo coronavirus, maiale → uomo",
+  '65 Mio. Tote im 18-Monats-Modell': "65 milioni di morti nel modello a 18 mesi",
+  '7 Empfehlungen · Staat-Wirtschaft-Kooperation': "7 raccomandazioni · cooperazione pubblico-privato",
+  'JHCHS: „keine Vorhersage von COVID-19"': "JHCHS: „non una previsione della COVID-19\"",
+  'Johns Hopkins Center for Health Security · WEF · Gates-Stiftung, 18.10.2019 · Übungsszenario, keine Prognose':
+    "Johns Hopkins Center for Health Security · WEF · Fondazione Gates, 18/10/2019 · scenario di esercitazione, non una previsione",
+  'Johns Hopkins Center for Health Security · Weltwirtschaftsforum · Gates-Stiftung — Planspiel am 18.10.2019 in New York, 15 Teilnehmende, 3,5 Stunden. Fiktives Szenario zu einem neuen Coronavirus (Fledermaus → Schwein → Mensch), 65 Mio. Tote im 18-Monats-Modell, 7 Empfehlungen zur Zusammenarbeit von Staat und Wirtschaft. Ausdrücklich keine Prognose (JHCHS-Stellungnahme); Vorläuferübung „Clade X" 2018. Chronik einer Übung — kein Beleg für eine geplante Pandemie.':
+    "Johns Hopkins Center for Health Security · Forum economico mondiale · Fondazione Gates — esercitazione il 18/10/2019 a New York, 15 partecipanti, 3,5 ore. Scenario fittizio di un nuovo coronavirus (pipistrello → maiale → uomo), 65 milioni di morti nel modello a 18 mesi, 7 raccomandazioni sulla cooperazione tra Stato ed economia. Esplicitamente non una previsione (dichiarazione del JHCHS); esercitazione precedente „Clade X\" nel 2018. La cronaca di un'esercitazione — non la prova di una pandemia pianificata.",
+  'Corona-Maßnahmen · Deutschland': "Misure Covid · Germania",
+  'Corona-Maßnahmen · 🇩🇪': "Misure Covid · 🇩🇪",
+  'Größtenteils aufgehoben': "In gran parte revocate",
+  'Erster Lockdown · Kontaktverbot': "Primo lockdown · divieto di contatto",
+  'Harter Lockdown über Weihnachten': "Lockdown duro a Natale",
+  'Bundesnotbremse · §28b IfSG': "Freno d'emergenza federale · §28b IfSG",
+  '3G, später 2G · Zugangsregeln': "Regole 3G, poi 2G · accesso",
+  'Einrichtungsbez. Impfpflicht beschlossen': "Obbligo vaccinale di settore approvato",
+  'Allgemeine Impfpflicht abgelehnt': "Obbligo vaccinale generale respinto",
+  'Einrichtungsbezogene Impfpflicht ausgelaufen': "Obbligo vaccinale di settore scaduto",
+  'Letzte Schutzmaßnahmen enden': "Terminano le ultime misure di protezione",
+  'Bundestag / BMG · IfSG §28b · Impfpräventionsgesetz · Abstimmung 07.04.2022':
+    "Bundestag / Ministero della Salute · IfSG §28b · legge sulla prevenzione vaccinale · voto del 07/04/2022",
+  'Bundestag / Bundesgesundheitsministerium · IfSG §28b (4. Bevölkerungsschutzgesetz, 04/2021, „Bundesnotbremse") · Gesetz zur Stärkung der Impfprävention (beschlossen 10.12.2021, in Kraft 15.03.2022) · Bundestag 07.04.2022: allgemeine Impfpflicht abgelehnt. Rot = in Kraft, Grün = aufgehoben / abgelehnt.':
+    "Bundestag / Ministero federale della Salute · IfSG §28b (4ª legge di protezione della popolazione, 04/2021, „freno d'emergenza federale\") · legge per rafforzare la prevenzione vaccinale (approvata il 10/12/2021, in vigore dal 15/03/2022) · Bundestag 07/04/2022: obbligo vaccinale generale respinto. Rosso = in vigore, verde = revocato / respinto.",
+  'Übersterblichkeit · roh vs. altersbereinigt': "Mortalità in eccesso · grezza vs. corretta per età",
+  'Übersterblichkeit · roh vs. altersbereinigt · 🇩🇪': "Mortalità in eccesso · grezza vs. corretta per età · 🇩🇪",
+  '2020 · roh': "2020 · grezza",
+  '2020 · altersbereinigt': "2020 · corretta per età",
+  '2021 · roh': "2021 · grezza",
+  '2021 · altersbereinigt': "2021 · corretta per età",
+  'Statistisches Bundesamt (Destatis) · Sonderauswertung Sterbefälle (rohe P-Scores 2020/21 ggü. Vor-Pandemie-Erwartung, gerundet) und WISTA 1/2023, Kauermann/De Nicola (altersstandardisiert; CODAG). Kernbefund: Der Anstieg 2020/21 lässt sich größtenteils durch die alternde Bevölkerung erklären — altersbereinigt bleibt 2020 nahe null, 2021 rund +2,3 %. Roh und bereinigt getrennt ausgewiesen; keine Zahl ersetzt die andere.':
+    "Ufficio federale di statistica (Destatis) · valutazione speciale dei decessi (p-score grezzi 2020/21 vs. attesa pre-pandemica, arrotondati) e WISTA 1/2023, Kauermann/De Nicola (standardizzato per età; CODAG). Risultato chiave: gran parte dell'aumento 2020/21 è spiegata dall'invecchiamento della popolazione — corretta per età, il 2020 resta vicino a zero e il 2021 intorno a +2,3 %. Grezza e corretta mostrate separatamente; nessun dato sostituisce l'altro.",
+  'Impf-Verdachtsmeldungen · Deutschland (PEI)': "Segnalazioni di sospette reazioni · Germania (PEI)",
+  '350.868 gemeldete Verdachtsfälle · 🇩🇪': "350.868 casi sospetti segnalati · 🇩🇪",
+  'Vektor · AstraZeneca': "vettore · AstraZeneca",
+  'mRNA · Moderna': "mRNA · Moderna",
+  'Vektor · J&J': "vettore · J&J",
+  'mRNA · BioNTech': "mRNA · BioNTech",
+  'Paul-Ehrlich-Institut · Pharmakovigilanzbericht COVID-19-Impfstoffe. 350.868 gemeldete Verdachtsfälle bei rund 197 Mio. Impfungen (Stand 31.12.2024), davon 63.909 (18,2 %) schwerwiegend; Melderate gesamt 1,78/1.000 Dosen. Balken: Melderate der Verdachtsfälle je 1.000 Dosen nach Impfstoff (27.12.2020–30.9.2021) — Vektorimpfstoffe über den mRNA-Impfstoffen. Passive Spontanerfassung: eine Meldung ist kein Kausalitätsnachweis; das PEI meldet seit 03/2023 kein neues Risikosignal.':
+    "Istituto Paul Ehrlich · rapporto di farmacovigilanza sui vaccini COVID-19. 350.868 casi sospetti segnalati su circa 197 milioni di vaccinazioni (al 31/12/2024), di cui 63.909 (18,2 %) gravi; tasso di segnalazione complessivo di 1,78 per 1.000 dosi. Barre: tasso di segnalazione dei casi sospetti per 1.000 dosi per vaccino (27/12/2020–30/09/2021) — vaccini a vettore sopra quelli a mRNA. Segnalazione spontanea passiva: una segnalazione non è prova di causalità; il PEI non segnala alcun nuovo segnale di rischio dal 03/2023.",
 };

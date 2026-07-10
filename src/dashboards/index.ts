@@ -285,6 +285,12 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'asset-register': ['freiheit'],
   'data-retention': ['freiheit'],
   dsa: ['freiheit'],
+  // Corona-critical dossier (Event 201, measures timeline, excess mortality,
+  // PEI reports) — see covidCritical.ts.
+  'event-201': ['corona'],
+  'de-corona-massnahmen': ['corona', 'freiheit'],
+  'excess-age-adjusted': ['corona'],
+  'covid-vax-reports-de': ['corona'],
 };
 for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 
@@ -294,7 +300,12 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
  * the pool ordered newest-first so fresh cards are easy to review.
  */
 const ADDED_BY_ID: Record<string, string> = {
-  // Suicide-rate world map — newest, so it leads the NEU chip.
+  // Corona-critical dossier — newest, so it leads the NEU chip.
+  'covid-vax-reports-de': '2026-07-10T11:03:00+02:00',
+  'excess-age-adjusted': '2026-07-10T11:02:00+02:00',
+  'de-corona-massnahmen': '2026-07-10T11:01:00+02:00',
+  'event-201': '2026-07-10T11:00:00+02:00',
+  // Suicide-rate world map.
   'suicide-map': '2026-07-10T10:05:00+02:00',
   // EU freedom-restriction dossier.
   chatkontrolle: '2026-07-10T10:04:00+02:00',

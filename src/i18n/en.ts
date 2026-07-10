@@ -1354,6 +1354,50 @@ export const EN = {
   'CO₂-Konzentration · ppm': 'CO₂ concentration · ppm',
   'EPICA Dome C · Lüthi et al. 2008 / Bereiter et al. 2015 · atmosphärisches CO₂ aus antarktischen Eiskernen (Luftblasen), letzte 800.000 Jahre. In acht Eiszeit-Zyklen blieb CO₂ zwischen ~180 ppm (Eiszeit) und ~300 ppm (Warmzeit). Heute: 424 ppm — rund 40 % über jedem natürlichen Höchstwert des Zeitraums, erreicht in ~150 Jahren.':
     'EPICA Dome C · Lüthi et al. 2008 / Bereiter et al. 2015 · atmospheric CO₂ from Antarctic ice cores (trapped air bubbles), the last 800,000 years. Across eight glacial cycles CO₂ stayed between ~180 ppm (glacial) and ~300 ppm (interglacial). Today: 424 ppm — about 40% above every natural peak of the period, reached in ~150 years.',
+  // Corona-critical dossier — see covidCritical.ts
+  'Event 201 · Pandemie-Planübung': 'Event 201 · pandemic tabletop exercise',
+  'Planübung · Okt 2019': 'Tabletop exercise · Oct 2019',
+  'Vorläuferübung „Clade X" (JHCHS)': 'Precursor exercise "Clade X" (JHCHS)',
+  'Event 201 · Johns Hopkins, WEF, Gates-Stiftung': 'Event 201 · Johns Hopkins, WEF, Gates Foundation',
+  'Szenario: neues Coronavirus, Schwein → Mensch': 'Scenario: novel coronavirus, pig → human',
+  '65 Mio. Tote im 18-Monats-Modell': '65 million deaths in the 18-month model',
+  '7 Empfehlungen · Staat-Wirtschaft-Kooperation': '7 recommendations · public-private cooperation',
+  'JHCHS: „keine Vorhersage von COVID-19"': 'JHCHS: "not a prediction of COVID-19"',
+  'Johns Hopkins Center for Health Security · WEF · Gates-Stiftung, 18.10.2019 · Übungsszenario, keine Prognose':
+    'Johns Hopkins Center for Health Security · WEF · Gates Foundation, 18 Oct 2019 · exercise scenario, not a forecast',
+  'Johns Hopkins Center for Health Security · Weltwirtschaftsforum · Gates-Stiftung — Planspiel am 18.10.2019 in New York, 15 Teilnehmende, 3,5 Stunden. Fiktives Szenario zu einem neuen Coronavirus (Fledermaus → Schwein → Mensch), 65 Mio. Tote im 18-Monats-Modell, 7 Empfehlungen zur Zusammenarbeit von Staat und Wirtschaft. Ausdrücklich keine Prognose (JHCHS-Stellungnahme); Vorläuferübung „Clade X" 2018. Chronik einer Übung — kein Beleg für eine geplante Pandemie.':
+    'Johns Hopkins Center for Health Security · World Economic Forum · Gates Foundation — tabletop exercise on 18 Oct 2019 in New York, 15 participants, 3.5 hours. Fictional scenario of a novel coronavirus (bat → pig → human), 65 million deaths in the 18-month model, 7 recommendations on government-business cooperation. Explicitly not a forecast (JHCHS statement); precursor exercise "Clade X" in 2018. The chronology of an exercise — not evidence of a planned pandemic.',
+  'Corona-Maßnahmen · Deutschland': 'Corona measures · Germany',
+  'Corona-Maßnahmen · 🇩🇪': 'Corona measures · 🇩🇪',
+  'Größtenteils aufgehoben': 'Mostly lifted',
+  'Erster Lockdown · Kontaktverbot': 'First lockdown · contact ban',
+  'Harter Lockdown über Weihnachten': 'Hard lockdown over Christmas',
+  'Bundesnotbremse · §28b IfSG': 'Federal "emergency brake" · §28b IfSG',
+  '3G, später 2G · Zugangsregeln': '3G, later 2G · access rules',
+  'Einrichtungsbez. Impfpflicht beschlossen': 'Facility-based vaccine mandate passed',
+  'Allgemeine Impfpflicht abgelehnt': 'General vaccine mandate rejected',
+  'Einrichtungsbezogene Impfpflicht ausgelaufen': 'Facility-based vaccine mandate expired',
+  'Letzte Schutzmaßnahmen enden': 'Last protective measures end',
+  'Bundestag / BMG · IfSG §28b · Impfpräventionsgesetz · Abstimmung 07.04.2022':
+    'Bundestag / Health Ministry · IfSG §28b · Vaccination Prevention Act · vote 07 Apr 2022',
+  'Bundestag / Bundesgesundheitsministerium · IfSG §28b (4. Bevölkerungsschutzgesetz, 04/2021, „Bundesnotbremse") · Gesetz zur Stärkung der Impfprävention (beschlossen 10.12.2021, in Kraft 15.03.2022) · Bundestag 07.04.2022: allgemeine Impfpflicht abgelehnt. Rot = in Kraft, Grün = aufgehoben / abgelehnt.':
+    'Bundestag / Federal Health Ministry · IfSG §28b (4th Population Protection Act, 04/2021, "federal emergency brake") · Act to Strengthen Vaccination Prevention (passed 10 Dec 2021, in force 15 Mar 2022) · Bundestag 07 Apr 2022: general vaccine mandate rejected. Red = in force, green = lifted / rejected.',
+  'Übersterblichkeit · roh vs. altersbereinigt': 'Excess mortality · raw vs. age-adjusted',
+  'Übersterblichkeit · roh vs. altersbereinigt · 🇩🇪': 'Excess mortality · raw vs. age-adjusted · 🇩🇪',
+  '2020 · roh': '2020 · raw',
+  '2020 · altersbereinigt': '2020 · age-adjusted',
+  '2021 · roh': '2021 · raw',
+  '2021 · altersbereinigt': '2021 · age-adjusted',
+  'Statistisches Bundesamt (Destatis) · Sonderauswertung Sterbefälle (rohe P-Scores 2020/21 ggü. Vor-Pandemie-Erwartung, gerundet) und WISTA 1/2023, Kauermann/De Nicola (altersstandardisiert; CODAG). Kernbefund: Der Anstieg 2020/21 lässt sich größtenteils durch die alternde Bevölkerung erklären — altersbereinigt bleibt 2020 nahe null, 2021 rund +2,3 %. Roh und bereinigt getrennt ausgewiesen; keine Zahl ersetzt die andere.':
+    'Federal Statistical Office (Destatis) · special mortality evaluation (raw p-scores 2020/21 vs. pre-pandemic expectation, rounded) and WISTA 1/2023, Kauermann/De Nicola (age-standardised; CODAG). Key finding: most of the 2020/21 rise is explained by the ageing population — age-adjusted, 2020 stays near zero and 2021 around +2.3%. Raw and adjusted shown separately; neither figure replaces the other.',
+  'Impf-Verdachtsmeldungen · Deutschland (PEI)': 'Suspected vaccine-reaction reports · Germany (PEI)',
+  '350.868 gemeldete Verdachtsfälle · 🇩🇪': '350,868 suspected-case reports · 🇩🇪',
+  'Vektor · AstraZeneca': 'vector · AstraZeneca',
+  'mRNA · Moderna': 'mRNA · Moderna',
+  'Vektor · J&J': 'vector · J&J',
+  'mRNA · BioNTech': 'mRNA · BioNTech',
+  'Paul-Ehrlich-Institut · Pharmakovigilanzbericht COVID-19-Impfstoffe. 350.868 gemeldete Verdachtsfälle bei rund 197 Mio. Impfungen (Stand 31.12.2024), davon 63.909 (18,2 %) schwerwiegend; Melderate gesamt 1,78/1.000 Dosen. Balken: Melderate der Verdachtsfälle je 1.000 Dosen nach Impfstoff (27.12.2020–30.9.2021) — Vektorimpfstoffe über den mRNA-Impfstoffen. Passive Spontanerfassung: eine Meldung ist kein Kausalitätsnachweis; das PEI meldet seit 03/2023 kein neues Risikosignal.':
+    'Paul Ehrlich Institute · pharmacovigilance report on COVID-19 vaccines. 350,868 suspected-case reports across about 197 million vaccinations (as of 31 Dec 2024), of which 63,909 (18.2%) serious; overall reporting rate 1.78 per 1,000 doses. Bars: reporting rate of suspected cases per 1,000 doses by vaccine (27 Dec 2020–30 Sep 2021) — vector vaccines above the mRNA ones. Passive spontaneous reporting: a report is not proof of causation; the PEI has reported no new risk signal since 03/2023.',
 } satisfies Record<string, string>;
 
 // The exact set of German source strings that get a non-identity English
