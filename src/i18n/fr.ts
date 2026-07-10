@@ -577,6 +577,13 @@ export const FR: Record<MessageKey, string> & Record<string, string> = {
   '🇦🇺 Social-Media-Verbot': '🇦🇺 Interdiction des réseaux sociaux',
   '🇦🇺 Zoe Buhler · Facebook-Post': '🇦🇺 Zoe Buhler · post Facebook',
   '🇧🇬 Bulgarien': '🇧🇬 Bulgarie',
+  // Foreign population by nationality (AZR 2024) card.
+  'Ausländische Bevölkerung nach Staatsangehörigkeit': 'Population étrangère par nationalité',
+  'Ausländische Bevölkerung · nach Staatsangehörigkeit · 2024': 'Population étrangère · par nationalité · 2024',
+  'Destatis · Ausländerzentralregister (AZR), Stand 31.12.2024. Gemeldete ausländische Staatsangehörige nach Herkunftsland — Deutschland erhebt keine Ethnie-Statistik. Eingebürgerte zählen als Deutsche und fehlen hier; kein Migrationshintergrund. Gesamt 14,06 Mio., Top 10.':
+    'Destatis · Registre central des étrangers (AZR), au 31.12.2024. Ressortissants étrangers enregistrés par pays d\'origine — l\'Allemagne ne recueille aucune statistique ethnique. Les personnes naturalisées comptent comme allemandes et sont absentes ici ; pas d\'origine migratoire. Total 14,06 M, top 10.',
+  '🇭🇷 Kroatien': '🇭🇷 Croatie',
+  '🇬🇷 Griechenland': '🇬🇷 Grèce',
   '🇧🇸 Sand Dollar · 1. CBDC': '🇧🇸 Sand Dollar · 1re MNBC',
   '🇧🇾 Belarus 2020': '🇧🇾 Biélorussie 2020',
   '🇨🇭 Digitaler Franken': '🇨🇭 Franc numérique',

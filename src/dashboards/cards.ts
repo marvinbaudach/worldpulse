@@ -1624,6 +1624,39 @@ export const POOL: Dashboard[] = [
       }),
   },
   {
+    id: 'de-foreign-population',
+    title: 'Ausländische Bevölkerung nach Staatsangehörigkeit',
+    source:
+      'Destatis · Ausländerzentralregister (AZR), Stand 31.12.2024. Gemeldete ausländische Staatsangehörige nach Herkunftsland — Deutschland erhebt keine Ethnie-Statistik. Eingebürgerte zählen als Deutsche und fehlen hier; kein Migrationshintergrund. Gesamt 14,06 Mio., Top 10.',
+    draw: (f) =>
+      hBarChart(f, {
+        // Foreign nationals resident in Germany by citizenship — the sourced
+        // answer to "break the migrants down by origin". German statistics
+        // publish immigration by nationality / country of origin, never by
+        // ethnicity (none is collected), so nationality is the honest axis.
+        // AZR 31 Dec 2024 (Destatis, published 2 Apr 2026); naturalized
+        // citizens count as German and are absent. Total 14.06M, top 10 shown.
+        label: 'Ausländische Bevölkerung · nach Staatsangehörigkeit · 2024',
+        value: 14_061_640,
+        rowFmt: deInt,
+        delta: null,
+        color: blue,
+        unit: '',
+        rows: [
+          { name: '🇹🇷 Türkei', v: 1_544_480 },
+          { name: '🇺🇦 Ukraine', v: 1_334_005 },
+          { name: '🇸🇾 Syrien', v: 975_060 },
+          { name: '🇷🇴 Rumänien', v: 909_755 },
+          { name: '🇵🇱 Polen', v: 864_980 },
+          { name: '🇮🇹 Italien', v: 636_730 },
+          { name: '🇦🇫 Afghanistan', v: 442_020 },
+          { name: '🇧🇬 Bulgarien', v: 432_080 },
+          { name: '🇭🇷 Kroatien', v: 425_810 },
+          { name: '🇬🇷 Griechenland', v: 353_730 },
+        ],
+      }),
+  },
+  {
     id: 'de-crime-foreign',
     title: 'Nichtdeutsche Tatverdächtige · gegen Bevölkerungsanteil',
     source:

@@ -532,6 +532,13 @@ export const EN = {
   '🇦🇺 Social-Media-Verbot': '🇦🇺 Social media ban',
   '🇦🇺 Zoe Buhler · Facebook-Post': '🇦🇺 Zoe Buhler · Facebook post',
   '🇧🇬 Bulgarien': '🇧🇬 Bulgaria',
+  // Foreign population by nationality (AZR 2024) card.
+  'Ausländische Bevölkerung nach Staatsangehörigkeit': 'Foreign population by nationality',
+  'Ausländische Bevölkerung · nach Staatsangehörigkeit · 2024': 'Foreign population · by nationality · 2024',
+  'Destatis · Ausländerzentralregister (AZR), Stand 31.12.2024. Gemeldete ausländische Staatsangehörige nach Herkunftsland — Deutschland erhebt keine Ethnie-Statistik. Eingebürgerte zählen als Deutsche und fehlen hier; kein Migrationshintergrund. Gesamt 14,06 Mio., Top 10.':
+    'Destatis · Central Register of Foreigners (AZR), as of 31 Dec 2024. Registered foreign nationals by country of origin — Germany collects no ethnicity statistics. Naturalized citizens count as German and are absent here; not migration background. Total 14.06M, top 10.',
+  '🇭🇷 Kroatien': '🇭🇷 Croatia',
+  '🇬🇷 Griechenland': '🇬🇷 Greece',
   '🇧🇸 Sand Dollar · 1. CBDC': '🇧🇸 Sand Dollar · 1st CBDC',
   '🇨🇭 Digitaler Franken': '🇨🇭 Digital franc',
   '🇨🇳 China überholt': '🇨🇳 China overtakes',
