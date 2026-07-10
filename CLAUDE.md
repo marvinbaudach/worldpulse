@@ -8,13 +8,18 @@ Three.js · Vite 8 · TypeScript 6 · oxlint. Deploys to GitHub Pages on push to
 ## Commands
 
 ```bash
-npm run dev      # vite dev server
-npm run gallery  # dev-only card QA/review grid (gallery.html) — never bundled
-npm run build    # tsc -b && vite build (type-checked — CI runs this)
-npm run lint     # oxlint (CI runs this before build)
+pnpm dev         # vite dev server
+pnpm gallery     # dev-only card QA/review grid (gallery.html) — never bundled
+pnpm build       # tsc -b && vite build (type-checked — CI runs this)
+pnpm lint        # oxlint (CI runs this before build)
 ```
 
-Card review: `npm run gallery` (or `npm run dev` → `/gallery.html`) renders
+Package manager is **pnpm** (`packageManager` field pins the version; CI uses
+`pnpm/action-setup` + `pnpm install --frozen-lockfile`). `postprocessing` is a
+direct dependency because the code imports it — pnpm's strict `node_modules`
+forbids the phantom-dep hoisting npm allowed.
+
+Card review: `pnpm gallery` (or `pnpm dev` → `/gallery.html`) renders
 every card into a filterable, sortable thumbnail grid with a full-size
 lightbox and optional live-data loading. It lives in `src/dev/` and is served
 only in dev — Vite builds `index.html` alone, so it never ships.

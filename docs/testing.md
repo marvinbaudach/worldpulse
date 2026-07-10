@@ -6,8 +6,8 @@ dashboard card offline. The WebGL/R3F layer and canvas pixels are intentionally
 not unit-tested (that's visual-regression territory).
 
 ```bash
-npm test         # vitest run — headless, ~3s; CI runs this between lint and build
-npm run test:watch
+pnpm test        # vitest run — headless, ~3s; CI runs this between lint and build
+pnpm test:watch
 ```
 
 ## Layout

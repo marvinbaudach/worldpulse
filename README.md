@@ -30,8 +30,8 @@ and sphere formations.
 ## Develop
 
 ```bash
-npm install
-npm run dev      # dev server
-npm run build    # type-checked production build
-npm run lint
+pnpm install
+pnpm dev         # dev server
+pnpm build       # type-checked production build
+pnpm lint
 ```

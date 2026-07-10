@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.11.0",
   "scripts": {
     "dev": "vite",
     "gallery": "vite --open /gallery.html",
@@ -16,6 +17,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
+    "postprocessing": "^6.36.6",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "styled-components": "^6.4.3",
