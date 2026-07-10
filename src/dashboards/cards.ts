@@ -1491,6 +1491,41 @@ export const POOL: Dashboard[] = [
       }),
   },
   {
+    id: 'de-tvbz-violence-adult',
+    title: 'Gewaltkriminalität · TVBZ Männer ab 21 nach Staatsangehörigkeit',
+    source:
+      'BKA · PKS 2024 (Summenschlüssel 892000), TVBZ via Bundestags-Drucksache 21/145 — nur Männer ab 21 J., damit die unterschiedliche Altersstruktur der Gruppen herausgerechnet ist; altersgleich bleibt der Abstand groß. Tatverdächtige, keine Verurteilten; kleine Bevölkerungsnenner machen Einzelwerte instabil.',
+    draw: (f) =>
+      hBarChart(f, {
+        // Age-controlled twin of `de-tvbz-violence`: violent-crime suspect
+        // rate (PKS sum key 892000, males, per 100k) restricted to adults 21+,
+        // from BT-Drs. 21/145's age-band tables. One band removes the age-
+        // structure confound with no standard-population assumption. Germany's
+        // crude 272 drops to 199; the top origins stay far above it (Morocco
+        // ~2.9k, ~14×). Complements the Afghan-vs-German age line (`de-tvbz-age`).
+        label: 'Gewaltkriminalität · Tatverdächtige Männer ab 21 J. je 100k · 2024',
+        value: 2888,
+        fmt: deInt,
+        rowFmt: deInt,
+        delta: null,
+        color: red,
+        unit: '',
+        rows: [
+          { name: '🇲🇦 Marokko', v: 2888 },
+          { name: '🇮🇶 Irak', v: 1956 },
+          { name: '🇦🇫 Afghanistan', v: 1885 },
+          { name: '🇸🇾 Syrien', v: 1777 },
+          { name: '🇧🇬 Bulgarien', v: 967 },
+          { name: '🇷🇸 Serbien', v: 947 },
+          { name: '🇹🇷 Türkei', v: 857 },
+          { name: '🇷🇴 Rumänien', v: 734 },
+          { name: '🇺🇦 Ukraine', v: 703 },
+          { name: '🇵🇱 Polen', v: 586 },
+          { name: '🇩🇪 Deutschland · Referenz', v: 199 },
+        ],
+      }),
+  },
+  {
     id: 'de-tvbz-age',
     title: 'Gewaltkriminalität · Deutsche vs. Afghanen nach Alter',
     source:
@@ -1539,6 +1574,42 @@ export const POOL: Dashboard[] = [
           { name: '🇹🇷 Türkei', v: 64 },
           { name: '🇷🇴 Rumänien', v: 43 },
           { name: '🇩🇪 Deutschland · Referenz', v: 20 },
+        ],
+      }),
+  },
+  {
+    id: 'de-tvbz-rape-adult',
+    title: 'Vergewaltigung · TVBZ Männer ab 21 nach Staatsangehörigkeit',
+    source:
+      'BKA · PKS 2024 (Schlüssel 111000), TVBZ via Bundestags-Drucksache 21/145 — nur Männer ab 21 J., damit die unterschiedliche Altersstruktur der Gruppen herausgerechnet ist; altersgleich bleibt der Abstand groß. Tatverdächtige, keine Verurteilten; kleine Bevölkerungsnenner machen Einzelwerte instabil.',
+    draw: (f) =>
+      hBarChart(f, {
+        // Age-controlled twin of `de-tvbz-rape`: same suspect rate (PKS key
+        // 111000, males, per 100k) but restricted to adults 21+, taken
+        // directly from BT-Drs. 21/145's age-band tables. Restricting to one
+        // band removes the age-structure confound without any standard-
+        // population assumption. The gap does NOT collapse — Germany's crude
+        // 20 drops to 17 (its youth carried part of it), the Afghan/Iraq/Iran
+        // values barely move; Bulgaria/Serbia shrink most.
+        label: 'Vergewaltigung & schwere Übergriffe · Männer ab 21 J. je 100k · 2024',
+        value: 205,
+        fmt: deInt,
+        rowFmt: deInt,
+        delta: null,
+        color: red,
+        unit: '',
+        rows: [
+          { name: '🇦🇫 Afghanistan', v: 205 },
+          { name: '🇮🇶 Irak', v: 200 },
+          { name: '🇮🇷 Iran', v: 139 },
+          { name: '🇸🇾 Syrien', v: 131 },
+          { name: '🇷🇸 Serbien', v: 64 },
+          { name: '🇹🇷 Türkei', v: 62 },
+          { name: '🇧🇬 Bulgarien', v: 51 },
+          { name: '🇷🇴 Rumänien', v: 41 },
+          { name: '🇺🇦 Ukraine', v: 33 },
+          { name: '🇵🇱 Polen', v: 29 },
+          { name: '🇩🇪 Deutschland · Referenz', v: 17 },
         ],
       }),
   },
