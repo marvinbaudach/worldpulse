@@ -36,7 +36,16 @@ describe('statusTimeline', () => {
   });
 
   it('renders each status kind without throwing', () => {
-    const kinds = ['proposed', 'adopted', 'inforce', 'blocked', 'court'] as const;
+    const kinds = [
+      'proposed',
+      'adopted',
+      'inforce',
+      'blocked',
+      'court',
+      'past',
+      'now',
+      'forecast',
+    ] as const;
     for (const kind of kinds) {
       const f = frameAt(SETTLED_T);
       const cfg: StatusTimelineCfg = {
@@ -51,5 +60,19 @@ describe('statusTimeline', () => {
   it('survives the compact (mobile) frame', () => {
     const f = { ...frameAt(SETTLED_T, 420), compact: true };
     expect(() => statusTimeline(f, CFG)).not.toThrow();
+  });
+
+  it('dashes the spine into a forecast milestone', () => {
+    const f = frameAt(SETTLED_T);
+    const cfg: StatusTimelineCfg = {
+      ...CFG,
+      status: { text: 'Wir stehen hier', kind: 'now' },
+      milestones: [
+        { date: '2022', text: 'passiert', kind: 'past' },
+        { date: '~2033', text: 'Prognose', kind: 'forecast' },
+      ],
+    };
+    statusTimeline(f, cfg);
+    expect(f.ctx.calls).toContain('setLineDash');
   });
 });

@@ -89,6 +89,9 @@ export interface HBarCfg {
   /** `sub` is a small pre-translated annotation after the name (e.g. a
       per-area density) — compose it with `tr()` in the card. */
   rows: { name: string; v: number; sub?: string }[];
+  /** Vertical reference line at value `v` (e.g. "human = 100 %"): dashed ink
+      across the bar block with a small label beneath — context, not data. */
+  refValue?: { v: number; label: string };
 }
 
 /** Horizontal top-N bars sliding in, every row direct-labeled. */
@@ -110,6 +113,29 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
   const blockTop = areaTop + Math.max(0, (areaH - rowH * cfg.rows.length) / 2);
   const max = Math.max(...cfg.rows.map((d) => d.v));
   const grad = barGradient(ctx, pad, w - pad, cfg.color);
+
+  // Reference line (e.g. "human = 100 %"): dashed ink across the bar block,
+  // drawn after the bars so it stays visible on top of them.
+  const drawRef = (): void => {
+    if (!cfg.refValue) return;
+    const blockH = rowH * cfg.rows.length;
+    const rx = pad + (w - 2 * pad) * (cfg.refValue.v / max);
+    ctx.strokeStyle = withAlpha(INK_SECONDARY, 0.55);
+    ctx.lineWidth = 1.5 * u;
+    ctx.setLineDash([6 * u, 5 * u]);
+    ctx.beginPath();
+    ctx.moveTo(rx, blockTop - 4 * u);
+    ctx.lineTo(rx, blockTop + blockH + 4 * u);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = withAlpha(INK_SECONDARY, 0.85);
+    ctx.font = `500 ${12 * u}px ${FONT}`;
+    const label = tr(cfg.refValue.label);
+    const half = ctx.measureText(label).width / 2;
+    ctx.textAlign = 'center';
+    ctx.fillText(label, Math.min(Math.max(rx, pad + half), w - pad - half), blockTop + blockH + 18 * u);
+    ctx.textAlign = 'left';
+  };
 
   // Tight rows (long lists on the short mobile cards): the label-above-bar
   // group would collide with its neighbors, so the row collapses into one
@@ -149,6 +175,7 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
       ctx.textAlign = 'left';
       ctx.restore();
     });
+    drawRef();
     return;
   }
 
@@ -193,6 +220,7 @@ export function hBarChart(f: Frame, cfg: HBarCfg): void {
     roundRect(ctx, pad, y + 20 * u, Math.max(bw, 10 * u), 10 * u, 5 * u);
     ctx.fill();
   });
+  drawRef();
 }
 
 // ---------------------------------------------------------------------------

@@ -14,7 +14,7 @@ import {
   makeSeries,
   type Frame,
 } from '../draw';
-import { FONT } from '../theme';
+import { FONT, INK_SECONDARY } from '../theme';
 import { plotRect, withAlpha, xAxisLabels } from './shared';
 
 /** A series whose label is a bare flag emoji (two regional-indicator glyphs). */
@@ -243,6 +243,10 @@ export interface LineCfg {
   /** Projection start (0..1 of the x-range): the lines render solid up to
       here, dashed with an arrowhead beyond — forecast, not measurement. */
   projectFrom?: number;
+  /** Horizontal reference line at a normalized y (0..1 of the value range),
+      e.g. a human baseline the series are measured against. Dashed ink, not a
+      series colour — it is context, never data. */
+  refLine?: { at: number; label: string };
 }
 
 /** Two-series line chart with draw-in, endpoint pulse and direct labels. */
@@ -294,6 +298,24 @@ export function lineChart(f: Frame, cfg: LineCfg): void {
 
   drawGrid(f, r.y0, r.y1, cfg.ticks.length);
   drawLegend(f, r.y0 - 30 * u, cfg.series);
+
+  // Reference line (e.g. "human = 100 %"): dashed ink behind the series, its
+  // label tucked above the left end so converging lines stay readable.
+  if (cfg.refLine) {
+    const ry = r.y1 - 6 * u - cfg.refLine.at * (r.y1 - 6 * u - (r.y0 + 14 * u));
+    ctx.strokeStyle = withAlpha(INK_SECONDARY, 0.55);
+    ctx.lineWidth = 1.5 * u;
+    ctx.setLineDash([6 * u, 5 * u]);
+    ctx.beginPath();
+    ctx.moveTo(d.x0, ry);
+    ctx.lineTo(d.x1, ry);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = withAlpha(INK_SECONDARY, 0.85);
+    ctx.font = `500 ${12 * u}px ${FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(tr(cfg.refLine.label), d.x0 + 4 * u, ry - 6 * u);
+  }
 
   const p = easeOut(t / 1.4);
   const datas = cfg.series.map(
