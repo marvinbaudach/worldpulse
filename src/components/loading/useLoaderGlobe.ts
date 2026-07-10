@@ -103,12 +103,13 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
     // Supernova dust: motes hurled outward by the shockwave when the flash
     // bursts. Each mote gets its own direction, launch delay, speed and a
     // slight tangential curl so the cloud reads as turbulence, not spokes.
-    const dust = Array.from({ length: 260 }, () => ({
+    // A denser, faster field so the discharge hits with real force.
+    const dust = Array.from({ length: 380 }, () => ({
       angle: Math.random() * Math.PI * 2,
-      speed: 0.4 + Math.random() ** 1.6 * 0.65,
-      size: 1.3 + Math.random() * 3.1,
-      delay: Math.random() * 0.14,
-      curl: (Math.random() - 0.5) * 0.7,
+      speed: 0.45 + Math.random() ** 1.6 * 0.85,
+      size: 1.3 + Math.random() * 3.4,
+      delay: Math.random() * 0.12,
+      curl: (Math.random() - 0.5) * 0.8,
       glow: Math.random(),
     }));
     // The wave fires as the iris starts closing (the moment the flash peaks)
@@ -117,7 +118,12 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
     const WAVE_MS = 950;
 
     // Pre-allocated dot buckets, reused each frame (cleared, not reallocated).
+    // The sphere splits into a deep-blue body and a white-hot spark set: dots
+    // caught mid-flare route into `sparkBk` and flush near-white, so the globe
+    // reads as a dark-blue field crackling with electricity rather than a flat
+    // pale-blue cloud.
     const sphereBk = makeBuckets();
+    const sparkBk = makeBuckets();
     const gridBk = makeBuckets();
     const arcWarmBk = makeBuckets();
     const arcCoolBk = makeBuckets();
@@ -175,7 +181,9 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
       const cy = h / 2;
       // Portrait phones: scale on width to fill the tall screen, tracking the
       // ring's 86vw sizing (ring radius 0.378w; globe stays just inside it).
-      const base = h > w && w <= 640 ? w * 0.348 : Math.min(w, h) * 0.3;
+      // Desktop is sized against the 62vmin ring, leaving headroom for the
+      // type block that now sits fully above the globe.
+      const base = h > w && w <= 640 ? w * 0.348 : Math.min(w, h) * 0.27;
       const R = base * (1 - ease);
       // Assembly: dots swirl outward from the center during the first beat.
       const assemble = Math.min(1, t / 1.1);
@@ -192,26 +200,47 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
       const cosR = Math.cos(rot);
       const sinT = Math.sin(TILT);
       const cosT = Math.cos(TILT);
+      // Fixed light in view space (upper left, toward the viewer): the dot
+      // sphere gets a lit day side and a dim night side as it turns, which is
+      // what makes it read as a sphere instead of a flat dot cloud.
       const project = (p: Vec3) => {
         const x1 = p[0] * cosR + p[2] * sinR;
         const z1 = -p[0] * sinR + p[2] * cosR;
         const y2 = p[1] * cosT - z1 * sinT;
         const z2 = p[1] * sinT + z1 * cosT;
-        return { x: cx + x1 * R * aEase, y: cy - y2 * R * aEase, z: z2 };
+        return {
+          x: cx + x1 * R * aEase,
+          y: cy - y2 * R * aEase,
+          z: z2,
+          light: Math.max(0, x1 * -0.45 + y2 * 0.5 + z2 * 0.74),
+        };
       };
 
-      // Sphere dots — back ones dim, front ones bright. Bucketed by alpha.
+      // Sphere dots — depth dims the back, the terminator shades the night
+      // side, and a deterministic subset flares briefly ("data arriving").
+      // Flaring dots split off into the white spark set so they read as
+      // electric discharge points against the deep-blue body.
       clear(sphereBk);
+      clear(sparkBk);
       for (let i = 0; i < N; i++) {
         const q = project(pts[i]);
         const depth = (q.z + 1) / 2;
-        const alpha = (0.34 + depth * 0.62) * aEase * (1 - ease * 0.6);
+        const shade = 0.3 + 0.7 * q.light;
+        const flare =
+          i % 19 === 0
+            ? Math.max(0, Math.sin(t * 1.8 + i * 0.911)) ** 24 * (0.3 + 0.7 * depth)
+            : 0;
+        const alpha =
+          Math.min(1, (0.16 + depth * 0.42) * (0.5 + shade) + flare * 0.9) *
+          aEase *
+          (1 - ease * 0.6);
         const bi = alphaBucket(alpha, BUCKETS);
         if (bi === 0) continue;
-        const s = 1.6 + depth * 2.3;
-        sphereBk[bi].push(q.x, q.y, s);
+        const s = 1.6 + depth * 2.0 + flare * 3.2;
+        (flare > 0.12 ? sparkBk : sphereBk)[bi].push(q.x, q.y, s);
       }
-      flush(sphereBk, 142, 190, 255);
+      flush(sphereBk, 64, 118, 240); // deep electric blue body
+      flush(sparkBk, 234, 244, 255); // white-hot discharge points
 
       // Graticule dots — fainter and finer than the sphere fill.
       clear(gridBk);
@@ -224,7 +253,7 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
         const s = 0.9 + depth * 1.2;
         gridBk[bi].push(q.x, q.y, s);
       }
-      flush(gridBk, 175, 208, 255);
+      flush(gridBk, 120, 168, 250);
 
       // Arcs with a travelling packet each. Warm (near the packet) and cool
       // (the trailing line) collect into separate bucket sets.
@@ -246,8 +275,8 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
           (packet > 0.25 ? arcWarmBk : arcCoolBk)[bi].push(q.x, q.y, s);
         }
       }
-      flush(arcWarmBk, 168, 158, 255);
-      flush(arcCoolBk, 88, 162, 255);
+      flush(arcWarmBk, 224, 238, 255); // packet head: white-hot charge
+      flush(arcCoolBk, 74, 146, 250); // trailing line: electric blue
 
       // Stations: bright dot, ping ring, code label on the front side.
       // Hubs (the real API cities) stay big and bright; relays render
@@ -258,12 +287,12 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
         const front = Math.min(1, (q.z + 0.05) / 0.6);
         const a = front * aEase * (1 - ease) * (st.hub ? 1 : 0.6);
         const dotR = st.hub ? 4.5 : 3;
-        ctx.fillStyle = `rgba(150, 200, 255, ${Math.min(1, a * 1.2)})`;
+        ctx.fillStyle = `rgba(224, 240, 255, ${Math.min(1, a * 1.25)})`;
         ctx.beginPath();
         ctx.arc(q.x, q.y, dotR, 0, Math.PI * 2);
         ctx.fill();
         const ring = (t * 0.7 + i * 0.33) % 1;
-        ctx.strokeStyle = `rgba(95, 165, 255, ${(1 - ring) * 0.7 * a})`;
+        ctx.strokeStyle = `rgba(90, 170, 255, ${(1 - ring) * 0.75 * a})`;
         ctx.lineWidth = 1.4;
         ctx.beginPath();
         ctx.arc(q.x, q.y, dotR + ring * (st.hub ? 14 : 9), 0, Math.PI * 2);
@@ -274,24 +303,26 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
       });
 
       // Shockwave + dust: once the flash peaks, a pressure ring races outward
-      // and drags a cloud of nebula dust with it. Each mote starts ember-warm
-      // and cools to blue as it flies — the flash's color story, scattered.
+      // and drags a cloud of nebula dust with it. Each mote starts white-hot
+      // and cools to electric blue as it flies — an electrical discharge, not
+      // an ember spray.
       const waveT = !mobileExit && doneAt
         ? Math.min(1, Math.max(0, (now - doneAt - WAVE_DELAY_MS) / WAVE_MS))
         : 0;
       if (waveT > 0 && waveT < 1) {
         const we = 1 - Math.pow(1 - waveT, 3); // easeOutCubic
-        const maxR = Math.min(w, h) * 0.72;
+        const maxR = Math.min(w, h) * 0.78;
         const fade = 1 - waveT;
 
-        // Pressure front: a thin bright ring with a soft trailing band.
-        ctx.strokeStyle = `rgba(205, 224, 255, ${0.55 * fade})`;
-        ctx.lineWidth = 1.4;
+        // Pressure front: a hot white ring with a wide electric-blue trailing
+        // band, brightest right as the wave fires.
+        ctx.strokeStyle = `rgba(232, 242, 255, ${0.72 * fade})`;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(cx, cy, we * maxR, 0, Math.PI * 2);
         ctx.stroke();
-        ctx.strokeStyle = `rgba(120, 160, 235, ${0.22 * fade})`;
-        ctx.lineWidth = 10 + 26 * we;
+        ctx.strokeStyle = `rgba(86, 150, 250, ${0.3 * fade})`;
+        ctx.lineWidth = 12 + 34 * we;
         ctx.beginPath();
         ctx.arc(cx, cy, we * maxR * 0.9, 0, Math.PI * 2);
         ctx.stroke();
@@ -302,12 +333,13 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
           const pe = 1 - Math.pow(1 - p, 2.6);
           const a = d.angle + d.curl * pe;
           const r = pe * maxR * d.speed;
-          // Ember → blue: the warm channel decays as the mote flies out.
-          const warm = Math.max(0, 1 - p * 2.2);
-          const cr = Math.round(168 + 87 * warm);
-          const cg = Math.round(198 - 28 * warm);
-          const cb = Math.round(255 - 145 * warm);
-          const alpha = (1 - p) * (0.55 + d.glow * 0.45);
+          // White-hot → electric blue: the hot channels decay as the mote
+          // flies out, leaving a saturated blue core.
+          const hot = Math.max(0, 1 - p * 2.2);
+          const cr = Math.round(90 + 150 * hot);
+          const cg = Math.round(165 + 80 * hot);
+          const cb = 255;
+          const alpha = (1 - p) * (0.6 + d.glow * 0.4);
           ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${alpha})`;
           const s = d.size * (1 - p * 0.55);
           ctx.fillRect(cx + Math.cos(a) * r - s / 2, cy + Math.sin(a) * r - s / 2, s, s);

@@ -5,8 +5,8 @@
   "type": "module",
   "packageManager": "pnpm@11.11.0",
   "scripts": {
-    "dev": "vite",
-    "gallery": "vite --open /gallery.html",
+    "dev": "BROWSER=code BROWSER_ARGS=--open-url vite --open",
+    "gallery": "BROWSER=code BROWSER_ARGS=--open-url vite --open /gallery.html",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",

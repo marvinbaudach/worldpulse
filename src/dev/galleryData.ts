@@ -72,20 +72,29 @@ export function filterSort(entries: CardEntry[], s: FilterState): CardEntry[] {
   return sorted;
 }
 
-/** Draw a card into a canvas at w×h; paints an error box if draw() throws so a
-    broken card is visible in the grid instead of silently blank. */
+// The canvas is sized in CSS pixels (grid column width / lightbox height), so on
+// a HiDPI display its backing store must be scaled by the device pixel ratio or
+// the thumbnail is upscaled and looks blurry. Capped at 2× to bound the memory
+// of ~80 thumbnails; the vector renderers scale crisply via `u = w / 512`.
+const MAX_PIXEL_RATIO = 2;
+
+/** Draw a card into a canvas sized w×h CSS px; paints an error box if draw()
+    throws so a broken card is visible in the grid instead of silently blank. */
 export function drawCard(canvas: HTMLCanvasElement, card: Dashboard, w: number, h: number): void {
-  canvas.width = w;
-  canvas.height = h;
+  const dpr = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
+  const pw = Math.round(w * dpr);
+  const ph = Math.round(h * dpr);
+  canvas.width = pw;
+  canvas.height = ph;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   try {
-    card.draw({ ctx, w, h, t: SETTLED_T, u: w / 512 });
+    card.draw({ ctx, w: pw, h: ph, t: SETTLED_T, u: pw / 512 });
   } catch (err) {
     ctx.fillStyle = '#3a0d0d';
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillRect(0, 0, pw, ph);
     ctx.fillStyle = '#ff6b6b';
-    ctx.font = '16px monospace';
-    ctx.fillText(`draw() threw: ${String(err)}`.slice(0, 54), 16, 32);
+    ctx.font = `${16 * dpr}px monospace`;
+    ctx.fillText(`draw() threw: ${String(err)}`.slice(0, 54), 16 * dpr, 32 * dpr);
   }
 }

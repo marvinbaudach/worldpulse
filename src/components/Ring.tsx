@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { CarouselItem } from './CarouselItem';
 import type { HeroStart } from './HeroCard';
+import type { RingMotion } from './cameraMotion';
 import { DEFAULT_RADIUS, PANEL_H, PANEL_W, layoutSlots, type LayoutMode } from '../layouts';
 import { useCarouselRotation } from '../hooks/useCarouselRotation';
 import type { Dashboard } from '../dashboards';
@@ -30,6 +31,8 @@ interface RingProps {
   poses: RefObject<Map<string, HeroStart>>;
   /** False while the user paused the auto-spin (Space). */
   spinning: boolean;
+  /** Sink the ring publishes its live spin into for the camera guidance. */
+  motion: RefObject<RingMotion>;
 }
 
 export function Ring({
@@ -44,6 +47,7 @@ export function Ring({
   radius,
   poses,
   spinning,
+  motion,
 }: RingProps) {
   // Collapsing panels must not absorb clicks — the card would unmount from
   // under its own hero mid-flight.
@@ -87,6 +91,7 @@ export function Ring({
     // tilt shrinks on big rings — otherwise a 30-panel ring opens with the
     // front row shoved to the top of the frame.
     initialTilt: -INITIAL_TILT * Math.min(1, DEFAULT_RADIUS / radius),
+    motion,
   });
   // Memoized so the slot objects keep their identity across unrelated
   // re-renders — CarouselItem detects a formation switch by slot identity.

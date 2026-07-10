@@ -52,42 +52,4 @@ export const EU_FREEDOM_CARDS: Dashboard[] = [
         source: 'EU-Kommission · VO (EU) 2024/1624 · AMLA VO (EU) 2024/1620',
       }),
   },
-  {
-    id: 'data-retention',
-    title: 'Vorratsdatenspeicherung',
-    source:
-      'RL 2006/24/EG · EuGH-Urteile C-293/12 (Digital Rights Ireland), C-203/15 (Tele2), C-511/18 (La Quadrature du Net) · EU-Hochrangige Gruppe „Zugang zu Daten für die Strafverfolgung" 2024.',
-    draw: (f) =>
-      statusTimeline(f, {
-        label: 'Vorratsdaten · 20 Jahre Streit',
-        status: { text: 'Neuauflage geplant', kind: 'proposed' },
-        milestones: [
-          { date: '2006', text: 'EU-Richtlinie zur Vorratsdatenspeicherung', kind: 'inforce' },
-          { date: '2014', text: 'EuGH kippt die Richtlinie', kind: 'court' },
-          { date: '2016', text: 'EuGH: anlasslose Speicherung unzulässig', kind: 'court' },
-          { date: '2020', text: 'EuGH bekräftigt das Verbot', kind: 'court' },
-          { date: '2024', text: 'EU-Expertengruppe empfiehlt Wiedereinführung', kind: 'proposed' },
-        ],
-        source: 'RL 2006/24/EG · EuGH · EU-Gruppe „Zugang zu Daten" 2024',
-      }),
-  },
-  {
-    id: 'dsa',
-    title: 'Digital Services Act',
-    source:
-      'VO (EU) 2022/2065 (Digital Services Act) · EU-Kommission, förmliche Verfahren gegen X, TikTok, Meta und AliExpress wegen Moderations- und Transparenzpflichten.',
-    draw: (f) =>
-      statusTimeline(f, {
-        label: 'DSA · Plattform-Aufsicht',
-        status: { text: 'In Kraft', kind: 'inforce' },
-        milestones: [
-          { date: '11·2022', text: 'DSA tritt in Kraft (VO 2022/2065)', kind: 'inforce' },
-          { date: '04·2023', text: 'Kommission benennt sehr große Plattformen', kind: 'adopted' },
-          { date: '12·2023', text: 'Erstes Verfahren — gegen X', kind: 'inforce' },
-          { date: '02·2024', text: 'DSA gilt vollständig · Verfahren gegen TikTok', kind: 'inforce' },
-          { date: '2024', text: 'Weitere Verfahren: Meta, AliExpress', kind: 'inforce' },
-        ],
-        source: 'VO (EU) 2022/2065 · EU-Kommission, förmliche Verfahren',
-      }),
-  },
 ];

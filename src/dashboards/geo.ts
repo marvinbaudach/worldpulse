@@ -162,6 +162,52 @@ export const CPI_INVERTED: Record<string, number> = Object.fromEntries(
   }).map(([iso, score]) => [iso, 90 - score]),
 );
 
+// SDG Index score (0–100) per country, Sustainable Development Report 2026
+// (SDSN/Dublin) — "% of the way to optimal performance across all 17 SDGs".
+// The single published composite, used as-is; we never aggregate our own.
+// No keyless live API — an annual download — so this feeds a bundled choropleth.
+// Higher = closer to the goals, so the card shades it with the GOOD (green) ramp,
+// not the alert-red default. 169 countries ranked; the ~120 with WORLD outlines
+// are listed. Source: dashboards.sdgindex.org/rankings (SDR 2026).
+export const SDG_INDEX: Record<string, number> = {
+  FIN: 87.4, SWE: 86.3, DNK: 85.7, NOR: 84.1, DEU: 84.0, AUT: 84.0, FRA: 83.4,
+  GBR: 82.5, ISL: 82.3, CZE: 82.2, POL: 82.1, EST: 81.8, HRV: 81.8, LVA: 81.7,
+  SVN: 81.7, ESP: 81.2, PRT: 81.1, BEL: 81.1, NLD: 81.0, JPN: 81.0, SVK: 80.9,
+  CHE: 80.3, HUN: 80.0, IRL: 80.0, ITA: 79.9, CAN: 79.1, AUS: 79.0, GRC: 78.6,
+  CHL: 78.5, KOR: 78.4, ROU: 78.1, URY: 77.9, UKR: 75.9, THA: 75.4, USA: 75.3,
+  CHN: 74.7, RUS: 74.5, BRA: 74.2, ARG: 73.9, VNM: 73.8, IDN: 70.8, MEX: 70.6,
+  TUR: 70.2, IRN: 68.8, MNG: 68.6, LKA: 68.5, PRY: 68.4, IND: 68.3, CPV: 68.2,
+  SLV: 68.1, MUS: 68.0, TJK: 67.8, BOL: 67.6, NAM: 67.1, QAT: 66.4, TLS: 66.2,
+  BHS: 66.1, SAU: 65.9, BHR: 65.7, KEN: 65.6, VEN: 65.4, KHM: 65.3, ZAF: 65.2,
+  BGD: 64.8, STP: 64.8, BWA: 64.6, NIC: 64.4, RWA: 64.3, GUY: 64.2, GAB: 63.9,
+  GHA: 63.9, SEN: 63.4, CIV: 63.2, KWT: 62.9, LBN: 62.9, LAO: 62.5, MMR: 62.4,
+  IRQ: 62.0, HND: 61.8, TTO: 61.3, GTM: 60.9, TKM: 59.9, BEN: 59.7, SYR: 59.7,
+  PAK: 59.3, TGO: 59.1, SWZ: 59.0, GMB: 58.5, CMR: 57.6, TZA: 57.6, MRT: 57.4,
+  ZWE: 57.3, GIN: 56.8, MWI: 56.5, ETH: 56.3, SLE: 55.9, NGA: 55.7, UGA: 55.5,
+  LSO: 54.9, BFA: 54.4, COM: 54.4, DJI: 54.3, MLI: 54.0, ZMB: 53.9, BDI: 53.5,
+  GNB: 53.3, MOZ: 53.1, MDG: 52.9, COG: 52.5, AGO: 52.4, PNG: 52.2, LBR: 50.9,
+  HTI: 50.7, NER: 49.6, AFG: 48.8, ERI: 48.7, COD: 48.3, YEM: 47.8, SDN: 47.7,
+  SOM: 46.2, TCD: 43.9, CAF: 43.3, SSD: 39.9,
+};
+
+/** Leaders for the choropleth's ranked list (SDR 2026 top 5, German names). */
+export const SDG_INDEX_TOP: { name: string; v: number }[] = [
+  { name: 'Finnland', v: 87.4 },
+  { name: 'Schweden', v: 86.3 },
+  { name: 'Dänemark', v: 85.7 },
+  { name: 'Norwegen', v: 84.1 },
+  { name: 'Deutschland', v: 84.0 },
+];
+
+/** Furthest-behind countries for the laggards card's list (SDR 2026 bottom 5). */
+export const SDG_INDEX_BOTTOM: { name: string; v: number }[] = [
+  { name: 'Südsudan', v: 39.9 },
+  { name: 'Zentralafr. Republik', v: 43.3 },
+  { name: 'Tschad', v: 43.9 },
+  { name: 'Somalia', v: 46.2 },
+  { name: 'Sudan', v: 47.7 },
+];
+
 // Absolute general government gross debt, EU members, in EUR (Eurostat 2024,
 // rounded to the billion) — non-EU countries stay neutral on the Europe map.
 // Absolute rather than debt-to-GDP so the map reads as systemic threat: a big
@@ -335,6 +381,34 @@ export const MODERN_SLAVERY_TOP = [
   { name: 'Mauretanien', v: 32.0 },
   { name: 'Saudi-Arabien', v: 21.3 },
   { name: 'Türkei', v: 15.6 },
+  { name: 'Tadschikistan', v: 14.0 },
+  { name: 'VAE', v: 13.4 },
+  { name: 'Russland', v: 13.0 },
+  { name: 'Afghanistan', v: 13.0 },
+  { name: 'Kuwait', v: 13.0 },
+];
+
+// ---------------------------------------------------------------------------
+// Extreme Armut. Share of the population under $2.15/day (World Bank PIP, 2017
+// PPP, SI.POV.DDAY) — the modern international poverty line. This bundled set is
+// the OFFLINE FALLBACK only: the poverty-map card fetches the full per-country
+// choropleth live from the World Bank at runtime, and falls back to these real
+// last-known values (the same figures the poorest-nations bar card carries)
+// until the fetch lands. Almost the entire top is sub-Saharan Africa; Yemen is
+// the war-impoverished West-Asian outlier.
+export const POVERTY_HEADCOUNT: Record<string, number> = {
+  MDG: 75, MWI: 70, SSD: 68, CAF: 66, BDI: 65, MOZ: 63, COD: 62, ZMB: 61,
+  YEM: 55, NGA: 31,
+};
+
+/** Ranked list for the poverty map's offline fallback (top prevalence). */
+export const POVERTY_TOP = [
+  { name: 'Madagaskar', v: 75 },
+  { name: 'Malawi', v: 70 },
+  { name: 'Südsudan', v: 68 },
+  { name: 'Zentralafr. Republik', v: 66 },
+  { name: 'Burundi', v: 65 },
+  { name: 'Mosambik', v: 63 },
 ];
 
 // ---------------------------------------------------------------------------

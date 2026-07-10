@@ -5,7 +5,6 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 import { CONVERGE_MS, MONO } from './loaderConstants';
 import { progressTarget } from './loaderMath';
 import { useLoaderGlobe } from './useLoaderGlobe';
-import { FeedStrip } from './FeedStrip';
 
 interface LoadingScreenProps {
   done: boolean;
@@ -24,9 +23,13 @@ const sweep = keyframes`
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
 `;
-// One-time draw-on for the EKG pulse line under the wordmark.
-const drawOn = keyframes`
-  to { stroke-dashoffset: 0; }
+// The EKG pulse line loops: draw on, hold the full trace, sweep out — a
+// repeating heartbeat instead of a line that draws once and freezes.
+const pulseSweep = keyframes`
+  0% { stroke-dashoffset: 1; }
+  38% { stroke-dashoffset: 0; }
+  62% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1; }
 `;
 // The scanner arc orbits the progress ring; transform-only, compositor-cheap.
 const orbit = keyframes`
@@ -109,17 +112,18 @@ const FlashCool = styled.div`
   );
 `;
 
-// Hot start: reddish-warm, fading out on top of the cool layer so the
-// bloom reads as cooling from ember-red into blue-white.
+// Hot start: a brilliant white-electric core with a violet edge, fading out
+// on top of the cool layer so the bloom reads as an electrical discharge
+// settling into blue-white — not an ember cooling down.
 const FlashHot = styled.div<{ $done: boolean }>`
   position: absolute;
   inset: 0;
   background: radial-gradient(
     circle,
-    rgba(255, 235, 220, 0.9) 0%,
-    rgba(250, 150, 110, 0.5) 22%,
-    rgba(226, 88, 66, 0.16) 45%,
-    transparent 68%
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(206, 224, 255, 0.62) 20%,
+    rgba(138, 128, 236, 0.24) 42%,
+    transparent 66%
   );
   opacity: ${(p) => (p.$done ? 0 : 1)};
   transition: opacity ${CONVERGE_MS + 250}ms ease-in;
@@ -156,6 +160,51 @@ const StarCanvas = styled.canvas`
   }
 `;
 
+// Static vignette pulling the eye toward the center; sits above the glows
+// and stars but below the globe, so only the screen edges darken.
+const Vignette = styled.div`
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(3, 5, 11, 0.6) 100%);
+  pointer-events: none;
+`;
+
+// Atmosphere rim hugging the globe's edge — painted once as a CSS gradient,
+// so the dot sphere reads as a planet with an atmosphere, not a flat cloud.
+// Sized so the globe's edge lands at ~90% of the gradient radius (desktop
+// globe radius 27vmin / halo radius 30vmin; portrait 34.8vw / 38.5vw).
+const Halo = styled.div<{ $done: boolean }>`
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 60vmin;
+  height: 60vmin;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(70, 130, 230, 0.06) 0%,
+    rgba(70, 130, 230, 0.02) 60%,
+    rgba(96, 156, 255, 0.15) 88%,
+    rgba(150, 192, 255, 0.08) 94%,
+    transparent 100%
+  );
+  transform: translate(-50%, -50%) scale(${(p) => (p.$done ? 0 : 1)});
+  opacity: ${(p) => (p.$done ? 0 : 1)};
+  transition:
+    transform ${CONVERGE_MS}ms cubic-bezier(0.55, 0, 0.7, 0.4),
+    opacity ${CONVERGE_MS}ms ease-in;
+  pointer-events: none;
+
+  @media (orientation: portrait) and (max-width: 640px) {
+    width: 77vw;
+    height: 77vw;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    display: none; /* the globe it wraps is hidden too */
+  }
+`;
+
 // The globe fills the screen behind the type; the iris clips it on exit.
 const GlobeCanvas = styled.canvas`
   position: absolute;
@@ -176,8 +225,8 @@ const RingWrap = styled.div<{ $done: boolean }>`
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 68vmin;
-  height: 68vmin;
+  width: 62vmin;
+  height: 62vmin;
 
   @media (orientation: portrait) and (max-width: 640px) {
     width: 86vw;
@@ -206,21 +255,45 @@ const ScannerSvg = styled.svg`
   }
 `;
 
-// The type collapses into the screen center together with the converging
-// dots and the ring — same duration and ease — so the iris closes over an
-// already-empty stage.
+// The type block sits fully ABOVE the globe: bottom-anchored just over the
+// ring's top edge (ring radius 31vmin + breathing room), so wordmark and
+// globe never overlap at any viewport size. On done it still collapses into
+// the SCREEN center with the converging dots — the transform origin is
+// shifted down to exactly that point.
 const Column = styled.div<{ $done: boolean }>`
-  position: relative;
+  position: absolute;
+  left: 50%;
+  bottom: calc(50% + 34.5vmin);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
-  transform: scale(${(p) => (p.$done ? 0 : 1)});
+  gap: 16px;
+  transform: translate(-50%, 0) scale(${(p) => (p.$done ? 0 : 1)});
+  transform-origin: 50% calc(100% + 34.5vmin);
   opacity: ${(p) => (p.$done ? 0 : 1)};
   transition:
     transform ${CONVERGE_MS}ms cubic-bezier(0.55, 0, 0.7, 0.4),
     opacity ${CONVERGE_MS}ms ease-in;
   pointer-events: none;
+
+  /* Track the width-scaled portrait globe (86vw ring → 43vw radius). */
+  @media (orientation: portrait) and (max-width: 640px) {
+    bottom: calc(50% + 47vw);
+    transform-origin: 50% calc(100% + 47vw);
+  }
+
+  /* Half-height windows: tighten the block so it clears the top edge. */
+  @media (max-height: 620px) and (orientation: landscape) {
+    gap: 10px;
+  }
+`;
+
+// Kicker above the wordmark — deliberately language-neutral (no i18n keys).
+const Eyebrow = styled.div`
+  font: 500 11px ${MONO};
+  letter-spacing: 0.44em;
+  margin-left: 0.44em; /* optically recenter the tracked-out text */
+  color: rgba(143, 184, 236, 0.72);
 `;
 
 // Gradient sweep needs background-clip, so the fill replaces text color;
@@ -259,7 +332,7 @@ const Wordmark = styled.div`
   }
 `;
 
-// EKG heartbeat under the wordmark — draws itself on once via dashoffset.
+// EKG heartbeat under the wordmark — loops via dashoffset (see pulseSweep).
 const PulseSvg = styled.svg`
   width: min(340px, 80vw);
   height: 22px;
@@ -273,7 +346,11 @@ const PulseSvg = styled.svg`
     stroke-linejoin: round;
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
-    animation: ${drawOn} 1.4s cubic-bezier(0.4, 0, 0.3, 1) 0.15s forwards;
+    animation: ${pulseSweep} 3.4s cubic-bezier(0.4, 0, 0.4, 1) 0.15s infinite;
+  }
+
+  @media (max-height: 620px) and (orientation: landscape) {
+    display: none; /* half-height windows: keep eyebrow + wordmark only */
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -284,37 +361,28 @@ const PulseSvg = styled.svg`
   }
 `;
 
-// Empty space the globe rotates through; the type sits above, progress below.
-const GlobeGap = styled.div`
-  height: min(48vmin, 44vh);
-
-  /* Match the width-scaled portrait globe (86vw ring + breathing room), so
-     the type clears its top edge instead of floating over the dots. */
-  @media (orientation: portrait) and (max-width: 640px) {
-    height: min(100vw, 56vh);
-  }
-`;
-
-// Numeric progress under the globe — portrait phones only. The ring arc gets
-// thin at phone size, and the tall screen leaves the lower third empty; a
-// plain tabular readout fills it with the numbers that matter: the honest
-// percentage plus how many of the live sources have checked in.
+// Numeric progress under the globe: the honest percentage plus how many live
+// sources have checked in. Desktop sits it just below the ring (the lower
+// half was dead space); portrait phones keep the roomier bottom placement.
 const PctReadout = styled.div<{ $done: boolean }>`
-  display: none;
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 10vh);
+  top: calc(50% + 35vmin);
   text-align: center;
-  font: 600 17px ${MONO};
-  letter-spacing: 0.24em;
-  color: rgba(143, 184, 236, 0.85);
+  font: 600 12px ${MONO};
+  letter-spacing: 0.3em;
+  color: rgba(143, 184, 236, 0.65);
   opacity: ${(p) => (p.$done ? 0 : 1)};
   transition: opacity ${CONVERGE_MS}ms ease-in;
   pointer-events: none;
 
   @media (orientation: portrait) and (max-width: 640px) {
-    display: block;
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10vh);
+    font-size: 17px;
+    letter-spacing: 0.24em;
+    color: rgba(143, 184, 236, 0.85);
   }
 `;
 
@@ -420,6 +488,8 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
       <Glow $x="55%" $y="45%" $color="rgba(28, 170, 122, 0.18)" $delay="-6s" />
 
       <StarCanvas ref={starRef} aria-hidden />
+      <Vignette aria-hidden />
+      <Halo $done={done} aria-hidden />
       <GlobeCanvas ref={canvasRef} aria-hidden />
       {!isMobile && (
         <Flash $done={done} aria-hidden>
@@ -476,15 +546,12 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
         </ScannerSvg>
       </RingWrap>
 
-      {isMobile ? (
-        <PctReadout $done={done}>
-          {pct} % <PctFeeds>· {settled}/{FEED_TOTAL}</PctFeeds>
-        </PctReadout>
-      ) : (
-        <FeedStrip states={feedSnapshot} done={done} />
-      )}
+      <PctReadout $done={done}>
+        {pct} % <PctFeeds>· {settled}/{FEED_TOTAL}</PctFeeds>
+      </PctReadout>
 
       <Column $done={done}>
+        <Eyebrow aria-hidden>LIVE · GLOBAL · DATA</Eyebrow>
         <Wordmark>WORLDPULSE</Wordmark>
         <PulseSvg viewBox="0 0 340 22" aria-hidden>
           <defs>
@@ -501,7 +568,6 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
             d="M0 11 H118 l7 -7 8 14 7 -7 H216 l6 -5 7 10 6 -5 H340"
           />
         </PulseSvg>
-        <GlobeGap />
       </Column>
     </Screen>
   );

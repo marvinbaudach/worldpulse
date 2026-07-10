@@ -371,6 +371,47 @@ async function loadSuicide(): Promise<void> {
   live.suicide = { byIso: data.byIso, rows: data.top, world: data.world };
 }
 
+// World Bank PIP — extreme poverty (SI.POV.DDAY): share of the population under
+// $2.15/day (2017 PPP), the modern World Bank line. A world choropleth plus a
+// top-6 ranking. Poverty surveys lag heavily and are irregular, so the query
+// spans a wide window and keeps the latest year per country; a 500k population
+// floor keeps the ranking free of micro-state noise.
+async function loadPoverty(): Promise<void> {
+  const data = await cached('poverty', 24 * 60 * MIN, async () => {
+    const [world, pop] = await Promise.all([
+      fetchJson<[unknown, WorldBankRow[]]>(
+        'https://api.worldbank.org/v2/country/all/indicator/SI.POV.DDAY' +
+          `?format=json&date=${THIS_YEAR - 15}:${THIS_YEAR}&per_page=5000`,
+      ),
+      fetchJson<[unknown, WorldBankRow[]]>(
+        'https://api.worldbank.org/v2/country/all/indicator/SP.POP.TOTL' +
+          '?format=json&mrv=1&per_page=400',
+      ),
+    ]);
+    const populous = new Set(
+      (pop[1] ?? []).filter((r) => (r.value ?? 0) >= 500_000).map((r) => r.countryiso3code),
+    );
+    const latest = new Map<string, { name: string; v: number; year: string }>();
+    for (const row of world[1] ?? []) {
+      if (row.value === null || row.countryiso3code.length !== 3) continue;
+      const prev = latest.get(row.countryiso3code);
+      if (!prev || row.date > prev.year) {
+        latest.set(row.countryiso3code, { name: row.country.value, v: row.value, year: row.date });
+      }
+    }
+    return {
+      byIso: Object.fromEntries([...latest.entries()].map(([iso3, e]) => [iso3, e.v])),
+      world: latest.get('WLD')?.v ?? 9,
+      top: [...latest.entries()]
+        .filter(([iso3]) => iso3 !== 'WLD' && populous.has(iso3))
+        .map(([, e]) => ({ name: e.name, v: e.v }))
+        .toSorted((a, b) => b.v - a.v)
+        .slice(0, 6),
+    };
+  });
+  live.poverty = { byIso: data.byIso, rows: data.top, world: data.world };
+}
+
 // ---------------------------------------------------------------------------
 // Tech for Palestine — Gaza & West-Bank casualties. Keyless, CORS-enabled
 // static JSON (Cloudflare), refreshed ~daily. The only one of the Nahost
@@ -506,6 +547,7 @@ export const LIVE_FEEDS: LiveFeed[] = [
   { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Bevölkerung', load: loadPopulation },
   { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Mordrate', load: loadHomicide },
   { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Suizidrate', load: loadSuicide },
+  { code: 'WAS', source: 'WORLD BANK', city: 'WASHINGTON', item: 'Extreme Armut', load: loadPoverty },
   { code: 'GZA', source: 'TECH FOR PALESTINE', city: 'GAZA', item: 'Opferzahlen', load: loadMideast },
   { code: 'HOR', source: 'IMF PORTWATCH', city: 'STRASSE VON HORMUS', item: 'Tanker-Transite', load: loadHormuzTankers },
 ];

@@ -1,6 +1,7 @@
 // Dev-only review gallery — the lightbox: a full 768×960 render of one card
 // alongside its metadata, with prev/next to walk the current filtered set.
 
+import { downloadCard } from '../exportCard';
 import { drawCard, type CardEntry, type Category } from './galleryData';
 
 const FULL_W = 768;
@@ -10,6 +11,8 @@ export interface Lightbox {
   open(list: CardEntry[], index: number): void;
   /** Redraw the currently shown card (e.g. after live data lands). */
   redraw(): void;
+  /** Whether the lightbox is currently open (owns the arrow keys). */
+  isOpen(): boolean;
 }
 
 function addRow(parent: HTMLElement, key: string, value: string): void {
@@ -28,6 +31,7 @@ export function createLightbox(categoryOf: (tag: string) => Category | undefined
   const canvas = document.getElementById('lbCanvas') as HTMLCanvasElement;
   const info = document.getElementById('lbInfo') as HTMLDivElement;
   const btnClose = document.getElementById('close') as HTMLButtonElement;
+  const btnDownload = document.getElementById('download') as HTMLButtonElement;
   const btnPrev = document.getElementById('prev') as HTMLButtonElement;
   const btnNext = document.getElementById('next') as HTMLButtonElement;
 
@@ -75,7 +79,23 @@ export function createLightbox(categoryOf: (tag: string) => Category | undefined
     root.classList.remove('open');
   }
 
+  // Reuse the app's poster export (1080×1350, source stamped in) so the QA
+  // download is byte-for-byte what the mobile deck's share/save produces.
+  async function download(): Promise<void> {
+    const entry = list[pos];
+    if (!entry || btnDownload.disabled) return;
+    btnDownload.disabled = true;
+    try {
+      await downloadCard(entry.card);
+    } catch (err) {
+      console.error('Card-Export fehlgeschlagen', err);
+    } finally {
+      btnDownload.disabled = false;
+    }
+  }
+
   btnClose.addEventListener('click', close);
+  btnDownload.addEventListener('click', () => void download());
   btnPrev.addEventListener('click', () => show(pos - 1));
   btnNext.addEventListener('click', () => show(pos + 1));
   root.addEventListener('click', (e) => {
@@ -97,6 +117,9 @@ export function createLightbox(categoryOf: (tag: string) => Category | undefined
     },
     redraw() {
       if (isOpen) render();
+    },
+    isOpen() {
+      return isOpen;
     },
   };
 }

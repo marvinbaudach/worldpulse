@@ -977,16 +977,6 @@ export const PRESS_FREEDOM_COMPARE = compareSeries(
   { deLatest: 82.0 },
 );
 
-// PEN America Index of School Book Bans — documented cases per US school year.
-// Bans exploded from 2,532 (2021–22) to a peak of 10,046 (2023–24), then eased
-// to 6,870 (2024–25) — though PEN notes titles pulled in earlier years stay off
-// the shelves uncounted, so the dip understates books still unavailable.
-export const BOOK_BANS_PANEL: TrendSeries = trend(
-  [[2021, 2532], [2022, 3362], [2023, 10046], [2024, 6870]],
-  (v) => (v >= 1000 ? `${localeNum(v / 1000, 1)}k` : `${v}`),
-  ['21/22', '22/23', '23/24', '24/25'],
-);
-
 // Undernourished people worldwide, millions (FAO State of Food Security 2024).
 // Hunger (SDG 2) fell for a decade, bottomed near 2017 (~570M), then climbed
 // with the pandemic and food-price shocks to ~733M in 2023 — the goal is

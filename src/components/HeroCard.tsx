@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, type RefObject } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
-import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
+import { BackSide, FrontSide, MathUtils, PlaneGeometry, Quaternion, Vector3 } from 'three';
 import type { Group, Mesh, MeshPhysicalMaterial } from 'three';
 import { GlassPlate, GLASS_OPACITY } from './GlassPlate';
 import { SETTLED_T, type Dashboard } from '../dashboards';
@@ -149,7 +149,19 @@ export function HeroCard({
   const pivotRef = useRef<Group>(null);
   const innerRef = useRef<Group>(null);
   const imgRef = useRef<Mesh>(null);
+  const backRef = useRef<Mesh>(null);
   const glassRef = useRef<Mesh>(null);
+  // UV-flipped plane so the hero's back shows its own chart the right way round
+  // (readable) when a flight stunt turns it away, rather than a mirrored front
+  // or a branded slab.
+  const backGeo = useMemo(() => {
+    const g = new PlaneGeometry(1, 1);
+    const uv = g.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i));
+    uv.needsUpdate = true;
+    return g;
+  }, []);
+  useEffect(() => () => backGeo.dispose(), [backGeo]);
   const progress = useRef(startOpen ? 1 : 0);
   // The chart intro plays from the moment the hero opens, so the diagram
   // animates in during the fly-in instead of making the viewer wait for the
@@ -271,6 +283,9 @@ export function HeroCard({
     inner.position.set(0, -halfH, 0);
     inner.quaternion.copy(_spin);
     img.scale.set(_scale.x, _scale.y, 1);
+    // Back slab tracks the card's size so the flip reveals a clean dark panel.
+    const back = backRef.current;
+    if (back) back.scale.set(_scale.x, _scale.y, 1);
     // The glass slab (unit-sized geometry) tracks the card, so the panel
     // keeps its plate through the whole flight — no glass/no-glass jump.
     const glass = glassRef.current;
@@ -289,13 +304,24 @@ export function HeroCard({
   return (
     <group ref={pivotRef}>
       <group ref={innerRef}>
+        {/* Back face: the hero's own chart, UV-flipped (see backGeo) so it
+            reads correctly when a flight stunt turns the card away. */}
+        <mesh ref={backRef} geometry={backGeo} position={[0, 0, -0.006]} raycast={() => null}>
+          <meshBasicMaterial
+            map={dash.tex}
+            side={BackSide}
+            transparent
+            toneMapped={false}
+            depthWrite={false}
+          />
+        </mesh>
         <Image
           ref={imgRef}
           texture={dash.tex}
           scale={[start.scale.x, start.scale.y]}
           transparent
           toneMapped={false}
-          side={DoubleSide}
+          side={FrontSide}
           radius={0.06}
           onClick={(e) => e.stopPropagation()}
         />

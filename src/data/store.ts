@@ -110,6 +110,13 @@ export interface LiveData {
     rows: { name: string; v: number }[];
     world: number;
   };
+  /** Extreme poverty: share under $2.15/day (World Bank PIP, SI.POV.DDAY,
+      latest year per country). */
+  poverty?: {
+    byIso: Record<string, number>;
+    rows: { name: string; v: number }[];
+    world: number;
+  };
   /** Strait of Hormuz daily tanker transits (IMF PortWatch, satellite AIS)
       against the pre-crisis average — the live "now vs. normal" tanker curve. */
   hormuzTankers?: BaselineTrend;

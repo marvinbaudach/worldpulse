@@ -19,6 +19,10 @@ export const IDENTICAL_ACROSS_LOCALES: ReadonlySet<string> = new Set<string>([
   'Digital Services Act',
   'Stuttgart 21',
   'Elbphilharmonie',
+  'BND-Zentrale',
+  'Humboldt Forum',
+  'Kanzleramt-Erweiterung',
+  'World Bank / WHO (SH.STA.SUIC.P5)',
   'Gaza',
   'FPRI/WSJ',
   'Honduras',
@@ -139,4 +143,8 @@ export const IDENTICAL_ACROSS_LOCALES: ReadonlySet<string> = new Set<string>([
   'AUM',
   'Vanguard',
   'State Street',
+  // sdg-index-map card — report title and source acronyms, identical everywhere.
+  'Sustainable Development Report 2026 (SDSN)',
+  'SDR 2026',
+  'SDSN',
 ]);

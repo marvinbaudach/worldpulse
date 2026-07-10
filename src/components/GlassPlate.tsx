@@ -6,8 +6,10 @@ import { useIsMobile } from '../hooks/useIsMobile';
 // Thickness of the glass plate sitting in front of each dashboard, giving the
 // panels real depth instead of looking like flat sheets.
 export const GLASS_THICKNESS = 0.08;
-// Base transparency of the glass; front panels get a touch clearer.
-export const GLASS_OPACITY = 0.16;
+// Base transparency of the glass; front panels get a touch clearer. Kept low so
+// the plate's aurora reflection doesn't lift the near-black panel to a milky
+// gray — the charts need their full contrast to read from across the ring.
+export const GLASS_OPACITY = 0.13;
 
 interface GlassPlateProps {
   width: number;
@@ -34,13 +36,16 @@ export function GlassPlate({ width, height, meshRef }: GlassPlateProps) {
   const isMobile = useIsMobile();
 
   const mats = useMemo(() => {
+    // envMapIntensity dialed back from 3.x: the plate still catches the night
+    // env as a glossy sheen along the edges, but no longer floods the reading
+    // surface with the bright aurora — which was greying out the black panel.
     const cheap = new MeshStandardMaterial({
       color: '#ffffff',
       transparent: true,
       opacity: GLASS_OPACITY,
       roughness: isMobile ? 0.05 : 0.04,
       metalness: 0,
-      envMapIntensity: isMobile ? 3.2 : 3.6,
+      envMapIntensity: isMobile ? 2.2 : 2.4,
       depthWrite: false,
     });
     const rich = isMobile
@@ -51,7 +56,7 @@ export function GlassPlate({ width, height, meshRef }: GlassPlateProps) {
           opacity: GLASS_OPACITY,
           roughness: 0.04,
           metalness: 0,
-          envMapIntensity: 3.6,
+          envMapIntensity: 2.4,
           ior: 1.5,
           clearcoat: 1,
           clearcoatRoughness: 0.08,

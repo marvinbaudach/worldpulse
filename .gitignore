@@ -34,3 +34,8 @@ dist-ssr
 
 # Local, private project instructions — never commit
 CLAUDE.local.md
+
+# Local scratch artifacts (card proposals, screenshots)
+scratchpad/
+.playwright-mcp/
+loader-electric.png

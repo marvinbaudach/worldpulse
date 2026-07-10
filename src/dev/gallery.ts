@@ -17,6 +17,7 @@ import {
   type FilterState,
 } from './galleryData';
 import { createLightbox } from './galleryLightbox';
+import { attachCardMenu } from './galleryContextMenu';
 
 // The real app assigns the bundled country outlines synchronously in
 // loadLiveData(); mirror that here so every choropleth/region map has something
@@ -40,6 +41,9 @@ interface Mounted {
 }
 let mounted: Mounted[] = [];
 let thumbW = Number(sizeSelect.value);
+// The currently rendered (filtered/sorted) list, in DOM order — the source of
+// truth for keyboard navigation and for opening the lightbox at the right card.
+let currentList: CardEntry[] = [];
 
 // Panel aspect ratio (native 768×960); thumbnails scale to the chosen width.
 const FULL_RATIO = 960 / 768;
@@ -76,6 +80,10 @@ function buildCategoryOptions(): void {
 
 function makeFigure(entry: CardEntry, list: CardEntry[], h: number): HTMLElement {
   const figure = document.createElement('figure');
+  // Keyboard reachable: Tab into the grid, arrows move, Enter/Space opens.
+  figure.tabIndex = 0;
+  figure.setAttribute('role', 'button');
+  figure.setAttribute('aria-label', `${entry.card.id} öffnen`);
 
   const canvas = document.createElement('canvas');
   drawCard(canvas, entry.card, thumbW, h);
@@ -108,6 +116,7 @@ function makeFigure(entry: CardEntry, list: CardEntry[], h: number): HTMLElement
   figure.appendChild(cap);
 
   figure.addEventListener('click', () => lightbox.open(list, list.indexOf(entry)));
+  attachCardMenu(figure, entry.card);
 
   mounted.push({ entry, canvas });
   return figure;
@@ -116,6 +125,7 @@ function makeFigure(entry: CardEntry, list: CardEntry[], h: number): HTMLElement
 function render(): void {
   grid.style.setProperty('--tw', `${thumbW}px`);
   const list = filterSort(entries, currentFilter());
+  currentList = list;
   const h = thumbH();
   mounted = [];
 
@@ -125,6 +135,56 @@ function render(): void {
 
   countLabel.textContent = `${list.length} Karten`;
 }
+
+/** Columns currently laid out by the auto-fill grid — needed for row-wise
+    (up/down) arrow movement, which depends on the responsive column count. */
+function gridColumns(): number {
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length;
+  return Math.max(1, cols);
+}
+
+/** Move keyboard focus to the figure at `i` (clamped), scrolling it into view. */
+function focusFigure(i: number): void {
+  const figures = grid.children;
+  if (!figures.length) return;
+  const clamped = Math.max(0, Math.min(figures.length - 1, i));
+  const el = figures[clamped] as HTMLElement;
+  el.focus();
+  el.scrollIntoView({ block: 'nearest' });
+}
+
+// Grid keyboard navigation: arrows move the focused tile, Home/End jump to the
+// ends, Enter/Space opens the lightbox for the focused card.
+grid.addEventListener('keydown', (e) => {
+  // While the lightbox is open, focus stays on the tile but its own window-level
+  // handler owns the arrows — don't also move grid focus underneath it.
+  if (lightbox.isOpen()) return;
+  const figures = grid.children;
+  if (!figures.length) return;
+  const current = Array.prototype.indexOf.call(figures, document.activeElement);
+
+  if (e.key === 'Enter' || e.key === ' ') {
+    if (current >= 0 && currentList[current]) {
+      e.preventDefault();
+      lightbox.open(currentList, current);
+    }
+    return;
+  }
+
+  const cols = gridColumns();
+  let next: number | null = null;
+  if (e.key === 'ArrowRight') next = current < 0 ? 0 : current + 1;
+  else if (e.key === 'ArrowLeft') next = current < 0 ? 0 : current - 1;
+  else if (e.key === 'ArrowDown') next = current < 0 ? 0 : current + cols;
+  else if (e.key === 'ArrowUp') next = current < 0 ? 0 : current - cols;
+  else if (e.key === 'Home') next = 0;
+  else if (e.key === 'End') next = figures.length - 1;
+
+  if (next !== null) {
+    e.preventDefault();
+    focusFigure(next);
+  }
+});
 
 // Coalesce live-update bursts into a single redraw of the visible thumbnails.
 let redrawQueued = false;
@@ -139,8 +199,15 @@ function scheduleRedraw(): void {
   });
 }
 
-// Controls.
-searchInput.addEventListener('input', render);
+// Controls. Each keystroke would otherwise re-render the full grid (hundreds of
+// canvases at device-pixel resolution), which stalls the input; debounce the
+// search so typing stays responsive and the grid catches up shortly after.
+const SEARCH_DEBOUNCE_MS = 140;
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(render, SEARCH_DEBOUNCE_MS);
+});
 catSelect.addEventListener('change', render);
 sortSelect.addEventListener('change', render);
 sizeSelect.addEventListener('change', () => {

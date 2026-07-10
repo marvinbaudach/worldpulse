@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="./gallery-favicon.svg" />
     <title>Card Gallery · QA</title>
     <script>
       // Force German (source copy — worst case for label collisions) before
@@ -61,7 +62,7 @@
         padding: 22px;
         align-items: start;
       }
-      figure { margin: 0; cursor: pointer; }
+      figure { margin: 0; cursor: pointer; outline: none; }
       figure canvas {
         display: block;
         width: 100%;
@@ -69,9 +70,14 @@
         border: 1px solid var(--line);
         border-radius: 4px;
         background: #000;
-        transition: border-color 0.12s ease, transform 0.12s ease;
+        transition: border-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
       }
       figure:hover canvas { border-color: var(--line-hi); transform: translateY(-2px); }
+      figure:focus-visible canvas {
+        border-color: #7aa2ff;
+        box-shadow: 0 0 0 2px rgba(122, 162, 255, 0.55);
+        transform: translateY(-2px);
+      }
       figcaption { padding: 6px 2px 0; }
       figcaption .top { color: var(--ink); word-break: break-all; }
       figcaption .idx { color: var(--dim); }
@@ -83,6 +89,51 @@
         font-weight: 600;
         color: #05070c;
       }
+
+      /* Right-click card menu */
+      #ctxmenu {
+        position: fixed;
+        z-index: 30;
+        min-width: 168px;
+        padding: 4px;
+        background: var(--panel);
+        border: 1px solid var(--line-hi);
+        border-radius: 8px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+      }
+      #ctxmenu button {
+        display: block;
+        width: 100%;
+        padding: 7px 10px;
+        text-align: left;
+        background: none;
+        border: none;
+        border-radius: 5px;
+        color: var(--ink);
+        font: inherit;
+        cursor: pointer;
+      }
+      #ctxmenu button:hover,
+      #ctxmenu button:focus-visible { background: var(--line); outline: none; }
+
+      /* Copy confirmation toast */
+      #toast {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        z-index: 40;
+        transform: translate(-50%, 8px);
+        padding: 8px 14px;
+        background: var(--panel);
+        border: 1px solid var(--line-hi);
+        border-radius: 8px;
+        color: var(--ink);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease, transform 0.15s ease;
+      }
+      #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
       /* Lightbox */
       #lb { position: fixed; inset: 0; z-index: 20; display: none; background: rgba(2, 3, 7, 0.86); backdrop-filter: blur(4px); }
@@ -122,6 +173,8 @@
       #lb #prev { left: 16px; }
       #lb #next { right: 16px; }
       #lb #close { position: fixed; top: 16px; right: 16px; padding: 8px 12px; }
+      #lb #download { position: fixed; top: 58px; right: 16px; padding: 8px 12px; }
+      #lb #download:disabled { opacity: 0.5; cursor: progress; }
     </style>
   </head>
   <body>
@@ -150,6 +203,7 @@
 
     <div id="lb" role="dialog" aria-modal="true" aria-label="Karten-Detailansicht">
       <button id="close">✕ Esc</button>
+      <button id="download" aria-label="Karte als PNG herunterladen">⭳ PNG</button>
       <button id="prev" class="nav" aria-label="Zurück">‹</button>
       <button id="next" class="nav" aria-label="Weiter">›</button>
       <div class="stage">

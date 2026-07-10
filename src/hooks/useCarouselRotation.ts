@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { MathUtils } from 'three';
 import type { Group } from 'three';
+import type { RingMotion } from '../components/cameraMotion';
 
 interface Options {
   /** Constant idle rotation in radians/second. */
@@ -18,6 +19,9 @@ interface Options {
   initialTilt?: number;
   /** Pixel -> radians conversion for vertical drag tilting. */
   tiltSensitivity?: number;
+  /** Optional sink the ring publishes its live motion into every frame, so the
+      camera can bank and dolly with the spin without a per-frame re-render. */
+  motion?: RefObject<RingMotion>;
 }
 
 // rad/s cap so repeated key kicks cannot blur the ring.
@@ -62,6 +66,7 @@ export function useCarouselRotation({
   paused,
   initialTilt = -0.32,
   tiltSensitivity = 0.005,
+  motion,
 }: Options = {}) {
   const groupRef = useRef<Group>(null);
   const tiltRef = useRef<Group>(null);
@@ -210,6 +215,13 @@ export function useCarouselRotation({
         );
         groupRef.current.rotation.y = rotation.current;
       }
+      // Held under a hero: report the resting pose so the camera guidance eases
+      // out cleanly (it is gated off while a hero is open anyway).
+      if (motion?.current) {
+        motion.current.rotation = rotation.current;
+        motion.current.velocity = 0;
+        motion.current.dragging = false;
+      }
       return;
     }
     // Ring back under free control: drop any leftover spin-to target so the
@@ -247,6 +259,16 @@ export function useCarouselRotation({
     }
     if (tiltRef.current) {
       tiltRef.current.rotation.x = tilt.current;
+    }
+
+    // Publish the live motion for the camera. Reports the *applied* rotation
+    // (including the boot swirl) so the settle-dolly tracks the visible front
+    // card, but the logical spin velocity so a fast boot swirl does not bank
+    // the camera. Mutated in place — no allocation, no per-frame re-render.
+    if (motion?.current) {
+      motion.current.rotation = rotation.current + assembleOffset;
+      motion.current.velocity = velocity.current;
+      motion.current.dragging = dragging.current;
     }
   });
 

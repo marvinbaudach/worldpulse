@@ -13,8 +13,8 @@
 // they need no translation.
 
 import { hBarChart, statusTimeline } from './charts';
-import { red, yellow } from './cardHelpers';
-import { localeNumTrim, localePct, t as tr } from '../i18n';
+import { red } from './cardHelpers';
+import { localePct } from '../i18n';
 import type { Dashboard } from './types';
 
 export const COVID_CRITICAL_CARDS: Dashboard[] = [
@@ -93,35 +93,6 @@ export const COVID_CRITICAL_CARDS: Dashboard[] = [
           { name: '2020 · altersbereinigt', v: 1 },
           { name: '2021 · roh', v: 7 },
           { name: '2021 · altersbereinigt', v: 2.3 },
-        ],
-      }),
-  },
-  {
-    // German (PEI) suspected-report rates by vaccine — the DE-specific angle the
-    // EU/US "covid-vax-reports" card doesn't carry. Raw total in the header
-    // (foreground, as requested), bars compare the reporting RATE per 1000 doses
-    // so vaccine usage doesn't confound the picture: the vector vaccines
-    // (Vaxzevria, Janssen) sit above the mRNA ones. Amber = unverified reports;
-    // the source states plainly that a report is not proof of causation and that
-    // no new risk signal has appeared since 03/2023.
-    id: 'covid-vax-reports-de',
-    title: 'Impf-Verdachtsmeldungen · Deutschland (PEI)',
-    source:
-      'Paul-Ehrlich-Institut · Pharmakovigilanzbericht COVID-19-Impfstoffe. 350.868 gemeldete Verdachtsfälle bei rund 197 Mio. Impfungen (Stand 31.12.2024), davon 63.909 (18,2 %) schwerwiegend; Melderate gesamt 1,78/1.000 Dosen. Balken: Melderate der Verdachtsfälle je 1.000 Dosen nach Impfstoff (27.12.2020–30.9.2021) — Vektorimpfstoffe über den mRNA-Impfstoffen. Passive Spontanerfassung: eine Meldung ist kein Kausalitätsnachweis; das PEI meldet seit 03/2023 kein neues Risikosignal.',
-    draw: (f) =>
-      hBarChart(f, {
-        label: '350.868 gemeldete Verdachtsfälle · 🇩🇪',
-        value: 350868,
-        fmt: (v) => `${localeNumTrim(v, 0)}`,
-        rowFmt: (v) => `${localeNumTrim(v, 2)}/1.000`,
-        delta: null,
-        color: yellow,
-        unit: '',
-        rows: [
-          { name: 'Vaxzevria', v: 3.6, sub: tr('Vektor · AstraZeneca') },
-          { name: 'Spikevax', v: 2.66, sub: tr('mRNA · Moderna') },
-          { name: 'Janssen', v: 1.96, sub: tr('Vektor · J&J') },
-          { name: 'Comirnaty', v: 1.14, sub: tr('mRNA · BioNTech') },
         ],
       }),
   },

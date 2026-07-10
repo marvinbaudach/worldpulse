@@ -34,10 +34,6 @@ export const TAGS: { id: string; label: string; accent: string; primary?: boolea
   // the palette is fixed (CVD-validated), never extended by hand.
   { id: 'tech', label: 'TECH', accent: SERIES[4] }, // violet
   { id: 'welt', label: 'WELT', accent: SERIES[0] }, // blue
-  // Climate category: the live world-temperature map plus the deep-time
-  // paleoclimate panels. Shares aqua with GESUNDHEIT — the palette is fixed
-  // (CVD-validated), and aqua reads cold/ice for a climate theme.
-  { id: 'klima', label: 'KLIMA', accent: SERIES[1] }, // aqua
   // Personal stack: gets its cards from the favorites store at runtime, so it
   // has no static pool entry (see RING_BY_TAG below). Shares gold with GELD —
   // the palette is fixed (CVD-validated), and gold matches the star.
@@ -57,7 +53,6 @@ function shuffled<T>(list: T[]): T[] {
 // right below; clustering and the theme chips both key off tags[0].
 const TAGS_BY_ID: Record<string, string[]> = {
   'de-budget-split': ['deutschland'],
-  'de-aid-peru': ['deutschland'],
   'de-megaprojects': ['deutschland'],
   military: ['krieg'],
   mideast: ['krieg'],
@@ -67,18 +62,9 @@ const TAGS_BY_ID: Record<string, string[]> = {
   nukes: ['krieg'],
   'homicide-map': ['soziales'],
   'suicide-map': ['soziales'],
-  'temp-map': ['klima'],
-  'ice-cores': ['klima'],
-  deglaciation: ['klima'],
-  'sea-level': ['klima'],
-  'co2-800k': ['klima'],
-  'global-temp-800k': ['klima'],
-  'global-temp-anomaly': ['klima'],
-  'abs-temp': ['klima'],
-  'climate-sensitivity': ['klima'],
-  'models-vs-obs': ['klima'],
-  'disaster-deaths': ['klima'],
-  'crop-yields': ['klima'],
+  'sdg-index-map': ['welt', 'soziales'],
+  'sdg-laggards-map': ['welt', 'soziales'],
+  'temp-map': ['welt'],
   'swiss-pop': ['welt'],
   'world-pop': ['welt'],
   'oil-consumption': ['welt'],
@@ -115,6 +101,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   unemployment: ['soziales'],
   poverty: ['soziales'],
   'poorest-nations': ['soziales'],
+  'poverty-map': ['soziales'],
   'de-insolvenz-jobs': ['deutschland'],
   'de-industry': ['deutschland'],
   'de-auto-jobs': ['deutschland'],
@@ -140,7 +127,6 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'de-tax-revenue': ['deutschland'],
   'de-income-tax-share': ['deutschland'],
   'de-power-prices': ['deutschland'],
-  'de-power-prices-eu': ['deutschland'],
   'berlin-warrants': ['deutschland'],
   'de-state-quota': ['deutschland'],
   'de-public-employment': ['deutschland'],
@@ -167,7 +153,6 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'office-vacancy': ['geld'],
   'dollar-reserves': ['geld'],
   'zombie-firms': ['geld'],
-  'book-bans': ['freiheit'],
   internet: ['tech'],
   'world-hunger': ['welt'],
   'extreme-poverty': ['soziales'],
@@ -262,8 +247,6 @@ const TAGS_BY_ID: Record<string, string[]> = {
   'covid-vax-births': ['corona'],
   'de-deaths-raw': ['corona'],
   'covid-myocarditis': ['corona'],
-  'covid-vax-reports': ['corona'],
-  'covid-vax-risks': ['corona'],
   'excess-mortality-map': ['corona'],
   'covid-vax-map': ['corona'],
   'cb-gold': ['geld'],
@@ -282,14 +265,11 @@ const TAGS_BY_ID: Record<string, string[]> = {
   // EU freedom-restriction dossier (legislative timelines) — see euFreedom.ts.
   chatkontrolle: ['freiheit'],
   'asset-register': ['freiheit'],
-  'data-retention': ['freiheit'],
-  dsa: ['freiheit'],
   // Corona-critical dossier (Event 201, measures timeline, excess mortality,
   // PEI reports) — see covidCritical.ts.
   'event-201': ['corona'],
   'de-corona-massnahmen': ['corona', 'freiheit'],
   'excess-age-adjusted': ['corona'],
-  'covid-vax-reports-de': ['corona'],
 };
 for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
 
@@ -299,10 +279,13 @@ for (const d of POOL) d.tags = TAGS_BY_ID[d.id] ?? [];
  * review gallery (src/dev/gallery.ts) so freshly added cards are easy to find.
  */
 const ADDED_BY_ID: Record<string, string> = {
-  // Live Hormuz tanker traffic (IMF PortWatch) — newest, leads the NEU chip.
+  // SDG-Index laggards choropleth (SDR 2026) — newest, leads the NEU chip.
+  'sdg-laggards-map': '2026-07-10T13:05:00+02:00',
+  // SDG-Index world choropleth per country (SDR 2026).
+  'sdg-index-map': '2026-07-10T13:00:00+02:00',
+  // Live Hormuz tanker traffic (IMF PortWatch).
   'hormuz-tankers': '2026-07-10T12:30:00+02:00',
   // Corona-critical dossier.
-  'covid-vax-reports-de': '2026-07-10T11:03:00+02:00',
   'excess-age-adjusted': '2026-07-10T11:02:00+02:00',
   'de-corona-massnahmen': '2026-07-10T11:01:00+02:00',
   'event-201': '2026-07-10T11:00:00+02:00',
@@ -311,11 +294,8 @@ const ADDED_BY_ID: Record<string, string> = {
   // EU freedom-restriction dossier.
   chatkontrolle: '2026-07-10T10:04:00+02:00',
   'asset-register': '2026-07-10T10:03:00+02:00',
-  'data-retention': '2026-07-10T10:02:00+02:00',
-  dsa: '2026-07-10T10:01:00+02:00',
   'datacenter-map': '2026-07-09T22:30:00+02:00',
   'de-budget-split': '2026-07-09T20:00:00+02:00',
-  'de-aid-peru': '2026-07-09T21:30:00+02:00',
   'de-megaprojects': '2026-07-09T21:31:00+02:00',
   'military': '2026-07-07T07:48:18+02:00',
   'mideast': '2026-07-09T12:00:00+02:00',
@@ -361,6 +341,7 @@ const ADDED_BY_ID: Record<string, string> = {
   'unemployment': '2026-07-07T07:48:18+02:00',
   'poverty': '2026-07-07T07:48:18+02:00',
   'poorest-nations': '2026-07-07T21:01:29+02:00',
+  'poverty-map': '2026-07-10T20:30:00+02:00',
   'de-insolvenz-jobs': '2026-07-07T07:48:18+02:00',
   'de-industry': '2026-07-07T07:48:18+02:00',
   'de-migration': '2026-07-07T07:48:18+02:00',
@@ -382,7 +363,6 @@ const ADDED_BY_ID: Record<string, string> = {
   'de-tax-quota': '2026-07-07T09:01:56+02:00',
   'de-tax-revenue': '2026-07-09T16:00:00+02:00',
   'de-power-prices': '2026-07-07T09:13:02+02:00',
-  'de-power-prices-eu': '2026-07-09T19:30:00+02:00',
   'berlin-warrants': '2026-07-07T11:11:15+02:00',
   'de-state-quota': '2026-07-07T09:01:56+02:00',
   'de-old-age-ratio': '2026-07-07T09:28:10+02:00',
@@ -391,7 +371,6 @@ const ADDED_BY_ID: Record<string, string> = {
   'press-freedom-nations': '2026-07-07T08:03:48+02:00',
   'jailed-journalists': '2026-07-07T08:30:25+02:00',
   'asset-correlation': '2026-07-07T08:46:44+02:00',
-  'book-bans': '2026-07-07T07:48:18+02:00',
   'internet': '2026-07-07T07:48:18+02:00',
   'world-hunger': '2026-07-07T07:48:18+02:00',
   'extreme-poverty': '2026-07-07T07:48:18+02:00',
@@ -487,17 +466,6 @@ const ADDED_BY_ID: Record<string, string> = {
   'us-10y': '2026-07-09T02:00:00+02:00',
   'margin-debt': '2026-07-09T02:00:00+02:00',
   'temp-map': '2026-07-08T12:00:00+02:00',
-  'ice-cores': '2026-07-09T14:30:00+02:00',
-  'deglaciation': '2026-07-09T14:30:00+02:00',
-  'sea-level': '2026-07-09T14:30:00+02:00',
-  'co2-800k': '2026-07-10T13:25:00+02:00',
-  'global-temp-800k': '2026-07-10T13:20:00+02:00',
-  'global-temp-anomaly': '2026-07-10T13:06:00+02:00',
-  'abs-temp': '2026-07-10T13:05:00+02:00',
-  'climate-sensitivity': '2026-07-10T13:04:00+02:00',
-  'models-vs-obs': '2026-07-10T13:03:00+02:00',
-  'disaster-deaths': '2026-07-10T13:02:00+02:00',
-  'crop-yields': '2026-07-10T13:01:00+02:00',
   'de-income-tax-share': '2026-07-08T13:00:00+02:00',
   'sdg-progress': '2026-07-09T03:00:00+02:00',
   'who-funding': '2026-07-09T03:00:00+02:00',
@@ -506,8 +474,6 @@ const ADDED_BY_ID: Record<string, string> = {
   'covid-vax-births': '2026-07-09T14:30:00+02:00',
   'de-deaths-raw': '2026-07-09T17:00:00+02:00',
   'covid-myocarditis': '2026-07-09T15:00:00+02:00',
-  'covid-vax-reports': '2026-07-09T19:00:00+02:00',
-  'covid-vax-risks': '2026-07-09T19:01:00+02:00',
   'excess-mortality-map': '2026-07-09T09:45:00+02:00',
   'covid-vax-map': '2026-07-09T09:45:00+02:00',
   'cb-gold': '2026-07-09T03:00:00+02:00',
@@ -550,14 +516,13 @@ export const NEWEST: Dashboard[] = [...POOL].sort((a, b) =>
 const FEATURED = new Set([
   'us-wars', 'us-bases', 'modern-slavery', 'corruption', 'incarceration', 'obesity-nations', 'nukes',
   'us-debt', 'us-interest', 'm2', 'dollar', 'wealth', 'homicide-map', 'suicide-map',
-  'world-pop', 'oil-consumption', 'temp-map', 'ice-cores', 'deglaciation', 'sea-level',
-  'co2-800k', 'global-temp-800k', 'global-temp-anomaly', 'abs-temp', 'climate-sensitivity', 'models-vs-obs', 'disaster-deaths', 'crop-yields',
+  'world-pop', 'oil-consumption', 'temp-map',
   'de-insolvenz-jobs', 'conflict-deaths', 'refugees', 'refugees-interventions',
-  'military', 'military-per-soldier', 'military-gdp', 'de-industry', 'recent-wars', 'de-state-quota', 'de-tax-quota', 'de-tax-revenue', 'de-income-tax-share', 'de-public-employment', 'de-power-prices', 'de-power-prices-eu', 'de-old-age-ratio', 'de-aging-nations', 'berlin-warrants',
+  'military', 'military-per-soldier', 'military-gdp', 'de-industry', 'recent-wars', 'de-state-quota', 'de-tax-quota', 'de-tax-revenue', 'de-income-tax-share', 'de-public-employment', 'de-power-prices', 'de-old-age-ratio', 'de-aging-nations', 'berlin-warrants',
   'youth-unemployment', 'unemployment', 'poverty',
   'teen-mde', 'female-lfp',
   'teen-screen', 'teen-antidepressants', 'obesity-fastfood', 'surveillance',
-  'cameras-world', 'internet-shutdowns', 'press-freedom-nations', 'book-bans', 'jailed-journalists', 'asset-correlation',
+  'cameras-world', 'internet-shutdowns', 'press-freedom-nations', 'jailed-journalists', 'asset-correlation',
   'gov-requests-country', 'youtube-removals', '5g-stations',
   'un-resolutions', 'de-family', 'single-households', 'inflation',
   'digital-id', 'digital-id-gap', 'cash-limits', 'alcohol-nations', 'alcohol-deaths', 'c40-cities',
@@ -577,8 +542,8 @@ const FEATURED = new Set([
   'gender-language', 'gender-divide', 'self-id-laws', 'rainbow-camps', 'lgbt-criminal-map', 'executions-map', 'slavery-map', 'drug-deaths-map', 'genocides', 'trans-youth',
   'sdg-progress', 'who-funding', 'excess-mortality', 'cb-gold', 'gold-reserves', 'farm-decline', 'pisa', 'free-speech-feeling', 'birth-collapse', 'big-three',
   'de-bank-branches', 'us-middle-wealth', 'us-consumer-debt',
-  'de-budget-split', 'de-aid-peru', 'de-megaprojects',
-  'chatkontrolle', 'asset-register', 'data-retention', 'dsa',
+  'de-budget-split', 'de-megaprojects',
+  'chatkontrolle', 'asset-register',
 ]);
 
 /**

@@ -9,7 +9,6 @@ import {
   choroplethMap,
   dataCenterMap,
   debtClock,
-  factCheck,
   hBarChart,
   lineChart,
   mideastMap,
@@ -35,29 +34,21 @@ import {
   MODERN_SLAVERY_TOP,
   NUKE_STATES,
   NUKE_TOTAL,
+  POVERTY_HEADCOUNT,
+  POVERTY_TOP,
+  SDG_INDEX,
+  SDG_INDEX_BOTTOM,
+  SDG_INDEX_TOP,
   US_TROOPS_ABROAD,
 } from './geo';
 import type { Dashboard } from './types';
-import { BASELINE } from './theme';
+import { BASELINE, CRITICAL, GOOD } from './theme';
+import { WORLD } from '../data/world';
 import { EU_FREEDOM_CARDS } from './euFreedom';
 import { COVID_CRITICAL_CARDS } from './covidCritical';
 import { live } from '../data/store';
 import { EXCESS_100K_BY_ISO, VAX_RATE_BY_ISO } from '../data/covidWorld';
-import {
-  ABS_TEMP_PANEL,
-  CO2_800K_PANEL,
-  CROP_YIELD_PANEL,
-  DEGLACIATION_PANEL,
-  DISASTER_DEATHS_PANEL,
-  FALLBACK_TEMPS,
-  FALLBACK_TEMP_ROWS,
-  GLOBAL_800K_PANEL,
-  GLOBAL_TEMP_PANEL,
-  ICE_CORE_PANEL,
-  MODELS_OBS_COMPARE,
-  SEALEVEL_PANEL,
-  SENSITIVITY_COMPARE,
-} from '../data/climate';
+import { FALLBACK_TEMPS, FALLBACK_TEMP_ROWS } from '../data/climate';
 import {
   AFRICA_ROUTES_COMPARE,
   AI_JOBS_COMPARE,
@@ -133,7 +124,6 @@ import {
   NUKE_TESTS_PANEL,
   PL_MIGRATION_COMPARE,
   PRESS_FREEDOM_COMPARE,
-  BOOK_BANS_PANEL,
   JAILED_JOURNALISTS_PANEL,
   ASSET_MEGACOMPARE,
   OIL_CONSUMPTION_PANEL,
@@ -266,33 +256,10 @@ export const POOL: Dashboard[] = [
       }),
   },
   {
-    id: 'de-aid-peru',
-    title: 'Radwege in Peru · Behauptung vs. Realität',
-    source:
-      'BMZ-Faktencheck. Die „315 Mio €" stammen aus einer Bundestagsrede (J. Cotar, AfD) und wurden vom BMZ und Faktencheckern (vorwärts, Volksverpetzer) widerlegt. Real: 44 Mio € Zuschüsse (2020: 20 + 2022: 24) für ein Radschnellwegenetz in Lima, dazu ~155 Mio € Kredite (Rückzahlung, keine Ausgabe); läuft als internationale Klimafinanzierung. BMZ-Entwicklungsetat 2025: 10,27 Mrd €. Stand 2024/25.',
-    draw: (f) =>
-      // A worked example of how a viral "Verschwendung" number is built: the
-      // claim (315) is ~7x the actual grant (44), the bulk is repayable loans,
-      // and even the claim is a rounding error next to the aid budget. Colour,
-      // not bar length, marks which figure is real.
-      factCheck(f, {
-        label: 'Radwege in Peru · Behauptung vs. Realität',
-        unit: 'Mio €',
-        claim: { tag: 'Behauptung', name: 'Cotar/AfD, viral', v: 315 },
-        fact: { tag: 'belegt', name: 'BMZ-Zuschüsse 2020+2022', v: 44 },
-        notes: [
-          '+155 Mio € Kredite — Rückzahlung, keine Ausgabe',
-          'läuft als Klimafinanzierung (int. Verpflichtung)',
-          '44 Mio = 0,4 % des Entwicklungsetats (10,3 Mrd €)',
-        ],
-        source: 'BMZ-Faktencheck · Bundestag · vorwärts / Volksverpetzer · 2024/25',
-      }),
-  },
-  {
     id: 'de-megaprojects',
     title: 'Milliardengräber · geplant vs. tatsächlich',
     source:
-      'Bund der Steuerzahler / öffentliche Baubilanzen · tatsächliche bzw. prognostizierte Endkosten gegen die ursprüngliche Planung. Stuttgart 21 ~4,5 → 14,5 Mrd € (Eröffnung 2031), Flughafen BER 2 → 7 Mrd € (9 Jahre Verzug), Elbphilharmonie 77 Mio → 866 Mio €. Öffentliche Großprojekte überschreiten ihr Budget im Schnitt um rund 70 %. Werte gerundet, Stand 2025.',
+      'Bund der Steuerzahler / öffentliche Baubilanzen · tatsächliche bzw. prognostizierte Endkosten gegen die ursprüngliche Planung. Stuttgart 21 ~4,5 → 14,5 Mrd € (Eröffnung 2031), Flughafen BER 2 → 7 Mrd € (9 Jahre Verzug), BND-Zentrale 0,72 → 1,5 Mrd €, Elbphilharmonie 77 → 866 Mio € (×11), Kanzleramt-Erweiterung 0,49 → 0,78 Mrd €, Humboldt Forum 0,55 → 0,68 Mrd €. Öffentliche Großprojekte überschreiten ihr Budget im Schnitt um rund 70 %. Werte gerundet, Stand 2025.',
     draw: (f) =>
       hBarChart(f, {
         // Real, documented overruns — the sub carries the plan and the
@@ -308,7 +275,10 @@ export const POOL: Dashboard[] = [
         rows: [
           { name: 'Stuttgart 21', v: 14.5, sub: 'geplant 4,5 · ×3,2' },
           { name: 'Flughafen BER', v: 7.0, sub: 'geplant 2 · ×3,5' },
+          { name: 'BND-Zentrale', v: 1.5, sub: 'geplant 0,72 · ×2,1' },
           { name: 'Elbphilharmonie', v: 0.87, sub: 'geplant 0,08 · ×11' },
+          { name: 'Kanzleramt-Erweiterung', v: 0.78, sub: 'geplant 0,49 · ×1,6' },
+          { name: 'Humboldt Forum', v: 0.68, sub: 'geplant 0,55 · ×1,2' },
         ],
       }),
   },
@@ -462,25 +432,95 @@ export const POOL: Dashboard[] = [
     id: 'suicide-map',
     title: 'Suizidrate weltweit',
     source:
-      'World Bank / WHO · Suizidrate je 100k Einwohner, live abgerufen; letztes verfügbares Jahr je Land. Modellierte WHO-Schätzung.',
+      'World Bank / WHO (SH.STA.SUIC.P5) · Suizidrate je 100.000, altersstandardisierte WHO-Schätzung, letztes verfügbares Jahr (meist 2021), live abgerufen. Auswahl: höchste Raten plus bekannte Referenzländer (Russland, USA, Deutschland). USA als WHO-Schätzung, da World Bank aktuell keinen Wert führt.',
     dynamic: true,
     draw: (f) => {
-      const sc = live.suicide;
-      choroplethMap(f, {
-        label: 'Suizidrate',
-        value: sc?.world ?? 9,
+      // Ranked country comparison rather than a choropleth: the highest-rate
+      // nations are nearly all small (Lesotho, Guyana, Litauen…) and vanish on
+      // a world map, so bars read them clearly — and put the familiar reference
+      // countries (Russia, USA, Germany) on the same scale. Live World Bank
+      // value per ISO, each with a bundled WHO fallback (2021, USA = WHO 2019).
+      const by = live.suicide?.byIso;
+      const rows = [
+        { iso: 'LSO', name: 'Lesotho', fb: 28.7 },
+        { iso: 'KOR', name: 'Südkorea', fb: 27.5 },
+        { iso: 'GUY', name: 'Guyana', fb: 24.8 },
+        { iso: 'LTU', name: 'Litauen', fb: 22.1 },
+        { iso: 'RUS', name: 'Russland', fb: 21.4 },
+        { iso: 'JPN', name: 'Japan', fb: 17.4 },
+        { iso: 'USA', name: 'USA', fb: 14.5 },
+        { iso: 'DEU', name: 'Deutschland', fb: 12.9 },
+        { iso: 'GBR', name: 'Großbritannien', fb: 9.6 },
+      ]
+        .map((c) => ({ name: c.name, v: by?.[c.iso] ?? c.fb }))
+        .toSorted((a, b) => b.v - a.v);
+      hBarChart(f, {
+        label: 'Suizidrate · je 100.000',
+        value: rows[0].v,
+        delta: null,
+        color: magenta,
+        unit: '',
+        rows,
         fmt: (v) => `${localeNumTrim(v, 1)} /100k`,
-        valueByIso: sc?.byIso,
-        world: live.worldMap,
-        rows: sc?.rows ?? [
-          { name: 'Lesotho', v: 28.7 },
-          { name: 'Südkorea', v: 27.5 },
-          { name: 'Eswatini', v: 27.2 },
-          { name: 'Guyana', v: 24.8 },
-          { name: 'Uruguay', v: 24.8 },
-        ],
+        rowFmt: (v) => `${localeNumTrim(v, 1)}`,
+      });
+    },
+  },
+  {
+    id: 'sdg-index-map',
+    title: 'SDG-Index · Länder',
+    source:
+      'Sustainable Development Report 2026 (SDSN) · SDG-Index-Gesamtscore je Land: 0–100 = Anteil des Weges zum Optimum aller 17 Nachhaltigkeitsziele. Jährlicher Datensatz, kein Live-Abruf.',
+    draw: (f) => {
+      // Shade by (score − floor): the published scores only span ~40–87, so raw
+      // values leave even the worst countries mid-bright. Subtracting a floor
+      // spreads the ramp so laggards read clearly dim and leaders bright. The
+      // shift is order-preserving and shading-only — the ranked list and the
+      // dark-surface eyeball still read the real, unaltered scores.
+      const SDG_FLOOR = 35;
+      const shade = Object.fromEntries(
+        Object.entries(SDG_INDEX).map(([iso, s]) => [iso, Math.max(0, s - SDG_FLOOR)]),
+      );
+      choroplethMap(f, {
+        label: 'SDG-Index · Fortschritt',
+        value: 74,
+        fmt: (v) => localeNumTrim(v, 1),
+        valueByIso: shade,
+        world: live.worldMap ?? WORLD,
+        rows: SDG_INDEX_TOP,
         rowFmt: (v) => localeNumTrim(v, 1),
-        source: 'World Bank / WHO · Suizidrate je 100k',
+        // High score = closer to the goals = good news, so the calmer green GOOD
+        // ramp instead of the map's alert-red default (per choroplethMap docs).
+        ramp: GOOD,
+        source: 'SDR 2026 · SDSN',
+      });
+    },
+  },
+  {
+    id: 'sdg-laggards-map',
+    title: 'SDG-Index · Nachzügler',
+    source:
+      'Sustainable Development Report 2026 (SDSN) · Rückstand zum SDG-Optimum je Land: 100 minus SDG-Index-Score. Rot = am weitesten von der Agenda 2030 entfernt. Jährlicher Datensatz, kein Live-Abruf.',
+    draw: (f) => {
+      // Inverse of sdg-index-map: shade by the shortfall to the goals with the
+      // red CRITICAL ramp, so the countries furthest behind glow brightest and
+      // the leaders fade to faint. max(0, 90 − score) mirrors the leader map's
+      // floor shift for contrast; it is order-preserving and shading-only — the
+      // ranked list shows the real, unaltered scores.
+      const shortfall = Object.fromEntries(
+        Object.entries(SDG_INDEX).map(([iso, s]) => [iso, Math.max(0, 90 - s)]),
+      );
+      choroplethMap(f, {
+        label: 'SDG-Index · Rückstand',
+        value: 26,
+        fmt: (v) => localeNumTrim(v, 1),
+        valueByIso: shortfall,
+        world: live.worldMap ?? WORLD,
+        rows: SDG_INDEX_BOTTOM,
+        rowFmt: (v) => localeNumTrim(v, 1),
+        // Bad-news semantics (furthest from the goals) → the reserved CRITICAL red.
+        ramp: CRITICAL,
+        source: 'SDR 2026 · SDSN',
       });
     },
   },
@@ -502,185 +542,6 @@ export const POOL: Dashboard[] = [
       });
     },
   },
-  trendCard(
-    'ice-cores',
-    'Eiszeiten · 800.000 Jahre',
-    'Antarktis-Temperatur · Δ vs. heute',
-    ICE_CORE_PANEL,
-    blue,
-    (v) => `${v > 0 ? '+' : ''}${localeNum(v, 1)} °C`,
-    77,
-    eraMarkers(-800, 0, [
-      [-125, '☀️ Eem-Warmzeit'],
-      [-20, '❄️ Eiszeit-Maximum'],
-    ]),
-    'EPICA Community Members 2004 / Jouzel et al. 2007 · antarktische Eiskerntemperatur (Dome C), Δ zum heutigen Wert. Acht Eiszeit-Zyklen; die Antarktis schwankt ~2× stärker als das globale Mittel.',
-  ),
-  trendCard(
-    'deglaciation',
-    'Das Ende der letzten Eiszeit',
-    'Globale Temperatur · Δ vs. 1850',
-    DEGLACIATION_PANEL,
-    orange,
-    (v) => `${v > 0 ? '+' : ''}${localeNum(v, 1)} °C`,
-    78,
-    eraMarkers(-24000, 0, [
-      [-22000, '❄️ Eiszeit-Maximum'],
-      [-12900, '❄️ Jüngere Dryas'],
-      [-11700, '🌱 Holozän'],
-    ]),
-    'Osman et al. 2021 / Shakun et al. 2012 · globale Mitteltemperatur seit dem letzten Eiszeit-Maximum; ab 1850 Instrumentaldaten (HadCRUT5). Der Sprung am Ende ist die industrielle Erwärmung.',
-  ),
-  trendCard(
-    'sea-level',
-    'Meeresspiegel seit der Eiszeit',
-    'Meeresspiegel · vs. heute',
-    SEALEVEL_PANEL,
-    aqua,
-    (v) => `${localeNum(v, 0)} m`,
-    79,
-    eraMarkers(-20000, 0, [
-      [-14500, '🌊 Schmelzwasserpuls 1A'],
-      [-7000, '⚖️ stabil'],
-    ]),
-    'Lambeck et al. 2014 (PNAS) · globaler Meeresspiegel relativ zu heute. +125 m seit der Eiszeit, seit ~7000 Jahren nahezu stabil — der moderne mm-Anstieg ist auf dieser Skala unsichtbar.',
-  ),
-  trendCard(
-    'global-temp-800k',
-    'Globale Temperatur · 800.000 Jahre',
-    'Globale Temperatur · Δ vs. vorindustriell',
-    GLOBAL_800K_PANEL,
-    magenta,
-    (v) => `${v > 0 ? '+' : ''}${localeNum(v, 1)} °C`,
-    80,
-    eraMarkers(-800, 0, [
-      [-125, '☀️ Eem-Warmzeit'],
-      [-20, '❄️ Eiszeit-Maximum'],
-      [0, '🔥 heute'],
-    ]),
-    'Snyder 2016 (Nature) / Hansen & Sato · rekonstruierte globale Mitteltemperatur der letzten 800.000 Jahre (Δ vs. vorindustriell), aus marinen Sediment- und Eiskerndaten (EPICA-Chronologie). Acht Eiszeit-Zyklen mit ~5 °C Hub; die Antarktis schwankt ~2× stärker. Heute (~+1,3 °C) liegt am oberen Rand oder über allen Warmzeiten des Zeitraums.',
-  ),
-  trendCard(
-    'co2-800k',
-    'CO₂ · 800.000 Jahre',
-    'CO₂-Konzentration · ppm',
-    CO2_800K_PANEL,
-    violet,
-    (v) => `${localeNum(v, 0)} ppm`,
-    81,
-    eraMarkers(-800, 0, [
-      [-20, '❄️ Eiszeit-Maximum'],
-      [0, '🔥 heute'],
-    ]),
-    'EPICA Dome C · Lüthi et al. 2008 / Bereiter et al. 2015 · atmosphärisches CO₂ aus antarktischen Eiskernen (Luftblasen), letzte 800.000 Jahre. In acht Eiszeit-Zyklen blieb CO₂ zwischen ~180 ppm (Eiszeit) und ~300 ppm (Warmzeit). Heute: 424 ppm — rund 40 % über jedem natürlichen Höchstwert des Zeitraums, erreicht in ~150 Jahren.',
-  ),
-  {
-    id: 'global-temp-anomaly',
-    title: 'Erderwärmung · mit Unsicherheit',
-    source:
-      'HadCRUT5 / NASA GISTEMP / Berkeley Earth · globale Oberflächentemperatur, Abweichung vom vorindustriellen Mittel (1850–1900), Dekaden geglättet. Band = ~90-%-Messunsicherheit: im 19. Jh. breit, heute schmal. Einzeljahre erreichen im El-Niño ~+1,5 °C.',
-    draw: (f) =>
-      areaChart(f, {
-        // The measured record drawn with its own reported uncertainty rather
-        // than a single false-precision line — the band is the honesty.
-        label: 'Globale Temperatur · Δ vs. 1850–1900',
-        value: GLOBAL_TEMP_PANEL.latest,
-        delta: null,
-        fmt: (v) => `${v > 0 ? '+' : ''}${localeNum(v, 1)} °C`,
-        seed: 141,
-        color: red,
-        data: GLOBAL_TEMP_PANEL.series,
-        band: GLOBAL_TEMP_PANEL.band,
-        ticks: GLOBAL_TEMP_PANEL.ticks,
-        xLabels: GLOBAL_TEMP_PANEL.xLabels,
-      }),
-  },
-  {
-    id: 'abs-temp',
-    title: 'Erdmitteltemperatur · absolut',
-    source:
-      'Berkeley Earth / NASA · absolute globale Mitteltemperatur: ~13,7 °C um 1850 → ~15 °C heute. Der Absolutwert ist über die Datensätze auf ±0,5 °C unsicher (breites Band) — deshalb berichtet die Wissenschaft die Anomalie, deren Trend ~10× genauer bekannt ist. Eisbohrkerne datieren global bis ~800.000 Jahre zurück (EPICA Dome C).',
-    draw: (f) =>
-      areaChart(f, {
-        // The absolute mean on its own axis: the wide ±0.5 °C band is the point
-        // — it dwarfs the anomaly's band, which is why science reports change.
-        label: 'Globale Mitteltemperatur · °C',
-        value: ABS_TEMP_PANEL.latest,
-        delta: null,
-        fmt: (v) => `${localeNum(v, 1)} °C`,
-        seed: 146,
-        color: orange,
-        data: ABS_TEMP_PANEL.series,
-        band: ABS_TEMP_PANEL.band,
-        ticks: ABS_TEMP_PANEL.ticks,
-        xLabels: ABS_TEMP_PANEL.xLabels,
-      }),
-  },
-  {
-    id: 'climate-sensitivity',
-    title: 'Wie stark heizt CO₂?',
-    source:
-      'IPCC-Sachstandsberichte (Charney 1979, FAR 1990, AR4 2007, AR5 2013, AR6 2021) · „likely"-Bereich der Gleichgewichts-Klimasensitivität (Erwärmung je CO₂-Verdopplung). Der zentrale Wert ~3 °C ist seit 1979 stabil; der Bereich weitete sich bei AR5 wieder und verengte sich erst mit AR6 deutlich (2,5–4 °C).',
-    draw: (f) =>
-      lineChart(f, {
-        label: 'Klimasensitivität · °C je CO₂-Verdopplung',
-        value: SENSITIVITY_COMPARE.latest,
-        unit: '',
-        fmt: (v) => `${localeNum(v, 1)} °C`,
-        delta: null,
-        seed: 142,
-        series: [
-          { name: 'obere Grenze', color: red, data: SENSITIVITY_COMPARE.rows[2].data },
-          { name: 'bester Wert', color: yellow, data: SENSITIVITY_COMPARE.rows[1].data },
-          { name: 'untere Grenze', color: blue, data: SENSITIVITY_COMPARE.rows[0].data },
-        ],
-        ticks: SENSITIVITY_COMPARE.ticks,
-        xLabels: ['1979', '1993', '2007', '2021'],
-      }),
-  },
-  {
-    id: 'models-vs-obs',
-    title: 'Klimamodelle vs. Realität',
-    source:
-      'Hausfather et al. 2020 (Geophysical Research Letters) · frühe Klimamodell-Projektionen (1970–2007) gegen die beobachtete Erwärmung. 14 von 17 Modellen stimmten mit den Messungen überein — nach Korrektur für die tatsächlichen Antriebe (Emissionen, Vulkanausbrüche). Die Modelle waren nicht übertrieben, sondern ungefähr richtig.',
-    draw: (f) =>
-      lineChart(f, {
-        label: 'Erwärmung · °C vs. 1850–1900',
-        value: MODELS_OBS_COMPARE.latest,
-        unit: '',
-        fmt: (v) => `${v > 0 ? '+' : ''}${localeNum(v, 1)} °C`,
-        delta: null,
-        seed: 145,
-        series: [
-          { name: '🌡️ Beobachtung', color: red, data: MODELS_OBS_COMPARE.rows[1].data },
-          { name: '🖥️ Modelle', color: blue, data: MODELS_OBS_COMPARE.rows[0].data },
-        ],
-        ticks: MODELS_OBS_COMPARE.ticks,
-        xLabels: ['1970', '1987', '2003', 'heute'],
-      }),
-  },
-  trendCard(
-    'disaster-deaths',
-    'Naturkatastrophen · Todesrate',
-    'Tote je 100.000 · Dekadenmittel',
-    DISASTER_DEATHS_PANEL,
-    green,
-    (v) => localeNum(v, 1),
-    143,
-    eraMarkers(1900, 2020, [[1920, '🌊 Hungerdekaden']]),
-    'EM-DAT / Our World in Data · Todesfälle durch Naturkatastrophen je 100.000 Menschen, Dekadenmittel. Der ~30-fache Rückgang ist Anpassung (Frühwarnung, Infrastruktur, Wohlstand) — nicht weniger Extremereignisse; die realen Schadenssummen stiegen zugleich.',
-  ),
-  trendCard(
-    'crop-yields',
-    'Ernteerträge · seit 1961',
-    'Getreideertrag · t/ha',
-    CROP_YIELD_PANEL,
-    yellow,
-    (v) => `${localeNum(v, 1)} t`,
-    144,
-    eraMarkers(1961, 2022, [[1968, '🌾 Grüne Revolution']]),
-    'FAO / Our World in Data · globaler Getreideertrag (t/ha). Verdreifachung seit 1961 vor allem durch Zucht, Dünger und Bewässerung; der CO₂-Düngeeffekt trägt real, aber gering bei. CO₂ stieg zugleich von 280 auf 424 ppm.',
-  ),
   {
     id: 'swiss-pop',
     title: 'Schweizer Bevölkerung · 500 Jahre',
@@ -1290,6 +1151,29 @@ export const POOL: Dashboard[] = [
           { name: 'Nigeria', v: 31 },
         ],
       }),
+  },
+  {
+    id: 'poverty-map',
+    title: 'Extreme Armut · Weltkarte',
+    source:
+      'Weltbank PIP · Anteil der Bevölkerung unter 2,15 $/Tag (KKP 2017, SI.POV.DDAY), letztes verfügbares Jahr je Land, live abgerufen; offline: gebündelte Weltbank-Schätzwerte. Armutserhebungen sind unregelmäßig, das Jahr variiert je Land.',
+    dynamic: true,
+    draw: (f) => {
+      // The global companion to the poorest-nations bar card: the bar list only
+      // ever surfaces the sub-Saharan top, so the choropleth shades the whole
+      // world by extreme-poverty share. Live World Bank per country, with a
+      // bundled real fallback so the map isn't blank before the fetch lands.
+      const pv = live.poverty;
+      choroplethMap(f, {
+        label: 'Extreme Armut · Anteil unter 2,15 $/Tag',
+        value: pv?.world ?? 9,
+        fmt: (v) => `${Math.round(v)}%`,
+        valueByIso: pv?.byIso ?? POVERTY_HEADCOUNT,
+        world: live.worldMap,
+        rows: pv?.rows ?? POVERTY_TOP,
+        rowFmt: (v) => `${Math.round(v)}%`,
+      });
+    },
   },
   trendCard('de-insolvenz-jobs', 'Insolvenzen · betroffene Arbeitsplätze', 'Jobs in Firmenpleiten · 🇩🇪', DE_INSOLVENCY_JOBS_PANEL, red, (v) => `${Math.round(v / 1000)}k`, 137, eraMarkers(2000, 2025, [
     // The 2020 lockdown plus the suspended filing obligation pushed the count
@@ -1901,39 +1785,6 @@ export const POOL: Dashboard[] = [
     [2011, '☢️ Atomausstieg'],
     [2022, '⚡ Energiekrise'],
   ]), 'BDEW / Destatis / Eurostat · Haushaltsstrompreis inkl. Steuern und Umlagen, ct/kWh, gerundet.'),
-  {
-    id: 'de-power-prices-eu',
-    title: 'Höchste Strompreise Europas',
-    source:
-      'Eurostat (nrg_pc_204) · Haushaltsstrompreis 1. Halbjahr 2024, Verbrauchsband 2 500–4 999 kWh/Jahr, inkl. aller Steuern und Umlagen, in ct/kWh, gerundet. EU-Schnitt = EU-27.',
-    draw: (f) =>
-      hBarChart(f, {
-        // Eurostat H1 2024, household band DC, all taxes and levies included:
-        // Germany has the most expensive household electricity in the EU. The
-        // renewables levies, grid fees and taxes stack on top of a wholesale
-        // price the 2022 gas shock never fully gave back; France (nuclear) and
-        // the EU average sit well below.
-        label: 'Haushaltsstrom · EU · ct/kWh · 2024',
-        value: 39.5,
-        fmt: (v) => `${localeNumTrim(v, 1)} ct`,
-        rowFmt: (v) => `${localeNumTrim(v, 1)} ct`,
-        delta: null,
-        color: orange,
-        unit: '',
-        rows: [
-          { name: '🇩🇪 Deutschland', v: 39.5 },
-          { name: '🇮🇪 Irland', v: 37.5 },
-          { name: '🇩🇰 Dänemark', v: 37.4 },
-          { name: '🇧🇪 Belgien', v: 37.0 },
-          { name: '🇮🇹 Italien', v: 35.9 },
-          { name: '🇨🇿 Tschechien', v: 32.6 },
-          { name: '🇳🇱 Niederlande', v: 31.3 },
-          { name: '🇦🇹 Österreich', v: 30.6 },
-          { name: '🇪🇺 EU-Schnitt', v: 28.9 },
-          { name: '🇫🇷 Frankreich', v: 27.6 },
-        ],
-      }),
-  },
   trendCard('berlin-warrants', 'Offene Haftbefehle · Berlin', 'Offene Haftbefehle · Berlin', BERLIN_WARRANTS_PANEL, red, (v) => `${localeNum(v / 1000, 0)}k`, 283, undefined, 'Senatsverwaltung für Justiz Berlin (parlamentarische Anfragen) und Presseberichte. Definitionen variieren — Größenordnung, frühe Werte grob geschätzt.'),
   trendCard('de-state-quota', 'Staatsquote Deutschland', 'Staatsquote · 🇩🇪 · Staatsausgaben % des BIP', DE_STATE_QUOTA_PANEL, orange, (v) => `${localePct(v, 1)}`, 227, eraMarkers(1880, 2024, [
     // Government spending as a share of GDP on the 1880–2024 axis: the secular
@@ -2071,9 +1922,6 @@ export const POOL: Dashboard[] = [
         xLabels: ['2022', '2023', '2024', 'heute'],
       }),
   },
-  trendCard('book-bans', 'Buchverbote an US-Schulen', 'Buchverbote · 🇺🇸 · Fälle/Schuljahr', BOOK_BANS_PANEL, orange, (v) => (v >= 1000 ? `${localeNum(v / 1000, 1)}k` : `${v}`), 179, eraMarkers(2021, 2024, [
-    [2023, '📚 Höhepunkt 23/24'],
-  ]), 'PEN America · Index of School Book Bans, dokumentierte Fälle je Schuljahr.'),
   trendCard('jailed-journalists', 'Inhaftierte Journalisten', 'Inhaftierte Journalisten · 🌍', JAILED_JOURNALISTS_PANEL, red, deInt, 181, eraMarkers(1992, 2024, [
     // The crackdowns that step the curve up on the 1992–2024 axis: Egypt after
     // the 2013 coup, Turkey's mass jailings after the 2016 coup attempt, Belarus
@@ -4117,7 +3965,6 @@ export const POOL: Dashboard[] = [
         ramp: orange,
         rows: DRUG_DEATHS_TOP,
         rowFmt: (v) => `${localeNum(v, 0)} /100k`,
-        source: 'IHME GBD / UNODC · Drogentote je 100.000',
       }),
   },
   trendCard('trans-youth', 'Genderklinik England · Ansturm', 'Minderjährige · Überweisungen an GIDS · pro Jahr', TRANS_YOUTH_PANEL, magenta, deInt, 353, eraMarkers(2010, 2022, [
@@ -4399,62 +4246,6 @@ export const POOL: Dashboard[] = [
           { name: 'Frauen 16–24', v: 1.0 },
           { name: 'Männer 30–49', v: 0.7 },
           { name: 'Frauen 25+', v: 0.2 },
-        ],
-      }),
-  },
-  {
-    id: 'covid-vax-reports',
-    title: 'Impf-Verdachtsmeldungen · COVID',
-    source:
-      'EMA EudraVigilance & US-VAERS (CDC/FDA) · passive Spontan-Meldesysteme: jede Person kann melden, die Fälle sind NICHT auf Ursächlichkeit geprüft. Werte je Mio. verabreichter Dosen, gerundet — Größenordnung Stand 2023 (EEA rund 1 Mrd., USA rund 0,7 Mrd. Dosen). Eine Meldung ist kein Nachweis eines durch die Impfung verursachten Schadens: rund 90 % sind nicht schwerwiegend, gemeldete Todesfälle sind zeitlich assoziiert (überwiegend Hochbetagte), nicht kausal belegt. Tatsächlich belegte Risiken: siehe Karte „Belegte Impfrisiken".',
-    draw: (f) =>
-      // Passive spontaneous-report systems (EudraVigilance, VAERS): the counts
-      // are unverified SUSPICIONS, not confirmed harm. Drawn per million doses
-      // as a funnel — most reports non-serious, death reports temporally
-      // associated (mostly the elderly), not causally established. Amber (not
-      // red) signals "unverified". The source note and the paired
-      // "belegte Risiken" card carry the interpretation; kept honest per the
-      // agencies' own warning that a report ≠ causation.
-      hBarChart(f, {
-        label: 'Verdachtsmeldungen je Mio. Dosen · COVID-Impfstoffe',
-        value: 1500,
-        fmt: (v) => `${localeNum(v, 0)}`,
-        rowFmt: (v) => `${localeNum(v, 0)}`,
-        delta: null,
-        color: yellow,
-        unit: '',
-        rows: [
-          { name: 'Meldungen gesamt', v: 1500, sub: tr('~90 % nicht schwerwiegend') },
-          { name: 'schwerwiegend gemeldet', v: 150 },
-          { name: 'Todesfall gemeldet', v: 30, sub: tr('zeitlich assoziiert, nicht kausal') },
-        ],
-      }),
-  },
-  {
-    id: 'covid-vax-risks',
-    title: 'Belegte Impfrisiken · COVID',
-    source:
-      'CDC/EMA/Fachliteratur · in kontrollierten Studien bestätigte Nebenwirkungsraten je Mio. Dosen, je Impfstoff und Gruppe — Größenordnungen, gerundet. Myokarditis: junge Männer nach 2. mRNA-Dosis, meist milder Verlauf (Oster et al., JAMA 2022; Moderna höher). TTS/VITT: seltene Thrombosen mit Thrombozytopenie nach Vektorimpfstoffen (AstraZeneca/J&J), v. a. Jüngere. Anaphylaxie rund 2–5/Mio. Diese Raten messen tatsächliche Gefährlichkeit — anders als ungeprüfte Verdachtsmeldungen (siehe Karte „Impf-Verdachtsmeldungen").',
-    draw: (f) =>
-      // Adjudicated adverse-event rates from controlled studies, per million
-      // doses — the figures that actually measure risk, unlike raw reports.
-      // Each bar is a different product/group, so `sub` carries the denominator;
-      // kept to the published, mostly-mild findings (matches the myocarditis
-      // card's boys-16–17 rate of 10.6/100k = ~106/Mio).
-      hBarChart(f, {
-        label: 'Belegte Nebenwirkungen je Mio. Dosen · COVID',
-        value: 106,
-        fmt: (v) => `${localeNum(v, 0)}`,
-        rowFmt: (v) => `${localeNum(v, 0)}`,
-        delta: null,
-        color: red,
-        unit: '',
-        rows: [
-          { name: 'Myokarditis', v: 106, sub: tr('junge ♂ · 2. mRNA-Dosis') },
-          { name: 'TTS-Thrombose', v: 15, sub: 'AstraZeneca' },
-          { name: 'Guillain-Barré', v: 6, sub: tr('Vektorimpfstoff') },
-          { name: 'Anaphylaxie', v: 5, sub: 'mRNA' },
-          { name: 'TTS-Thrombose', v: 4, sub: 'J&J' },
         ],
       }),
   },

@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
-import { AdditiveBlending, BackSide, FrontSide, MathUtils, Quaternion, Vector3 } from 'three';
+import {
+  AdditiveBlending,
+  BackSide,
+  FrontSide,
+  MathUtils,
+  PlaneGeometry,
+  Quaternion,
+  Vector3,
+} from 'three';
 import type { Group, Mesh, MeshBasicMaterial, MeshPhysicalMaterial } from 'three';
-import { getBackTexture, getGlowTexture } from './cardFaces';
+import { getGlowTexture } from './cardFaces';
 import type { HeroStart } from './HeroCard';
 import { GlassPlate, GLASS_OPACITY, GLASS_THICKNESS } from './GlassPlate';
 import { updateGlassLod } from './glassLod';
@@ -129,10 +137,21 @@ export function CarouselItem({
   const glowRef = useRef<Mesh>(null);
   const canvasEl = useThree((s) => s.gl.domElement);
 
-  // Shared singleton textures (one upload for the whole ring); built on first
-  // mount so no `document` access happens at module load.
-  const backTex = useMemo(getBackTexture, []);
+  // Shared singleton glow texture (one upload for the whole ring); built on
+  // first mount so no `document` access happens at module load.
   const glowTex = useMemo(getGlowTexture, []);
+  // Plane whose horizontal UVs are flipped: the back face shows the SAME
+  // dashboard texture as the front, but a plain BackSide sample of it reads
+  // mirrored — flipping U cancels that, so a card turned away shows its chart
+  // the right way round instead of a blank/branded slab.
+  const backGeo = useMemo(() => {
+    const g = new PlaneGeometry(1, 1);
+    const uv = g.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i));
+    uv.needsUpdate = true;
+    return g;
+  }, []);
+  useEffect(() => () => backGeo.dispose(), [backGeo]);
   const entranceStart = useRef<number | null>(null);
   // True on the frame the panel stops being hidden, so it can snap back to full
   // opacity instead of fading in and leaving a transparent gap after the hero.
@@ -212,6 +231,11 @@ export function CarouselItem({
     // owns the frame's final opacity (entrance, exit, hidden, settled).
     const setFaces = (opacity: number, starGlow: number) => {
       if (back && backMat) {
+        // The back shows the card's own chart (mirror-corrected) at exactly the
+        // front's opacity, so a panel looks identical from either side — same
+        // colour, same depth fade. (Boosting it brighter tinted it against the
+        // fog when translucent, or rendered the near-black card surface as a
+        // solid black slab when forced opaque; matching the front avoids both.)
         backMat.opacity = opacity;
         back.visible = opacity > 0.002;
       }
@@ -583,18 +607,19 @@ export function CarouselItem({
         />
       </mesh>
 
-      {/* Dedicated dark back face — replaces the mirrored dashboard that
-          DoubleSide used to show through from behind. */}
+      {/* Back face: the same dashboard texture on the reverse of the panel,
+          UV-flipped (see backGeo) so it reads correctly when the card is turned
+          away — every card shows its chart from both sides. */}
       <mesh
         ref={backRef}
-        position={[0, 0, -0.004]}
+        geometry={backGeo}
+        position={[0, 0, -0.006]}
         scale={[width, height, 1]}
         renderOrder={-1}
         raycast={() => null}
       >
-        <planeGeometry args={[1, 1]} />
         <meshBasicMaterial
-          map={backTex}
+          map={dash.tex}
           side={BackSide}
           transparent
           opacity={0}

@@ -13,7 +13,7 @@ import { LOCALE, onLocaleChange, ensureLocaleReady } from './i18n';
 // "Loading" is a staged boot sequence: it gives the pulse loader one full
 // beat before the iris hands the screen center over to the blooming ring,
 // while the live-data fetches race ahead in the background.
-const BOOT_MS = 2400;
+const BOOT_MS = 20000;
 
 const Stage = styled.main`
   position: fixed;

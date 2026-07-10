@@ -11,6 +11,7 @@ import { BlendFunction } from 'postprocessing';
 import { Environment, PerformanceMonitor } from '@react-three/drei';
 import { Vector2, Vector3 } from 'three';
 import { CAMERA_GAP, CameraRig } from './CameraRig';
+import type { RingMotion } from './cameraMotion';
 import { PerfProbe } from './PerfHud';
 import { Afterglow } from './Afterglow';
 import { Aurora } from './Aurora';
@@ -112,6 +113,9 @@ export function Carousel3D() {
   // Live poses of the ring panels while a hero is open — fly-back and
   // arrow-key switch targets.
   const posesRef = useRef(new Map<string, HeroStart>());
+  // Live ring spin, published by useCarouselRotation and read by CameraRig so
+  // the camera banks and dollies with the motion (no per-frame re-render).
+  const ringMotion = useRef<RingMotion>({ rotation: 0, velocity: 0, dragging: false });
   // Space toggles the carousel's idle spin.
   const [spinning, setSpinning] = useState(true);
 
@@ -255,6 +259,11 @@ export function Carousel3D() {
         // whole scene feel restless while browsing the panels.
         parallax={false}
         zoom={zoom}
+        // Cinematic guidance: bank + dolly with the ring's spin, but hold a
+        // calm head-on frame while a hero owns the screen.
+        guidance={ringMotion}
+        count={Math.max(dashboards.length, MIN_COUNT)}
+        guided={!heroOpen}
       />
       <Aurora accent={accent} />
       <Dust radius={radius} count={isMobile ? 120 : 320} />
@@ -272,6 +281,7 @@ export function Carousel3D() {
         radius={radius}
         poses={posesRef}
         spinning={spinning}
+        motion={ringMotion}
       />
 
       {/* Dims the ring, aurora and dust once a hero opens; fades back out as

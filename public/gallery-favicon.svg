@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="p" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3987e5"/>
+      <stop offset="1" stop-color="#9085e9"/>
+    </linearGradient>
+  </defs>
+  <!-- dark panel, same surface color as the app background -->
+  <rect width="64" height="64" rx="14" fill="#05070c"/>
+  <!-- 2×2 grid of card panels: the gallery is a review grid of dashboards.
+       Same card surface (#12151c) and hairline (#27354d) as the app's panels;
+       tiny bars read as mini-charts, one lit with the brand gradient. -->
+  <g stroke="#27354d" stroke-width="1.5">
+    <rect x="11" y="11" width="19" height="19" rx="3.5" fill="#12151c"/>
+    <rect x="34" y="11" width="19" height="19" rx="3.5" fill="#12151c"/>
+    <rect x="11" y="34" width="19" height="19" rx="3.5" fill="#12151c"/>
+    <rect x="34" y="34" width="19" height="19" rx="3.5" fill="#12151c"/>
+  </g>
+  <g fill="url(#p)">
+    <rect x="15" y="22" width="11" height="3" rx="1.5"/>
+    <rect x="15" y="17" width="7" height="3" rx="1.5" opacity="0.6"/>
+    <rect x="38" y="17" width="11" height="3" rx="1.5" opacity="0.6"/>
+    <rect x="38" y="22" width="8" height="3" rx="1.5" opacity="0.6"/>
+    <rect x="15" y="45" width="9" height="3" rx="1.5" opacity="0.6"/>
+    <rect x="15" y="40" width="11" height="3" rx="1.5" opacity="0.6"/>
+    <rect x="38" y="45" width="11" height="3" rx="1.5"/>
+    <rect x="38" y="40" width="6" height="3" rx="1.5" opacity="0.6"/>
+  </g>
+</svg>
