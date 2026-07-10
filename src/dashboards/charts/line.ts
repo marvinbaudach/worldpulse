@@ -232,8 +232,11 @@ export interface LineCfg {
   delta: number | null;
   fmt?: (v: number) => string;
   seed: number;
-  /** `data` (normalized 0..1) wins over the seeded fallback series. */
-  series: { name: string; color: string; data?: number[] }[];
+  /** `data` (normalized 0..1) wins over the seeded fallback series. `startAt`
+      (0..1 of the x-range) starts the line mid-plot for a series whose
+      measurements begin later than the axis — never pad a series with values
+      from before it existed. */
+  series: { name: string; color: string; data?: number[]; startAt?: number }[];
   ticks: string[];
   xLabels?: string[];
   /** Cool vertical bands over samples where mask[i] is true (e.g. ice ages). */
@@ -328,6 +331,16 @@ export function lineChart(f: Frame, cfg: LineCfg): void {
   const ends: { x: number; y: number }[] = [];
   cfg.series.forEach((s, si) => {
     const data = datas[si];
+    // A late-starting series draws inside [sx0, x1] and its draw-in progress
+    // re-maps so it starts revealing once the global sweep reaches sx0.
+    const s0 = s.startAt ?? 0;
+    const sx0 = d.x0 + (d.x1 - d.x0) * s0;
+    const pl = s0 > 0 ? Math.max(0, Math.min(1, (p - s0) / (1 - s0))) : p;
+    if (pl <= 0) {
+      // Not yet revealed: keep `ends` index-aligned with `cfg.series`.
+      ends.push({ x: sx0, y: yBottom });
+      return;
+    }
     ctx.strokeStyle = s.color;
     ctx.lineWidth = 2.5 * u;
     ctx.lineJoin = 'round';
@@ -336,10 +349,10 @@ export function lineChart(f: Frame, cfg: LineCfg): void {
     if (splitX !== undefined) {
       // Projection: dashed beyond the split, arrow instead of endpoint dot —
       // the "now" anchor below marks where measurement ends.
-      end = strokeSplit(ctx, data, d.x0, d.x1, yTop, yBottom, p, splitX, u);
-      if (p >= 1) arrowHead(ctx, data, d.x0, d.x1, yTop, yBottom, end, u, s.color);
+      end = strokeSplit(ctx, data, sx0, d.x1, yTop, yBottom, pl, splitX, u);
+      if (pl >= 1) arrowHead(ctx, data, sx0, d.x1, yTop, yBottom, end, u, s.color);
     } else {
-      end = linePath(ctx, data, d.x0, d.x1, yTop, yBottom, p);
+      end = linePath(ctx, data, sx0, d.x1, yTop, yBottom, pl);
       ctx.stroke();
       // Endpoint marker on measured data.
       ctx.fillStyle = s.color;

@@ -46,13 +46,18 @@ import { BASELINE, CRITICAL, GOOD } from './theme';
 import { WORLD } from '../data/world';
 import { EU_FREEDOM_CARDS } from './euFreedom';
 import { COVID_CRITICAL_CARDS } from './covidCritical';
+import { TECH_FUTURE_CARDS } from './techFuture';
 import { live } from '../data/store';
 import { EXCESS_100K_BY_ISO, VAX_RATE_BY_ISO } from '../data/covidWorld';
 import { FALLBACK_TEMPS, FALLBACK_TEMP_ROWS } from '../data/climate';
 import {
   AFRICA_ROUTES_COMPARE,
+  AI_BENCH,
   AI_JOBS_COMPARE,
   DE_AUTO_JOBS_PANEL,
+  DRONE_MARKET_PANEL,
+  ROBOT_INSTALL_PANEL,
+  UA_DRONES_PANEL,
   HORMUZ_OIL_PANEL,
   HORMUZ_TANKERS_FALLBACK,
   CAMERAS_PANEL,
@@ -208,6 +213,7 @@ import {
 export const POOL: Dashboard[] = [
   ...COVID_CRITICAL_CARDS,
   ...EU_FREEDOM_CARDS,
+  ...TECH_FUTURE_CARDS,
   {
     id: 'de-budget-split',
     title: 'Bundeshaushalt: genannte Posten vs. Investition',
@@ -3792,6 +3798,84 @@ export const POOL: Dashboard[] = [
   trendCard('ai-users', 'ChatGPT · Nutzerwachstum', 'ChatGPT · aktive Nutzer', CHATGPT_USERS_PANEL, aqua, (v) => `${localeNum(v / 1e6, 0)} ${tr('Mio')}`, 317, eraMarkers(2022, 2025, [
     [2023, '🚀 100 Mio in 2 Monaten'],
   ]), 'OpenAI-Angaben · aktive Nutzer, gerundete Meilensteine; bis 2023 monatlich, danach wöchentlich aktive Nutzer.'),
+  {
+    id: 'ai-benchmarks',
+    title: 'KI-Leistung · Benchmarks vs. Mensch',
+    source:
+      'Stanford AI Index 2024/2025 · bestes KI-System je Jahr in Prozent der publizierten menschlichen Baseline (Mensch = 100 %): Bilderkennung ImageNet (94,9 % Top-5), Sprachverstehen SQuAD 2.0 (F1 89,45), Wissen MMLU (89,8 %, Fachexperten), Mathe MATH (90 %). Jede Linie beginnt in dem Jahr, in dem ihr Benchmark erschien; exakte Werte wo publiziert, sonst aus den Report-Grafiken (±1–2 Pp.).',
+    draw: (f) =>
+      lineChart(f, {
+        // Every capability crosses the human line in a different year — image
+        // 2015, language 2019, knowledge 2024, math 2024/25. The crossings ARE
+        // the card; the dashed reference line is the human.
+        label: 'Beste KI · % der Mensch-Baseline',
+        value: AI_BENCH.latest,
+        unit: '',
+        fmt: (v) => `${localeNum(v, 0)} %`,
+        delta: null,
+        seed: 601,
+        series: [
+          { name: 'Bilderkennung', color: blue, data: AI_BENCH.image },
+          { name: 'Sprachverstehen', color: aqua, data: AI_BENCH.language, startAt: AI_BENCH.startLanguage },
+          { name: 'Wissen', color: yellow, data: AI_BENCH.knowledge, startAt: AI_BENCH.startKnowledge },
+          { name: 'Mathe', color: green, data: AI_BENCH.math, startAt: AI_BENCH.startMath },
+        ],
+        ticks: AI_BENCH.ticks,
+        xLabels: ['2012', '2017', '2021', 'heute'],
+        refLine: { at: AI_BENCH.refAt, label: 'Mensch = 100 %' },
+      }),
+  },
+  {
+    id: 'ai-vs-human',
+    title: 'KI vs. Mensch · was noch hält',
+    source:
+      'Stanford AI Index 2026, ARC Prize, ICPC-/MATH-Ergebnisse, Stand 07/2026 · beste KI je Domäne in Prozent der publizierten menschlichen Baseline (Fachexperten, beste Teams oder bezahlte Tester). ARC-AGI-3-Baseline per Design: Menschen lösen jedes Spiel. Benchmarks ohne belastbare Mensch-Baseline (z. B. Humanity’s Last Exam) sind bewusst nicht dargestellt.',
+    draw: (f) =>
+      hBarChart(f, {
+        // The mid-2026 snapshot of "what still holds": the static-cognitive
+        // domains have fallen (ARC-AGI-2 flipped this year), the remaining
+        // bastions are interactive learning, embodied work, computer use.
+        label: 'Beste KI · % der Mensch-Baseline · 2026',
+        value: 145,
+        fmt: (v) => `${localeNum(v, 0)} %`,
+        rowFmt: (v) => `${localeNum(v, 0)} %`,
+        delta: null,
+        color: violet,
+        unit: '',
+        refValue: { v: 100, label: 'Mensch = 100' },
+        rows: [
+          { name: 'Abstraktes Rätseln', v: 145, sub: `ARC-AGI-2 · ${tr('gefallen 2026')}` },
+          { name: 'Programmier-Weltfinale', v: 109, sub: 'ICPC 12/12' },
+          { name: 'Wettbewerbs-Mathe', v: 109, sub: 'MATH' },
+          { name: 'Bilderkennung', v: 104, sub: 'ImageNet' },
+          { name: 'Expertenwissen', v: 103, sub: 'MMLU' },
+          { name: 'Computer bedienen', v: 92, sub: 'OSWorld' },
+          { name: 'Uhren lesen', v: 56, sub: 'ClockBench' },
+          { name: 'Physische Arbeit', v: 12, sub: tr('Haushalt, real') },
+          { name: 'Interaktives Lernen', v: 8, sub: 'ARC-AGI-3' },
+        ],
+      }),
+  },
+  trendCard('robot-installations', 'Industrieroboter · Installationen weltweit', 'Neue Industrieroboter pro Jahr · 🌍', ROBOT_INSTALL_PANEL, magenta, (v) => `${localeNum(v / 1000, 0)} ${tr('Tsd.')}`, 613, eraMarkers(2000, 2024, [
+    // The IFR series: financial-crisis dip, then China pulling the world
+    // market — more than half of all 2024 installations go to one country.
+    [2009, '📉 Finanzkrise'],
+    [2017, '🇨🇳 China zieht an'],
+    [2021, '🤖 Rekordjahre'],
+  ]), 'IFR World Robotics 2025 · jährlich neu installierte Industrieroboter weltweit; 2024: 542.076 Stück, mehr als die Hälfte davon in China (295.045). Bestand: 4,66 Mio in Betrieb. Frühe Anker gerundet aus älteren IFR-Zusammenfassungen.'),
+  trendCard('ua-drones', 'Drohnen · Ukraines Kriegsproduktion', 'Drohnenproduktion Ukraine · Stück/Jahr · log', UA_DRONES_PANEL, red, (v) => (v >= 1e6 ? `${localeNum(v / 1e6, 1)} ${tr('Mio')}` : `${localeNum(v / 1000, 0)} ${tr('Tsd.')}`), 617, eraMarkers(2022, 2026, [
+    // Three orders of magnitude in three years — drones became munitions.
+    [2023, '🏭 Industrie entsteht'],
+    [2024, '⚔️ FPV wird Munition'],
+  ]), 'KSE/Brave1, Präsidialamt, Regierungsangaben · in der Ukraine produzierte Drohnen pro Jahr, log-Achse: ~4 Tsd. (2022) → 300 Tsd. (2023) → 2,2 Mio (2024) → ~3 Mio geliefert (2025). Gestrichelt ab 2025: Regierungsziel ~10 Mio für 2026 — Ziel, keine Messung.',
+  // Measurement ends 2025 on the 2022–2026 axis; the target leg is dashed.
+  (2025 - 2022) / (2026 - 2022)),
+  trendCard('drone-market', 'Drohnen · ziviler Weltmarkt', 'Kommerzieller Drohnenmarkt · Mrd $', DRONE_MARKET_PANEL, aqua, (v) => `$${localeNum(v, 0)} ${tr('Mrd')}`, 619, eraMarkers(2018, 2035, [
+    [2020, '📦 Logistik & Inspektion'],
+    [2025, '🛫 19,5 Mio Flüge/Jahr'],
+  ]), 'DroneII „Drone Market Report“ · globaler ziviler Drohnenmarkt (Hardware, Software, Services; ohne Militär), Basisjahr-Schätzung der jeweiligen Report-Ausgabe: $14,1 Mrd (2018) → $40,6 Mrd (2025). Gestrichelt ab 2025: DroneII-Prognose $83 Mrd bis 2035 (7,2 % p. a.). DJI hält ~70 % des Markts.',
+  // DroneII's own forecast takes over after the 2025 edition value.
+  (2025 - 2018) / (2035 - 2018)),
   // Facial recognition by state authorities — the tech the user now walks
   // past at every airport gate. Airport milestones ride as era markers.
   trendCard('face-recognition', 'Gesichtserkennung · Staaten', 'Staaten mit Gesichtserkennung', FACE_RECOGNITION_PANEL, aqua, deInt, 331, eraMarkers(2015, 2026, [

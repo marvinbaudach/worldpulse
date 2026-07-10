@@ -2562,3 +2562,94 @@ export const DE_DEATHS_PANEL: TrendSeries = trend(
   ['2015', '2018', '2021', '2025'],
   32,
 );
+
+// ---------------------------------------------------------------------------
+// AI capability vs. the human baseline — Stanford AI Index 2024/2025 (Fig.
+// 2.1.16 / 2.1.33): best system per year as % of each benchmark's published
+// human baseline (100 = human; 105 = 5 % better). Anchors are exact report/
+// leaderboard values where published, chart-read (±1–2 pp) otherwise. A fixed
+// 0–120 % scale keeps the human line at a computable height for the chart's
+// reference line; each series starts the year its benchmark existed (startAt
+// in the card) — never padded with values from before it was measured.
+
+const BENCH_LO = 0;
+const BENCH_HI = 120;
+const BENCH_START = 2012;
+const BENCH_END = 2026;
+const bench = (pts: [number, number][]): number[] =>
+  norm(resample(yearly(pts), 48), BENCH_LO, BENCH_HI);
+/** startAt fraction on the shared 2012–2026 axis for a series born in `year`. */
+const benchStart = (year: number): number => (year - BENCH_START) / (BENCH_END - BENCH_START);
+
+export const AI_BENCH = {
+  // ImageNet top-5 vs 94.9 % (trained annotator); crossed 2015, saturated.
+  image: bench([[2012, 89.3], [2014, 96.5], [2015, 100], [2017, 103], [2021, 104.3], [2026, 105]]),
+  // SQuAD 2.0 vs F1 89.45 (crowdworkers); ALBERT crossed it in 2019.
+  language: bench([[2018, 97], [2019, 103.1], [2021, 104.5], [2026, 105]]),
+  // MMLU vs 89.8 % (domain experts); crossed 2024 per AI Index 2025 dating
+  // (the 2024 edition already credited Gemini Ultra 90.04 % in 2023).
+  knowledge: bench([[2019, 31.1], [2020, 60], [2021, 67], [2022, 83.7], [2023, 96.2], [2024, 102.8], [2026, 103]]),
+  // MATH vs 90 %; 6.9 % at release (2021) to 97.9 % (o3-mini, 2025).
+  math: bench([[2021, 7.7], [2022, 55.9], [2023, 93.7], [2024, 105.3], [2025, 108.8], [2026, 108.8]]),
+  startLanguage: benchStart(2018),
+  startKnowledge: benchStart(2019),
+  startMath: benchStart(2021),
+  ticks: ['0 %', '30 %', '60 %', '90 %', '120 %'],
+  refAt: (100 - BENCH_LO) / (BENCH_HI - BENCH_LO),
+  latest: 108.8,
+};
+
+// ---------------------------------------------------------------------------
+// Industrial robots installed per year, worldwide — IFR World Robotics
+// (2025 edition; earlier anchors from prior executive summaries / UNECE).
+// 2024: 542,076 units, 54 % of them in China; operational stock 4.66 M.
+export const ROBOT_INSTALL_PANEL: TrendSeries = trend(
+  [
+    [2000, 98_700], [2005, 120_000], [2009, 60_000], [2010, 121_000],
+    [2012, 159_000], [2014, 221_000], [2016, 304_000], [2017, 400_000],
+    [2019, 387_000], [2020, 390_000], [2021, 526_000], [2022, 553_000],
+    [2023, 541_000], [2024, 542_076],
+  ],
+  (v) => `${localeNum(v / 1000, 0)} ${tr('Tsd.')}`,
+  ['2000', '2008', '2016', 'heute'],
+  32,
+);
+
+// ---------------------------------------------------------------------------
+// Ukraine's drone production per year — documented official figures: ~4 k
+// improvised (2022), ~300 k (2023, KSE/Brave1), 2.2 M (2024, presidential
+// office), ~3 M FPV delivered (2025, PM Shmyhal). The 2026 point is the
+// government's ~10 M production target and rides the card's dashed projection
+// leg — a goal, not a measurement; `latest` therefore stays at the last
+// measured year (2025).
+export const UA_DRONES_PANEL: TrendSeries = {
+  ...logPanel(
+    [[2022, 4_000], [2023, 300_000], [2024, 2_200_000], [2025, 3_000_000], [2026, 10_000_000]],
+    3,
+    7,
+    1,
+    countFmt,
+    ['2022', '2024', '2026'],
+  ),
+  latest: 3_000_000,
+};
+
+// ---------------------------------------------------------------------------
+// Global commercial drone market, USD — DroneII "Drone Market Report",
+// base-year headline of each successive edition (first published base year:
+// 2018). 2019/2024 published no base value; the yearly interpolation bridges
+// them like any sparse anchor. From 2026 the series is DroneII's own forecast
+// (DMR 2026: $44.4B 2026 → $83B 2035, 7.2 % CAGR) and rides the dashed
+// projection leg; `latest` stays at the last measured edition (2025, $40.6B).
+export const DRONE_MARKET_PANEL: TrendSeries = {
+  ...trend(
+    [
+      [2018, 14.1], [2020, 22.5], [2021, 26.3], [2022, 30.6],
+      [2023, 33.7], [2025, 40.6], [2026, 44.4], [2030, 57.8], [2035, 83],
+    ],
+    (v) => `$${localeNum(v, 0)} ${tr('Mrd')}`,
+    ['2018', '2024', '2030', '2035'],
+    36,
+  ),
+  latest: 40.6,
+};

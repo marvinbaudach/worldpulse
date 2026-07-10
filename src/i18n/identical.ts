@@ -147,4 +147,14 @@ export const IDENTICAL_ACROSS_LOCALES: ReadonlySet<string> = new Set<string>([
   'Sustainable Development Report 2026 (SDSN)',
   'SDR 2026',
   'SDSN',
+  // tech-future/robotics cards — source institutions and axis tokens.
+  'Goldman Sachs',
+  'Morgan Stanley',
+  'Metaculus',
+  'METR',
+  'Omdia',
+  'Grace et al. 2024',
+  'IFR World Robotics 2025',
+  'Stanford AI Index 2024/2025',
+  'log',
 ]);
