@@ -3,67 +3,7 @@
 3D data carousel: canvas-drawn dashboards on WebGL panels that orbit and morph
 between formations, fed by keyless public APIs. React 19 · React Three Fiber ·
 Three.js · Vite 8 · TypeScript 6 · oxlint. Deploys to GitHub Pages on push to
-`main`. Package name is `worldpulse`; the repo folder is `carousel-3d`.
-
-## Commands
-
-```bash
-pnpm dev         # vite dev server
-pnpm gallery     # dev-only card QA/review grid (gallery.html) — never bundled
-pnpm build       # tsc -b && vite build (type-checked — CI runs this)
-pnpm lint        # oxlint (CI runs this before build)
-```
-
-Package manager is **pnpm** (`packageManager` field pins the version; CI uses
-`pnpm/action-setup` + `pnpm install --frozen-lockfile`). `postprocessing` is a
-direct dependency because the code imports it — pnpm's strict `node_modules`
-forbids the phantom-dep hoisting npm allowed.
-
-Card review: `pnpm gallery` (or `pnpm dev` → `/gallery.html`) renders
-every card into a filterable, sortable thumbnail grid with a full-size
-lightbox and optional live-data loading. It lives in `src/dev/` and is served
-only in dev — Vite builds `index.html` alone, so it never ships.
-
-CI (`.github/workflows/deploy.yml`) = lint → build → deploy. Both must pass.
-`vite.config.ts` uses `base: './'` so the build works under the Pages subpath.
-
-## Architecture (data → texture → 3D)
-
-The pipeline is one-directional. Understand it before touching anything:
-
-1. **`src/data/sources.ts`** — one async fetcher per public API (Open-Meteo,
-   Wikimedia, World Bank, US Treasury). Each derives a draw-ready shape, caches
-   it (`data/cache.ts`, localStorage), writes it into the mutable `live` store,
-   and **swallows its own errors**. `LIVE_FEEDS` is the single source of truth:
-   it drives both the fetches AND the loading screen's feed list.
-2. **`src/data/store.ts`** — `live` (mutable `LiveData`) + tiny pub/sub
-   (`onLiveUpdate`/`emitLiveUpdate`). Fields stay `undefined` on failure.
-3. **`src/dashboards/`** — card definitions. Each card's `draw(frame)` reads
-   from `live` **every frame** and falls back to bundled/seeded data when the
-   field is undefined, so the ring never looks broken offline.
-4. **`src/dashboards/charts/` + `draw.ts`** — pure Canvas-2D renderers. They
-   work in "units" (`u = width / 512`) so the same code draws 512px ring panels
-   and the 1024px hero crisply.
-5. **`src/components/`** — R3F. Canvas draws paint into `CanvasTexture`s
-   (`useDashboardTexture`); panels only redraw on data change / live tick /
-   hover intro. Desktop → `Carousel3D`; phones → `MobileDeck` (2D canvas, no
-   WebGL). `App.tsx` picks via `useIsMobile`.
-
-## Adding a dashboard card
-
-1. Add the definition to `POOL` in `src/dashboards/cards.ts`. Build the chart
-   config **inside `draw`** (never above it) so it picks up live data per-frame.
-   Always provide a fallback for every `live.*` read.
-2. Register theme tags in `TAGS_BY_ID` in `src/dashboards/index.ts` (and add to
-   `FEATURED` if it should lead the ring).
-3. If the data is live-fetched, set `dynamic: true` (triggers redraw when a
-   dataset lands). If it keeps moving while idle (e.g. debt clock), set
-   `live: true`. Purely bundled cards leave both off to skip the boot redraw storm.
-4. New live source? Add a fetcher + a `LIVE_FEEDS` entry in `data/sources.ts`
-   and a typed field in `LiveData` (`data/store.ts`).
-
-Reusable single-series trend panels: use `trendCard()` from `cardHelpers.ts`.
-Year-axis era markers: use `eraMarkers()`.
+`main`.
 
 ## Conventions
 
