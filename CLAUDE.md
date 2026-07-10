@@ -9,9 +9,15 @@ Three.js · Vite 8 · TypeScript 6 · oxlint. Deploys to GitHub Pages on push to
 
 ```bash
 npm run dev      # vite dev server
+npm run gallery  # dev-only card QA/review grid (gallery.html) — never bundled
 npm run build    # tsc -b && vite build (type-checked — CI runs this)
 npm run lint     # oxlint (CI runs this before build)
 ```
+
+Card review: `npm run gallery` (or `npm run dev` → `/gallery.html`) renders
+every card into a filterable, sortable thumbnail grid with a full-size
+lightbox and optional live-data loading. It lives in `src/dev/` and is served
+only in dev — Vite builds `index.html` alone, so it never ships.
 
 CI (`.github/workflows/deploy.yml`) = lint → build → deploy. Both must pass.
 `vite.config.ts` uses `base: './'` so the build works under the Pages subpath.
