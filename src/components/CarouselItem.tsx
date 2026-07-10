@@ -1,8 +1,9 @@
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
-import { DoubleSide, MathUtils, Quaternion, Vector3 } from 'three';
-import type { Group, Mesh, MeshPhysicalMaterial } from 'three';
+import { AdditiveBlending, BackSide, FrontSide, MathUtils, Quaternion, Vector3 } from 'three';
+import type { Group, Mesh, MeshBasicMaterial, MeshPhysicalMaterial } from 'three';
+import { getBackTexture, getGlowTexture } from './cardFaces';
 import type { HeroStart } from './HeroCard';
 import { GlassPlate, GLASS_OPACITY, GLASS_THICKNESS } from './GlassPlate';
 import { updateGlassLod } from './glassLod';
@@ -98,6 +99,12 @@ const PRESS_SINK = 0.015; // the glass settles slightly onto the panel too
 // Small gap between the dashboard image and the glass plate's back face.
 const GLASS_GAP = 0.01;
 
+// Focus glow: a cool halo lit behind the front-most card, its opacity driven by
+// the same `star` term that steps the focal card forward. Additive, so it only
+// ever adds light to the space around the card, never darkens it.
+const GLOW_COLOR = '#6ea6ff';
+const GLOW_STRENGTH = 0.9;
+
 export function CarouselItem({
   dashboard,
   slot,
@@ -118,7 +125,14 @@ export function CarouselItem({
   const groupRef = useRef<Group>(null);
   const imgRef = useRef<Mesh>(null);
   const glassRef = useRef<Mesh>(null);
+  const backRef = useRef<Mesh>(null);
+  const glowRef = useRef<Mesh>(null);
   const canvasEl = useThree((s) => s.gl.domElement);
+
+  // Shared singleton textures (one upload for the whole ring); built on first
+  // mount so no `document` access happens at module load.
+  const backTex = useMemo(getBackTexture, []);
+  const glowTex = useMemo(getGlowTexture, []);
   const entranceStart = useRef<number | null>(null);
   // True on the frame the panel stops being hidden, so it can snap back to full
   // opacity instead of fading in and leaving a transparent gap after the hero.
@@ -188,6 +202,25 @@ export function CarouselItem({
 
     const mat = img.material as unknown as ImageMaterial;
     const glass = glassRef.current;
+    const back = backRef.current;
+    const backMat = back?.material as MeshBasicMaterial | undefined;
+    const glow = glowRef.current;
+    const glowMat = glow?.material as MeshBasicMaterial | undefined;
+
+    // Keep the dark back face in lockstep with the front image's opacity, and
+    // drive the focus glow from the star term. Called from every branch that
+    // owns the frame's final opacity (entrance, exit, hidden, settled).
+    const setFaces = (opacity: number, starGlow: number) => {
+      if (back && backMat) {
+        backMat.opacity = opacity;
+        back.visible = opacity > 0.002;
+      }
+      if (glow && glowMat) {
+        const go = MathUtils.clamp(starGlow, 0, 1) * GLOW_STRENGTH;
+        glowMat.opacity = go;
+        glow.visible = go > 0.004;
+      }
+    };
 
     // While the hero copy is on screen the panel is invisible, but it keeps
     // flying toward its slot below, so formation or count changes made with
@@ -247,8 +280,11 @@ export function CarouselItem({
     // before the entrance branch so a card flying toward a back slot arrives
     // already dimmed and translucent, instead of landing fully opaque (a
     // fogged black slab) and only fading to its depth look afterwards.
-    const targetOpacity = 0.38 + eased * 0.49 + star * 0.13;
-    const targetGray = (1 - eased) * 0.7;
+    // Deeper vignette than before: back panels sink further toward the near-
+    // black surface and desaturate harder, so the front-most card reads as the
+    // clear focal point of the stage rather than one of a uniform crowd.
+    const targetOpacity = 0.3 + eased * 0.55 + star * 0.15;
+    const targetGray = (1 - eased) * 0.82;
     const targetZoom = 1 + (1 - eased) * 0.15;
 
     // Glass LOD: clearcoat only where its glare reads (front of the ring).
@@ -320,6 +356,7 @@ export function CarouselItem({
       img.visible = mat.opacity > 0.002;
       if (glassMat) glassMat.opacity = snap.glass * (1 - e);
       if (glass && glassMat) glass.visible = img.visible && glassMat.opacity > 0.005;
+      setFaces(mat.opacity, 0); // no focus glow on a card that is leaving
       return;
     }
     exitStart.current = null;
@@ -399,6 +436,9 @@ export function CarouselItem({
       // slot must not arrive with a full bright plate and dim down after.
       if (glassMat) glassMat.opacity = GLASS_OPACITY * e * glassFade;
       if (glassRef.current) glassRef.current.visible = e > 0.001;
+      // Back fades in with the front; the glow eases up only as a card arriving
+      // at a front slot approaches full presence.
+      setFaces(mat.opacity, e * star);
       return;
     }
 
@@ -469,6 +509,7 @@ export function CarouselItem({
       img.visible = false;
       if (glassMat) glassMat.opacity = 0;
       if (glass) glass.visible = false;
+      setFaces(0, 0);
       wasHidden.current = true;
       return;
     }
@@ -495,6 +536,10 @@ export function CarouselItem({
     // a hover adds a small extra lift so the panel rises toward the viewer.
     const lift = focus * (1 + pressed * 0.03);
     group.scale.set(lift, lift, 1);
+
+    // Settled: mirror the live opacity onto the back face and light the focus
+    // glow for whichever card is currently front-most.
+    setFaces(mat.opacity, star);
   });
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -515,12 +560,55 @@ export function CarouselItem({
     // starts at the center anyway), so no transform props that React could
     // re-apply mid-morph.
     <group ref={groupRef}>
+      {/* Focus glow: additive halo behind the front-most card. renderOrder and
+          depthTest off keep it strictly behind the panel, so it only lights the
+          margins around the card, never washes over its face. */}
+      <mesh
+        ref={glowRef}
+        position={[0, 0, -0.06]}
+        scale={[width * 1.6, height * 1.45, 1]}
+        renderOrder={-2}
+        raycast={() => null}
+      >
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial
+          map={glowTex}
+          color={GLOW_COLOR}
+          transparent
+          opacity={0}
+          blending={AdditiveBlending}
+          depthWrite={false}
+          depthTest={false}
+          toneMapped={false}
+        />
+      </mesh>
+
+      {/* Dedicated dark back face — replaces the mirrored dashboard that
+          DoubleSide used to show through from behind. */}
+      <mesh
+        ref={backRef}
+        position={[0, 0, -0.004]}
+        scale={[width, height, 1]}
+        renderOrder={-1}
+        raycast={() => null}
+      >
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial
+          map={backTex}
+          side={BackSide}
+          transparent
+          opacity={0}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </mesh>
+
       <Image
         ref={imgRef}
         texture={dash.tex}
         transparent
         toneMapped={false}
-        side={DoubleSide}
+        side={FrontSide}
         radius={0.06}
         scale={[width, height]}
         onClick={interactive ? handleClick : undefined}

@@ -83,7 +83,10 @@ export interface Frame {
   sourceDrawn?: boolean;
 }
 
-/** Panel background: soft vertical gradient plus a faint top light. */
+/** Panel background: soft vertical gradient, a faint top light, and a hairline
+    edge rim. The rim keeps the panel's silhouette crisp against the dark space
+    now that the surface itself is nearly black — without it a card at the back
+    of the ring would dissolve into the starfield. */
 export function drawSurface({ ctx, w, h }: Frame): void {
   const g = ctx.createLinearGradient(0, 0, 0, h);
   g.addColorStop(0, SURFACE);
@@ -95,6 +98,20 @@ export function drawSurface({ ctx, w, h }: Frame): void {
   sheen.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = sheen;
   ctx.fillRect(0, 0, w, h * 0.18);
+  // Edge light: a thin inner rounded stroke, brightest at the top (same light
+  // direction as the sheen) and fading down the sides — reads as light catching
+  // a bevelled rim. Inset just inside the Image mask's corner radius (~2.5% of
+  // width) so the corners stay clean rather than clipped.
+  const inset = Math.max(2, w * 0.006);
+  const rr = w * 0.025;
+  const rim = ctx.createLinearGradient(0, 0, 0, h);
+  rim.addColorStop(0, 'rgba(255,255,255,0.14)');
+  rim.addColorStop(0.35, 'rgba(255,255,255,0.05)');
+  rim.addColorStop(1, 'rgba(255,255,255,0.07)');
+  ctx.strokeStyle = rim;
+  ctx.lineWidth = Math.max(1.5, w * 0.004);
+  roundRect(ctx, inset, inset, w - inset * 2, h - inset * 2, rr);
+  ctx.stroke();
 }
 
 /** Tracked eyebrow label, wrapped onto a second line when it would overflow
