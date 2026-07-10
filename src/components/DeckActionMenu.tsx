@@ -152,7 +152,12 @@ export function DeckActionMenu({
               also closes this menu. */}
           <LangRow role="group" aria-label={trans('SPRACHE')}>
             {LOCALES.map((l) => (
-              <LangButton key={l} $active={LOCALE === l} onClick={() => setLocale(l)}>
+              <LangButton
+                key={l}
+                $active={LOCALE === l}
+                aria-pressed={LOCALE === l}
+                onClick={() => setLocale(l)}
+              >
                 {l.toUpperCase()}
               </LangButton>
             ))}

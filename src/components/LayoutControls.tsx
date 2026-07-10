@@ -275,7 +275,12 @@ export function LayoutControls({ tag, tags, onTagChange, hidden }: LayoutControl
       </Measure>
       <Bar>
         {row.map((t) => (
-          <Chip key={t.id} $active={tag === t.id} onClick={() => pick(t.id)}>
+          <Chip
+            key={t.id}
+            $active={tag === t.id}
+            aria-pressed={tag === t.id}
+            onClick={() => pick(t.id)}
+          >
             {tr(t.label)}
           </Chip>
         ))}

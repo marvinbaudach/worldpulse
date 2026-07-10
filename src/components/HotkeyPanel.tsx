@@ -266,6 +266,7 @@ export function HotkeyPanel({ layout, onChange, hidden }: HotkeyPanelProps) {
                   key={mode.id}
                   type="button"
                   $active={layout === mode.id}
+                  aria-pressed={layout === mode.id}
                   onClick={() => onChange(mode.id)}
                 >
                   <Keycap $active={layout === mode.id}>{i + 1}</Keycap>
@@ -291,6 +292,7 @@ export function HotkeyPanel({ layout, onChange, hidden }: HotkeyPanelProps) {
                   key={lang.id}
                   type="button"
                   $active={LOCALE === lang.id}
+                  aria-pressed={LOCALE === lang.id}
                   onClick={() => setLocale(lang.id)}
                 >
                   <Keycap $active={LOCALE === lang.id}>{lang.id.toUpperCase()}</Keycap>
