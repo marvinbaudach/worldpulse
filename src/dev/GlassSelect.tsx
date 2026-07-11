@@ -70,6 +70,9 @@ const Menu = styled.ul`
   min-width: 100%;
   max-height: 320px;
   overflow-y: auto;
+  /* Keep wheel momentum inside the menu — no scroll-chaining to the page once an
+     end is reached, which reads as a stall. */
+  overscroll-behavior: contain;
   list-style: none;
   ${glassSurface}
   /* Denser than a bare panel: a menu floats over busy grid content, so it needs
@@ -79,6 +82,12 @@ const Menu = styled.ul`
     rgba(22, 28, 42, 0.9) 0%,
     rgba(12, 16, 24, 0.88) 100%
   );
+  /* The fill above is ~89% opaque, so the glassSurface blur barely shows — but a
+     backdrop-filter on a *scrolling* element forces the browser to re-blur the
+     grid behind it every frame, which is what makes the wheel feel sluggish.
+     Drop it here; the near-opaque gradient carries the look. */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-radius: ${RADIUS.menu};
   animation: ddIn 130ms cubic-bezier(0.16, 1, 0.3, 1);
 
