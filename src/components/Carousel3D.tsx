@@ -37,7 +37,15 @@ const LAYOUT_KEY = 'worldpulse-layout';
 // (up to ~0.11s jitter) plus their 0.4s plunge.
 const EXIT_MS = 520;
 
-export function Carousel3D() {
+interface Carousel3DProps {
+  /** Freeze the render loop (frameloop="never") while keeping the whole scene
+      mounted, so the dev gallery can take the screen without tearing down —
+      and without the ring burning GPU behind it. State is fully preserved;
+      the loop resumes the instant `paused` goes false. */
+  paused?: boolean;
+}
+
+export function Carousel3D({ paused = false }: Carousel3DProps = {}) {
   const isMobile = useIsMobile();
   const [selected, setSelected] = useState<{ id: string; start: HeroStart } | null>(
     null,
@@ -223,6 +231,9 @@ export function Carousel3D() {
   return (
     <>
     <Canvas
+      // Frozen while the dev gallery owns the screen: no frames render, but the
+      // scene stays mounted so returning is instant and lossless.
+      frameloop={paused ? 'never' : 'always'}
       // While a hero is open the heavy effect passes are dropped, so pin the
       // dpr up to a crisp fixed level instead of leaving it at whatever
       // PerformanceMonitor throttled the busy ring view down to (which upscales

@@ -105,8 +105,9 @@ Then drive Chrome headless (`use_browser`, see the browsing/browser-qa skills):
   renders, the new card appears, console has no errors. Screenshot.
 - **Mobile** — viewport ~390×844 (≤820 triggers the coarse path) → `MobileDeck`
   (2D canvas, no WebGL). Confirm the card renders there too. Screenshot.
-- Toggle live data (or `npm run gallery`, which renders every card with a live
-  toggle and lightbox) to confirm both the live and offline-fallback looks.
+- Toggle live data (or open the in-app dev gallery — the **⧉ Gallery** button
+  bottom-left, or press **`g`**, desktop dev only — which renders every card
+  with a live toggle and lightbox) to confirm both the live and offline looks.
 - **Eyeball the colors on the actual dark surface:** every series is distinct
   from its neighbours and from the background, no two look the same at ring-panel
   size, labels are readable. If a pair blurs together, re-pick `SERIES` slots or
@@ -122,7 +123,7 @@ colors clearly distinguishable on each. Only now is the card done.
 | Lint | `npm run lint` | oxlint error |
 | Build | `npm run build` | type or bundle error (CI gate) |
 | Test | `npm run test` | card throws/paints nothing, i18n gap |
-| Card QA | `npm run gallery` | new card looks wrong in the grid |
+| Card QA | in-app gallery: ⧉ Gallery / `g` (desktop dev) | new card looks wrong in the grid |
 | App | `npm run dev` → :5173 | ring/deck broken at either viewport |
 
 ## Common mistakes

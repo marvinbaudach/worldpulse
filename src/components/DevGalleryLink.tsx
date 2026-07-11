@@ -1,12 +1,12 @@
 import styled from 'styled-components';
 import { glassSurface } from './glass';
 
-// Dev-only shortcut from the running app to the card review gallery, so the
-// two Vite entry points aren't split across separate commands. A plain <a> —
-// gallery.html is its own entry point, so this is a real page navigation, not
-// a route. Rendered only under import.meta.env.DEV, so it never ships to prod
-// (where gallery.html isn't built anyway; Vite bundles only index.html).
-const Link = styled.a`
+// Dev-only shortcut that toggles the in-app card review gallery (a single-page
+// view that fades in over the ring — no page navigation, no state lost). The
+// gallery itself is desktop-only and code-split behind import.meta.env.DEV, so
+// this button and everything it opens never ship to production. App decides
+// when to render it (desktop, dev, and only while the gallery is closed).
+const Button = styled.button`
   position: fixed;
   left: 16px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
@@ -16,7 +16,7 @@ const Link = styled.a`
   color: #cfe4ff;
   font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.04em;
-  text-decoration: none;
+  cursor: pointer;
   opacity: 0.62;
   transition:
     opacity 0.14s ease,
@@ -33,11 +33,15 @@ const Link = styled.a`
   }
 `;
 
-export function DevGalleryLink() {
+interface DevGalleryLinkProps {
+  onOpen: () => void;
+}
+
+export function DevGalleryLink({ onOpen }: DevGalleryLinkProps) {
   if (!import.meta.env.DEV) return null;
   return (
-    <Link href="/gallery.html" aria-label="Karten-Galerie öffnen (Dev)">
+    <Button type="button" onClick={onOpen} aria-label="Karten-Galerie öffnen (Dev)">
       ⧉ Gallery
-    </Link>
+    </Button>
   );
 }

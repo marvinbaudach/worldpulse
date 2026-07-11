@@ -1,6 +1,7 @@
-// Dev-only review gallery — shared helpers: the card list, its category
+// Dev-only review gallery — shared engine: the card list, its category
 // metadata, filter/sort, and a canvas draw with an on-error fallback box.
-// Not part of the app bundle (served only via gallery.html; see gallery.ts).
+// UI-agnostic (no DOM), consumed by the React gallery (see DevGallery). Never
+// part of the app bundle — DevGallery is code-split behind import.meta.env.DEV.
 
 import { POOL } from '../dashboards/cards';
 // Importing the registry runs its side effects, which assign `tags` and `added`
