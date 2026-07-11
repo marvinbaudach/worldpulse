@@ -1,17 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import {
-  Color,
-  MathUtils,
-  Mesh,
-  OrthographicCamera,
-  PlaneGeometry,
-  Scene,
-  WebGLRenderTarget,
-} from 'three';
+import { Color, MathUtils } from 'three';
 import type { ShaderMaterial } from 'three';
-import { auroraBackdrop } from './auroraBackdrop';
-import { useIsMobile } from '../hooks/useIsMobile';
 
 // A fullscreen shader backdrop: slow, domain-warped value noise in the dark
 // blue/violet palette — an aurora-like flow that replaces the old starfield.
@@ -37,10 +27,6 @@ const FRAG = /* glsl */ `
   uniform float uAspect;
   uniform vec3 uTint;
   uniform float uGlow;
-  // 0 while rendering the frost backdrop buffer: at 64px a star collapses
-  // into one bright texel and upsamples to a drifting white smudge on the
-  // glass — the milk glass shows only the nebula wash.
-  uniform float uStars;
   varying vec2 vUv;
 
   float hash(vec2 p) {
@@ -127,7 +113,7 @@ const FRAG = /* glsl */ `
     // Stars on top: two layers at different depths, added after the vignette
     // so they read evenly across the whole field.
     float s = starLayer(uv, 55.0, 2.2) + starLayer(uv, 90.0, 1.4) * 0.7;
-    col += vec3(0.75, 0.82, 1.0) * s * 1.05 * uStars;
+    col += vec3(0.75, 0.82, 1.0) * s * 1.05;
 
     gl_FragColor = vec4(col, 1.0);
   }
@@ -159,42 +145,11 @@ function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
-// 64px wide is the blur radius sweet spot: sharp enough that the nebula's
-// drift stays recognizable through the glass, soft enough that stars and any
-// structure dissolve completely.
-const BACKDROP_W = 64;
-const BACKDROP_H = 36;
-
 export function Aurora({ accent, calm = false }: AuroraProps) {
   const mat = useRef<ShaderMaterial>(null);
   // Lit progress (1 = full nebula, 0 = calm floor), advanced linearly per
   // frame and shaped by the ease below — no React state per frame.
   const lit = useRef(1);
-  // The frost backdrop buffer is only consumed by the desktop frost panes.
-  const isMobile = useIsMobile();
-  const backdrop = useMemo(() => {
-    if (isMobile) return null;
-    const target = new WebGLRenderTarget(BACKDROP_W, BACKDROP_H, { depthBuffer: false });
-    // Same material as the fullscreen quad (assigned each frame, see below);
-    // the clip-space vertex shader ignores the camera entirely.
-    const mesh = new Mesh(new PlaneGeometry(2, 2));
-    const scene = new Scene();
-    scene.add(mesh);
-    return { target, mesh, scene, camera: new OrthographicCamera() };
-  }, [isMobile]);
-  // The backdrop only feeds a heavily upsampled milk-glass sample, so a 30 Hz
-  // refresh is indistinguishable from 60 — update it every other frame and hand
-  // the render-target pass back to the frame budget half the time.
-  const backdropParity = useRef(0);
-  useEffect(() => {
-    if (!backdrop) return;
-    auroraBackdrop.tex = backdrop.target.texture;
-    return () => {
-      auroraBackdrop.tex = null;
-      backdrop.target.dispose();
-      backdrop.mesh.geometry.dispose();
-    };
-  }, [backdrop]);
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
@@ -203,7 +158,6 @@ export function Aurora({ accent, calm = false }: AuroraProps) {
       // to the active theme, which doubles as a subtle boot color-in.
       uTint: { value: new Color(0.05, 0.13, 0.32) },
       uGlow: { value: 1 },
-      uStars: { value: 1 },
     }),
     [],
   );
@@ -226,19 +180,6 @@ export function Aurora({ accent, calm = false }: AuroraProps) {
     );
     m.uniforms.uGlow.value =
       CALM_GLOW + (1 - CALM_GLOW) * easeInOutCubic(lit.current);
-
-    // Refresh the frost backdrop into the tiny buffer, every other frame (see
-    // backdropParity). Stars are masked out — at 64px one collapses to a white
-    // texel that smears across the glass.
-    backdropParity.current ^= 1;
-    if (backdrop && backdropParity.current === 0) {
-      backdrop.mesh.material = m;
-      m.uniforms.uStars.value = 0;
-      state.gl.setRenderTarget(backdrop.target);
-      state.gl.render(backdrop.scene, backdrop.camera);
-      state.gl.setRenderTarget(null);
-      m.uniforms.uStars.value = 1;
-    }
   });
 
   return (

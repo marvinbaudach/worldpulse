@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { MathUtils, Quaternion, Vector2, Vector3 } from 'three';
+import { MathUtils, Quaternion, Vector3 } from 'three';
 import type { Group, Mesh, MeshStandardMaterial } from 'three';
-import { createCardFaceMaterials, updateCardFrost } from './cardFace';
+import { createCardFaceMaterials } from './cardFace';
 import type { HeroStart } from './HeroCard';
 import { GlassPlate, GLASS_GAP, GLASS_OPACITY } from './GlassPlate';
 import type { Slot } from '../layouts';
@@ -10,7 +10,6 @@ import { SETTLED_T, type Dashboard } from '../dashboards';
 import { onLiveUpdate } from '../data/store';
 import { onLocaleChange } from '../i18n';
 import { useDashboardTexture } from '../hooks/useDashboardTexture';
-import { useIsMobile } from '../hooks/useIsMobile';
 
 interface CarouselItemProps {
   /** The animated dashboard this panel renders. */
@@ -55,7 +54,6 @@ interface CarouselItemProps {
 }
 
 const worldPos = new Vector3();
-const bufSize = new Vector2();
 
 // Per-panel delay when flying to a new formation, so the morph ripples
 // through the set instead of moving as one rigid block.
@@ -112,27 +110,19 @@ export function CarouselItem({
   const glassRef = useRef<Mesh>(null);
   const backRef = useRef<Mesh>(null);
   const canvasEl = useThree((s) => s.gl.domElement);
-  const gl = useThree((s) => s.gl);
-  // The frost sample reads the desktop-only aurora backdrop buffer; on mobile
-  // the card face renders opaque (no frost merge, no backdrop to sample).
-  const isMobile = useIsMobile();
 
   const entranceStart = useRef<number | null>(null);
   // True on the frame the panel stops being hidden, so it can snap back to full
   // opacity instead of fading in and leaving a transparent gap after the hero.
   const wasHidden = useRef(false);
 
-  // The dashboard is rendered once in its settled state and only refreshed
-  // when live data lands — hovering no longer replays the intro animation.
-  // Desktop textures are frost-backed (surface drawn translucent, see
-  // Frame.frost) so the merged face shader shows the blurred backdrop through
-  // the card; mobile draws opaque.
-  const dash = useDashboardTexture(dashboard, TEX_W, TEX_H, !isMobile);
+  // The dashboard is rendered once in its settled state (opaque) and only
+  // refreshed when live data lands — hovering no longer replays the intro.
+  const dash = useDashboardTexture(dashboard, TEX_W, TEX_H);
 
-  // Merged card face: one shader per side that samples the chart and, where the
-  // chart surface is translucent, the frosted aurora backdrop (see cardFace) —
-  // replacing the old drei <Image> + separate FrostPlate, one transparent layer
-  // per card less. Shared animated uniforms drive both faces from the loop.
+  // Card face: one shader per side (front + back, see cardFace) that samples
+  // the chart with rounded corners, depth desaturation and zoom. Shared
+  // animated uniforms drive both faces from the frame loop.
   const faces = useMemo(
     () => createCardFaceMaterials(dash.tex, width, height),
     [dash.tex, width, height],
@@ -151,9 +141,8 @@ export function CarouselItem({
   const exitFrom = useRef(new Vector3());
   const exitSnapshot = useRef({
     scale: 1,
-    opacity: 1,
+    card: 1,
     glass: 0,
-    frost: 0,
     mode: 0,
     rotY: 0,
     spin: 1,
@@ -209,17 +198,10 @@ export function CarouselItem({
     const glass = glassRef.current;
     const back = backRef.current;
 
-    // Per-frame frost inputs (the shared aurora backdrop texture + the drawing-
-    // buffer size for the screen-space sample) on this card's shared uniforms.
-    // Desktop only — mobile has no backdrop buffer, and its opaque texture
-    // never reveals the frost anyway (tex.a = 1 everywhere).
-    if (!isMobile) updateCardFrost(u, gl.getDrawingBufferSize(bufSize));
-
-    // Whole-card fade (was the frost pane's opacity): drives uCardAlpha and
-    // gates both faces' visibility together. Face culling then keeps exactly
-    // one of them (front or back) in the draw for any view. Both faces share
-    // the same chart/grayscale/zoom uniforms, so they stay in lockstep with no
-    // separate back-face bookkeeping.
+    // Whole-card fade (lifecycle): drives uCardAlpha and gates both faces'
+    // visibility together. Face culling then keeps exactly one of them (front
+    // or back) in the draw for any view. Both faces share the same
+    // grayscale/zoom uniforms, so they stay in lockstep.
     const setCard = (cardAlpha: number) => {
       u.uCardAlpha.value = cardAlpha;
       const vis = cardAlpha > 0.02;
@@ -278,19 +260,12 @@ export function CarouselItem({
     // dead matte black.
     const glassFade = 0.15 + 0.85 * eased;
 
-    // Back panels: darker, desaturated and slightly zoomed out -> depth.
-    // Minimum opacity kept high enough that the back sides stay recognizable;
-    // the star term lifts the front-most card to full brightness so it reads
-    // as the stage's focal point against the deeper-dimmed rest. Computed
-    // before the entrance branch so a card flying toward a back slot arrives
-    // already dimmed and translucent, instead of landing fully opaque (a
-    // fogged black slab) and only fading to its depth look afterwards.
-    // The floor sits high (0.62) so even back/side cards keep their near-black
-    // surface and stay readable from across the ring — depth is carried by the
-    // remaining fade, the desaturation and the fog, not by sinking cards into
-    // the backdrop.
-    const targetOpacity = 0.62 + eased * 0.23 + star * 0.15;
-    const targetGray = (1 - eased) * 0.6;
+    // The cards are flat opaque panels now (no frost, no brightness fade), so
+    // every card holds the same dark surface — no focal card standing out.
+    // Depth is carried by size, fog and a light back-of-ring desaturation and
+    // pull-back; the grey wash is kept mild so the front card doesn't pop in
+    // saturation against the rest.
+    const targetGray = (1 - eased) * 0.25;
     const targetZoom = 1 + (1 - eased) * 0.15;
 
     const glassMat = glass?.material as MeshStandardMaterial | undefined;
@@ -305,9 +280,8 @@ export function CarouselItem({
         exitFrom.current.copy(group.position);
         exitSnapshot.current = {
           scale: group.scale.x,
-          opacity: u.uChartMix.value,
+          card: u.uCardAlpha.value,
           glass: glassMat?.opacity ?? 0,
-          frost: u.uCardAlpha.value,
           mode: move,
           rotY: group.rotation.y,
           spin: Math.random() < 0.5 ? -1 : 1,
@@ -357,8 +331,7 @@ export function CarouselItem({
       }
       const s = snap.scale * (1 - 0.45 * e);
       group.scale.set(s, s, 1);
-      u.uChartMix.value = snap.opacity * (1 - e);
-      setCard(snap.frost * (1 - e));
+      setCard(snap.card * (1 - e));
       if (glassMat) glassMat.opacity = snap.glass * (1 - e);
       if (glass && glassMat) glass.visible = img.visible && glassMat.opacity > 0.005;
       return;
@@ -430,12 +403,11 @@ export function CarouselItem({
       group.rotation.y = target.rotY;
       const s = (0.5 + 0.5 * e) * focus;
       group.scale.set(s, s, 1);
-      u.uChartMix.value = e * targetOpacity;
       u.uGray.value = targetGray;
       u.uZoom.value = targetZoom;
-      // uCardAlpha (was the frost opacity) fades in with the flight and gates
-      // both faces' draws — skipping them while the stagger delay holds the
-      // panel fully transparent at the center.
+      // uCardAlpha fades in with the flight and gates both faces' draws —
+      // skipping them while the stagger delay holds the panel fully transparent
+      // at the center.
       setCard(e);
       // Facing-scaled from the first frame: a card erupting toward a back
       // slot must not arrive with a full bright plate and dim down after.
@@ -506,7 +478,6 @@ export function CarouselItem({
       // it covers the slot on the click frame. A gradual fade would instead be
       // left behind visibly in the ring as the hero flies off and the ring
       // rotates the emptied slot away. The pose keeps being published above.
-      u.uChartMix.value = 0;
       setCard(0);
       if (glassMat) glassMat.opacity = 0;
       if (glass) glass.visible = false;
@@ -515,13 +486,11 @@ export function CarouselItem({
     }
     if (wasHidden.current) {
       // Just returned from the hero: snap to the settled look, no fade-in gap.
-      u.uChartMix.value = targetOpacity;
       u.uGray.value = targetGray;
       u.uZoom.value = targetZoom;
       if (glassMat) glassMat.opacity = targetGlass;
       wasHidden.current = false;
     } else {
-      u.uChartMix.value = MathUtils.lerp(u.uChartMix.value, targetOpacity, 0.15);
       u.uGray.value = MathUtils.lerp(u.uGray.value, targetGray, 0.15);
       u.uZoom.value = MathUtils.lerp(u.uZoom.value, targetZoom, 0.15);
       if (glassMat) glassMat.opacity = MathUtils.lerp(glassMat.opacity, targetGlass, 0.15);
