@@ -1,21 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { Canvas } from '@react-three/fiber';
-import {
-  EffectComposer,
-  SMAA,
-  ChromaticAberration,
-  Noise,
-  Vignette,
-} from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
+import { EffectComposer, SMAA, Vignette } from '@react-three/postprocessing';
 import { Environment, PerformanceMonitor } from '@react-three/drei';
-import { Vector2, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import { CAMERA_GAP, CameraRig } from './CameraRig';
 import type { RingMotion } from './cameraMotion';
 import { PerfProbe } from './PerfHud';
 import { Afterglow } from './Afterglow';
 import { Aurora } from './Aurora';
 import { Dust } from './Dust';
+import { GrainOverlay } from './GrainOverlay';
 import { HeroCard, type HeroStart } from './HeroCard';
 import { HeroDock } from './HeroDock';
 import { HeroScrim } from './HeroScrim';
@@ -140,16 +134,12 @@ export function Carousel3D() {
   // +/- keys and Ctrl + wheel dolly the camera in and out; CameraRig scales
   // the gap by this factor. Zoom idles while a hero owns the screen.
   const zoom = useZoomControls(heroOpen);
-  // Whether the ring's "dressing" passes (grain + aberration) render. They drop
-  // out under an open hero for a clean, crisp card — but come back the instant a
-  // close *begins*, not when it ends: the scrim is still dark then and masks
-  // their re-entry, so the scene doesn't brighten fully and then visibly grain
+  // Whether the ring's grain "dressing" renders (see GrainOverlay). It drops
+  // out under an open hero for a clean, crisp card — but comes back the instant
+  // a close *begins*, not when it ends: the scrim is still dark then and masks
+  // its re-entry, so the scene doesn't brighten fully and then visibly grain
   // over a beat later as the card lands.
   const dressed = !heroOpen || closing;
-  // Tiny constant color fringe for a cinematic, lens-like finish. The effect is
-  // dropped from the stack while a hero is settled open (see `dressed`), so the
-  // offset itself can stay constant.
-  const aberration = useMemo(() => new Vector2(0.0003, 0.0003), []);
 
   const open = (id: string, start: HeroStart) => {
     if (selected) return; // one hero at a time
@@ -344,30 +334,18 @@ export function Carousel3D() {
           // both the ring and hero views; desktop-only, matching the rest of
           // the effect stack's mobile-perf posture.
           !isMobile && <SMAA key="smaa" />,
-          // No bloom at all: its fullscreen glow ran every mipmap blur pass
-          // each frame (even zeroed), which tanked the frame rate at the hero's
-          // pinned dpr and hazed the hero text — removed entirely. Aberration
-          // and noise still dress the ring but drop out while a hero is open,
-          // so only the cheap vignette is ever left over the hero.
-          !isMobile && dressed && (
-            <ChromaticAberration
-              key="aberration"
-              blendFunction={BlendFunction.NORMAL}
-              offset={aberration}
-            />
-          ),
-          !isMobile && dressed && (
-            <Noise
-              key="noise"
-              premultiply
-              blendFunction={BlendFunction.OVERLAY}
-              opacity={0.12}
-            />
-          ),
+          // Only the cheap vignette is left in the composer. Bloom was removed
+          // earlier (fullscreen mipmap blur every frame); the grain moved to a
+          // static CSS layer (see GrainOverlay) and the chromatic aberration was
+          // dropped — both were fullscreen fill-rate passes at the render dpr on
+          // an already fill-bound scene, for a barely-visible dressing.
           <Vignette key="vignette" eskil={false} offset={0.25} darkness={0.85} />,
         ].filter(Boolean) as ReactElement[]}
       </EffectComposer>
     </Canvas>
+
+    {/* Film grain as a static composited layer instead of a per-frame pass. */}
+    {!isMobile && <GrainOverlay hidden={!dressed} />}
 
     <LayoutControls hidden={heroOpen} tag={tag} tags={visibleTags} onTagChange={setTag} />
 
