@@ -3,8 +3,7 @@ import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
 import { BackSide, FrontSide, MathUtils, PlaneGeometry, Quaternion, Vector3 } from 'three';
-import type { Group, Mesh, MeshStandardMaterial } from 'three';
-import { GlassPlate, GLASS_OPACITY } from './GlassPlate';
+import type { Group, Mesh } from 'three';
 import { SETTLED_T, type Dashboard } from '../dashboards';
 import { onLocaleChange } from '../i18n';
 import { useDashboardTexture } from '../hooks/useDashboardTexture';
@@ -79,11 +78,6 @@ function heroTextureSize(): { w: number; h: number } {
   return { w: Math.round(h * CARD_ASPECT), h };
 }
 
-// Glass opacity once the card faces the viewer head-on: at that angle the
-// white sheen sits on the whole reading surface, so it thins out during the
-// flight (from the ring plates' GLASS_OPACITY) instead of milking the charts.
-const HERO_GLASS_OPACITY = 0.06;
-
 const _pos = new Vector3();
 const _scale = new Vector3();
 const _target = new Vector3();
@@ -119,7 +113,6 @@ export function HeroCard({
   const groupRef = useRef<Group>(null);
   const imgRef = useRef<Mesh>(null);
   const backRef = useRef<Mesh>(null);
-  const glassRef = useRef<Mesh>(null);
   const progress = useRef(startOpen ? 1 : 0);
   // The chart intro plays from the moment the hero opens, so the diagram
   // animates in during the fly-in instead of making the viewer wait for the
@@ -216,17 +209,6 @@ export function HeroCard({
     img.scale.set(_scale.x, _scale.y, 1);
     const back = backRef.current;
     if (back) back.scale.set(_scale.x, _scale.y, 1);
-    // The glass slab (unit-sized geometry) tracks the card, so the panel
-    // keeps its plate through the whole flight — no glass/no-glass jump.
-    const glass = glassRef.current;
-    if (glass) {
-      glass.scale.set(_scale.x, _scale.y, 1);
-      (glass.material as MeshStandardMaterial).opacity = MathUtils.lerp(
-        GLASS_OPACITY,
-        HERO_GLASS_OPACITY,
-        t,
-      );
-    }
 
     if (closing && progress.current === 0) onClosed();
   });
@@ -254,7 +236,6 @@ export function HeroCard({
         radius={0.06}
         onClick={(e) => e.stopPropagation()}
       />
-      <GlassPlate width={1} height={1} meshRef={glassRef} />
     </group>
   );
 }

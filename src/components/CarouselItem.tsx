@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { MathUtils, Quaternion, Vector3 } from 'three';
-import type { Group, Mesh, MeshStandardMaterial } from 'three';
+import type { Group, Mesh } from 'three';
 import { createCardFaceMaterials } from './cardFace';
 import type { HeroStart } from './HeroCard';
-import { GlassPlate, GLASS_GAP, GLASS_OPACITY } from './GlassPlate';
 import type { Slot } from '../layouts';
 import { SETTLED_T, type Dashboard } from '../dashboards';
 import { onLiveUpdate } from '../data/store';
@@ -79,15 +78,6 @@ const ENTRANCE_DURATION = 0.9;
 // entrance so the swap feels snappy rather than ceremonial.
 const EXIT_DURATION = 0.4;
 
-// Hover press: the cursor side of the panel gets pushed down (away from the
-// viewer) while the edge opposite the cursor stays put — the panel pivots on
-// that far edge, so it reads as being pressed, not as spinning around its
-// center. Max tilt per axis (radians) — deliberately tiny: the press should
-// add life, not read as a playful 3D rotation.
-const TILT_X = 0.03; // vertical cursor offset -> rotation around x
-const TILT_Y = 0.035; // horizontal cursor offset -> rotation around y
-const PRESS_SINK = 0.015; // the glass settles slightly onto the panel too
-
 export function CarouselItem({
   dashboard,
   slot,
@@ -107,7 +97,6 @@ export function CarouselItem({
 }: CarouselItemProps) {
   const groupRef = useRef<Group>(null);
   const imgRef = useRef<Mesh>(null);
-  const glassRef = useRef<Mesh>(null);
   const backRef = useRef<Mesh>(null);
   const canvasEl = useThree((s) => s.gl.domElement);
 
@@ -128,21 +117,14 @@ export function CarouselItem({
     [dash.tex, width, height],
   );
   useEffect(() => faces.dispose, [faces]);
-  // Hover state; the frame loop eases `press` toward 1 while hovered so the
-  // glass plate tilts down toward the cursor.
-  const hovered = useRef(false);
-  const press = useRef(0);
-  // Cursor position on the panel, -1..1 from the center on both axes.
-  const pointer = useRef({ x: 0, y: 0 });
-  // Theme-switch exit: pose/scale/opacity snapshotted the moment the collapse
+  // Theme-switch exit: pose/scale/fade snapshotted the moment the collapse
   // starts, so the plunge departs from wherever the panel happened to be
-  // (mid-entrance, hovered, floating) without a pop.
+  // (mid-entrance, floating) without a pop.
   const exitStart = useRef<number | null>(null);
   const exitFrom = useRef(new Vector3());
   const exitSnapshot = useRef({
     scale: 1,
     card: 1,
-    glass: 0,
     mode: 0,
     rotY: 0,
     spin: 1,
@@ -195,7 +177,6 @@ export function CarouselItem({
     if (!group || !img) return;
 
     const u = faces.uniforms;
-    const glass = glassRef.current;
     const back = backRef.current;
 
     // Whole-card fade (lifecycle): drives uCardAlpha and gates both faces'
@@ -212,7 +193,6 @@ export function CarouselItem({
     // While the hero copy is on screen the panel is invisible, but it keeps
     // flying toward its slot below, so formation or count changes made with
     // the hero open still move it to the right place.
-    if (hidden) hovered.current = false;
 
     // With a hero open, publish the live world pose (from last frame's
     // transform) — fly-back and arrow-key switch targets.
@@ -252,13 +232,6 @@ export function CarouselItem({
     // because the ring rotates continuously; a hard cutoff would flicker.
     const star = MathUtils.smoothstep(eased, 0.92, 1);
     const focus = 1 + eased * 0.08 + star * 0.09;
-    // The glass sheen tracks the card's own brightness instead of running an
-    // independent fade window: a dim side/back card only ever carries a dim
-    // sheen, so the plate can never read as a bright milky slab over a nearly
-    // black panel (which is exactly what a full-opacity plate on a dimmed
-    // card looked like). The small floor keeps the back sides from going
-    // dead matte black.
-    const glassFade = 0.15 + 0.85 * eased;
 
     // The cards are flat opaque panels now (no frost, no brightness fade), so
     // every card holds the same dark surface — no focal card standing out.
@@ -267,8 +240,6 @@ export function CarouselItem({
     // saturation against the rest.
     const targetGray = (1 - eased) * 0.25;
     const targetZoom = 1 + (1 - eased) * 0.15;
-
-    const glassMat = glass?.material as MeshStandardMaterial | undefined;
 
     // Theme switch: the set leaves in the switch's choreography (see `move`),
     // staggered on the same per-panel jitter as the entrance, while the
@@ -281,7 +252,6 @@ export function CarouselItem({
         exitSnapshot.current = {
           scale: group.scale.x,
           card: u.uCardAlpha.value,
-          glass: glassMat?.opacity ?? 0,
           mode: move,
           rotY: group.rotation.y,
           spin: Math.random() < 0.5 ? -1 : 1,
@@ -332,8 +302,6 @@ export function CarouselItem({
       const s = snap.scale * (1 - 0.45 * e);
       group.scale.set(s, s, 1);
       setCard(snap.card * (1 - e));
-      if (glassMat) glassMat.opacity = snap.glass * (1 - e);
-      if (glass && glassMat) glass.visible = img.visible && glassMat.opacity > 0.005;
       return;
     }
     exitStart.current = null;
@@ -409,41 +377,13 @@ export function CarouselItem({
       // skipping them while the stagger delay holds the panel fully transparent
       // at the center.
       setCard(e);
-      // Facing-scaled from the first frame: a card erupting toward a back
-      // slot must not arrive with a full bright plate and dim down after.
-      if (glassMat) glassMat.opacity = GLASS_OPACITY * e * glassFade;
-      if (glassRef.current) glassRef.current.visible = e > 0.001;
       return;
     }
 
-    // Hover press: tilt the whole panel toward the cursor. Combined with the
-    // sink below, the panel pivots on the edge opposite the cursor — only the
-    // cursor side moves, down and away; nothing swings toward the viewer. The
-    // glass rides along and additionally settles slightly onto the dashboard.
-    press.current = MathUtils.lerp(press.current, hovered.current ? 1 : 0, 0.18);
-    const pressed = press.current;
-    // Positive rotation.x lifts the top edge toward the viewer, so the
-    // cursor side (pointer.y = +1 at the top) needs the negative direction.
-    group.rotation.x = lerpAngle(
-      group.rotation.x,
-      target.rotX - pointer.current.y * TILT_X * pressed,
-      0.15,
-    );
-    group.rotation.y = lerpAngle(
-      group.rotation.y,
-      target.rotY + pointer.current.x * TILT_Y * pressed,
-      0.12,
-    );
-    if (glass) {
-      glass.position.z = GLASS_GAP - pressed * PRESS_SINK;
-    }
-
-    // Push the panel back by exactly the distance the far edge would have
-    // swung forward, turning the center-pivot press tilt into an edge-pivot
-    // press: the edge opposite the cursor stays fixed in space.
-    const sink =
-      (height / 2) * Math.abs(Math.sin(group.rotation.x - target.rotX)) +
-      (width / 2) * Math.abs(Math.sin(group.rotation.y - target.rotY));
+    // Settle the panel's rotation to the slot pose. No hover tilt — the panel
+    // stays flat to the ring; hovering only changes the cursor.
+    group.rotation.x = lerpAngle(group.rotation.x, target.rotX, 0.15);
+    group.rotation.y = lerpAngle(group.rotation.y, target.rotY, 0.12);
 
     // Idle float: each panel drifts on its own slow, multi-frequency phase so
     // the ring looks alive rather than frozen — and because this frame loop
@@ -458,29 +398,20 @@ export function CarouselItem({
     // A hair of roll on its own phase adds the final touch of life.
     group.rotation.z = Math.sin(now * 0.3 + ph * 1.1) * 0.012;
 
-    // The slot's outward normal ('YXZ': yaw, then pitch) — the press sink
-    // pushes the panel along it, away from the viewer side.
-    const nx = Math.sin(target.rotY) * Math.cos(target.rotX);
-    const ny = -Math.sin(target.rotX);
-    const nz = Math.cos(target.rotY) * Math.cos(target.rotX);
-
     // Damped flight toward the slot (plus the idle float): fast enough to feel
     // pinned when settled, slow enough that a formation switch reads as panels
     // flying over, and soft enough to smooth the drifting float target.
     const k = 0.085;
-    group.position.x += (target.x + floatX - nx * sink - group.position.x) * k;
-    group.position.y += (target.y + floatY - ny * sink - group.position.y) * k;
-    group.position.z += (target.z + floatZ - nz * sink - group.position.z) * k;
+    group.position.x += (target.x + floatX - group.position.x) * k;
+    group.position.y += (target.y + floatY - group.position.y) * k;
+    group.position.z += (target.z + floatZ - group.position.z) * k;
 
-    const targetGlass = GLASS_OPACITY * glassFade;
     if (hidden) {
       // Hide at once: the hero copy launches from exactly this panel's pose, so
       // it covers the slot on the click frame. A gradual fade would instead be
       // left behind visibly in the ring as the hero flies off and the ring
       // rotates the emptied slot away. The pose keeps being published above.
       setCard(0);
-      if (glassMat) glassMat.opacity = 0;
-      if (glass) glass.visible = false;
       wasHidden.current = true;
       return;
     }
@@ -488,24 +419,17 @@ export function CarouselItem({
       // Just returned from the hero: snap to the settled look, no fade-in gap.
       u.uGray.value = targetGray;
       u.uZoom.value = targetZoom;
-      if (glassMat) glassMat.opacity = targetGlass;
       wasHidden.current = false;
     } else {
       u.uGray.value = MathUtils.lerp(u.uGray.value, targetGray, 0.15);
       u.uZoom.value = MathUtils.lerp(u.uZoom.value, targetZoom, 0.15);
-      if (glassMat) glassMat.opacity = MathUtils.lerp(glassMat.opacity, targetGlass, 0.15);
     }
     // Settled: the card is fully present (uCardAlpha = 1); face culling shows
     // exactly one of front/back.
     setCard(1);
-    // Back-of-ring plates keep a faint sheen (glassFade floor); only fully
-    // faded plates (hero hidden, entrance) skip the draw entirely.
-    if (glass && glassMat) glass.visible = glassMat.opacity > 0.005;
 
-    // Front panels slightly larger -> "focus" feel (scales the whole group);
-    // a hover adds a small extra lift so the panel rises toward the viewer.
-    const lift = focus * (1 + pressed * 0.03);
-    group.scale.set(lift, lift, 1);
+    // Front panels slightly larger -> "focus" feel (scales the whole group).
+    group.scale.set(focus, focus, 1);
   });
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -526,17 +450,15 @@ export function CarouselItem({
     // starts at the center anyway), so no transform props that React could
     // re-apply mid-morph.
     <group ref={groupRef}>
-      {/* Back face: the merged card-face shader on a BackSide plane. It mirrors
-          the chart (uFlip) so a card turned away reads right, and carries the
-          same frosted backdrop as the front — every card is milk glass from
-          both sides. Face culling keeps only one of front/back in the draw. */}
+      {/* Back face: the card-face shader on a BackSide plane. It mirrors the
+          chart (uFlip) so a card turned away reads right. Face culling keeps
+          only one of front/back in the draw. */}
       <mesh ref={backRef} material={faces.back} scale={[width, height, 1]} raycast={() => null}>
         <planeGeometry args={[1, 1]} />
       </mesh>
 
-      {/* Front face: the chart and its frosted backdrop in one shader (see
-          cardFace) — the old drei <Image> plus a separate FrostPlate, merged
-          into a single transparent layer. */}
+      {/* Front face: the chart (see cardFace). Hover only changes the cursor —
+          the panel itself doesn't react. */}
       <mesh
         ref={imgRef}
         material={faces.front}
@@ -548,16 +470,6 @@ export function CarouselItem({
                 // The rotation hook keeps cursor:grab on the canvas itself,
                 // which overrides document.body — so set it on the canvas.
                 canvasEl.style.cursor = 'pointer';
-                hovered.current = true;
-              }
-            : undefined
-        }
-        onPointerMove={
-          interactive
-            ? (e: ThreeEvent<PointerEvent>) => {
-                if (!e.uv) return;
-                pointer.current.x = e.uv.x * 2 - 1;
-                pointer.current.y = e.uv.y * 2 - 1;
               }
             : undefined
         }
@@ -565,15 +477,12 @@ export function CarouselItem({
           interactive
             ? () => {
                 canvasEl.style.cursor = 'grab';
-                hovered.current = false;
               }
             : undefined
         }
       >
         <planeGeometry args={[1, 1]} />
       </mesh>
-
-      <GlassPlate width={width} height={height} meshRef={glassRef} />
     </group>
   );
 }
