@@ -79,7 +79,12 @@ export const Button = styled.button`
   }
 `;
 
-export const Label = styled.label`
+// A <span>, not a <label>: it wraps the custom GlassSelect widget (a button +
+// listbox that carries its own aria-label), not a native form control. A real
+// <label> would forward any click inside it — including a click on a menu
+// option — to its labelable control, re-firing the trigger and reopening the
+// dropdown the moment you pick something. The visible word stays decorative.
+export const Label = styled.span`
   display: inline-flex;
   gap: 6px;
   align-items: center;
