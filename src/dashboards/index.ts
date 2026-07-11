@@ -21,6 +21,9 @@ export { type DashboardTexture, createDashboardTexture } from './texture';
  * lists everything.
  */
 export const TAGS: { id: string; label: string; accent: string; primary?: boolean }[] = [
+  // TECH leads the bar. Shares violet with FREIHEIT — the palette is fixed
+  // (CVD-validated, all 8 categorical slots taken), never extended by hand.
+  { id: 'tech', label: 'TECH', accent: SERIES[4], primary: true }, // violet
   { id: 'geld', label: 'GELD', accent: SERIES[2], primary: true }, // gold
   { id: 'krieg', label: 'KRIEG', accent: SERIES[5], primary: true }, // red
   { id: 'deutschland', label: 'DEUTSCHLAND', accent: SERIES[7], primary: true }, // orange
@@ -30,9 +33,6 @@ export const TAGS: { id: string; label: string; accent: string; primary?: boolea
   // Pandemic dossier: everything COVID — measures, vaccinations, excess
   // mortality. Shares aqua with GESUNDHEIT (the palette is fixed).
   { id: 'corona', label: 'CORONA', accent: SERIES[1] }, // aqua
-  // All 8 categorical slots are taken, so TECH shares violet with FREIHEIT —
-  // the palette is fixed (CVD-validated), never extended by hand.
-  { id: 'tech', label: 'TECH', accent: SERIES[4] }, // violet
   { id: 'welt', label: 'WELT', accent: SERIES[0] }, // blue
   // Personal stack: gets its cards from the favorites store at runtime, so it
   // has no static pool entry (see RING_BY_TAG below). Shares gold with GELD —
