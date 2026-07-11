@@ -1,15 +1,8 @@
 import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
-import { Image } from '@react-three/drei';
-import { BackSide, FrontSide, MathUtils, PlaneGeometry, Quaternion, Vector3 } from 'three';
-import type {
-  Group,
-  Mesh,
-  MeshBasicMaterial,
-  MeshStandardMaterial,
-  ShaderMaterial,
-} from 'three';
-import { FrostPlate, FROST_OPACITY } from './FrostPlate';
+import { MathUtils, Quaternion, Vector2, Vector3 } from 'three';
+import type { Group, Mesh, MeshStandardMaterial } from 'three';
+import { createCardFaceMaterials, updateCardFrost } from './cardFace';
 import type { HeroStart } from './HeroCard';
 import { GlassPlate, GLASS_GAP, GLASS_OPACITY } from './GlassPlate';
 import type { Slot } from '../layouts';
@@ -61,14 +54,8 @@ interface CarouselItemProps {
   poses?: RefObject<Map<string, HeroStart>>;
 }
 
-/** Shape of drei's Image shader material, as far as this component needs it. */
-type ImageMaterial = {
-  opacity: number;
-  grayscale: number;
-  zoom: number;
-};
-
 const worldPos = new Vector3();
+const bufSize = new Vector2();
 
 // Per-panel delay when flying to a new formation, so the morph ripples
 // through the set instead of moving as one rigid block.
@@ -124,24 +111,12 @@ export function CarouselItem({
   const imgRef = useRef<Mesh>(null);
   const glassRef = useRef<Mesh>(null);
   const backRef = useRef<Mesh>(null);
-  const frostRef = useRef<Mesh>(null);
   const canvasEl = useThree((s) => s.gl.domElement);
-  // The frost pane is desktop-only: its transmission pass re-renders the
-  // opaque scene once per frame, which the mobile perf posture can't afford.
+  const gl = useThree((s) => s.gl);
+  // The frost sample reads the desktop-only aurora backdrop buffer; on mobile
+  // the card face renders opaque (no frost merge, no backdrop to sample).
   const isMobile = useIsMobile();
 
-  // Plane whose horizontal UVs are flipped: the back face shows the SAME
-  // dashboard texture as the front, but a plain BackSide sample of it reads
-  // mirrored — flipping U cancels that, so a card turned away shows its chart
-  // the right way round instead of a blank/branded slab.
-  const backGeo = useMemo(() => {
-    const g = new PlaneGeometry(1, 1);
-    const uv = g.attributes.uv;
-    for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i));
-    uv.needsUpdate = true;
-    return g;
-  }, []);
-  useEffect(() => () => backGeo.dispose(), [backGeo]);
   const entranceStart = useRef<number | null>(null);
   // True on the frame the panel stops being hidden, so it can snap back to full
   // opacity instead of fading in and leaving a transparent gap after the hero.
@@ -149,9 +124,20 @@ export function CarouselItem({
 
   // The dashboard is rendered once in its settled state and only refreshed
   // when live data lands — hovering no longer replays the intro animation.
-  // Desktop panels sit on a FrostPlate, so their surface is filled translucent
-  // and the blurred scene glows through the card face (see Frame.frost).
+  // Desktop textures are frost-backed (surface drawn translucent, see
+  // Frame.frost) so the merged face shader shows the blurred backdrop through
+  // the card; mobile draws opaque.
   const dash = useDashboardTexture(dashboard, TEX_W, TEX_H, !isMobile);
+
+  // Merged card face: one shader per side that samples the chart and, where the
+  // chart surface is translucent, the frosted aurora backdrop (see cardFace) —
+  // replacing the old drei <Image> + separate FrostPlate, one transparent layer
+  // per card less. Shared animated uniforms drive both faces from the loop.
+  const faces = useMemo(
+    () => createCardFaceMaterials(dash.tex, width, height),
+    [dash.tex, width, height],
+  );
+  useEffect(() => faces.dispose, [faces]);
   // Hover state; the frame loop eases `press` toward 1 while hovered so the
   // glass plate tilts down toward the cursor.
   const hovered = useRef(false);
@@ -219,33 +205,26 @@ export function CarouselItem({
     const img = imgRef.current;
     if (!group || !img) return;
 
-    const mat = img.material as unknown as ImageMaterial;
+    const u = faces.uniforms;
     const glass = glassRef.current;
     const back = backRef.current;
-    const backMat = back?.material as MeshBasicMaterial | undefined;
-    const frost = frostRef.current;
-    const frostMat = frost?.userData.frost as ShaderMaterial | undefined;
 
-    // Frosted backdrop pane (see FrostPlate): fades with the panel lifecycle.
-    const setFrost = (opacity: number) => {
-      if (!frost || !frostMat) return;
-      frostMat.uniforms.uOpacity.value = opacity;
-      frost.visible = opacity > 0.02;
-    };
+    // Per-frame frost inputs (the shared aurora backdrop texture + the drawing-
+    // buffer size for the screen-space sample) on this card's shared uniforms.
+    // Desktop only — mobile has no backdrop buffer, and its opaque texture
+    // never reveals the frost anyway (tex.a = 1 everywhere).
+    if (!isMobile) updateCardFrost(u, gl.getDrawingBufferSize(bufSize));
 
-    // Keep the dark back face in lockstep with the front image's opacity.
-    // Called from every branch that owns the frame's final opacity (entrance,
-    // exit, hidden, settled).
-    const setFaces = (opacity: number) => {
-      if (back && backMat) {
-        // The back shows the card's own chart (mirror-corrected) at exactly the
-        // front's opacity, so a panel looks identical from either side — same
-        // colour, same depth fade. (Boosting it brighter tinted it against the
-        // fog when translucent, or rendered the near-black card surface as a
-        // solid black slab when forced opaque; matching the front avoids both.)
-        backMat.opacity = opacity;
-        back.visible = opacity > 0.002;
-      }
+    // Whole-card fade (was the frost pane's opacity): drives uCardAlpha and
+    // gates both faces' visibility together. Face culling then keeps exactly
+    // one of them (front or back) in the draw for any view. Both faces share
+    // the same chart/grayscale/zoom uniforms, so they stay in lockstep with no
+    // separate back-face bookkeeping.
+    const setCard = (cardAlpha: number) => {
+      u.uCardAlpha.value = cardAlpha;
+      const vis = cardAlpha > 0.02;
+      img.visible = vis;
+      if (back) back.visible = vis;
     };
 
     // While the hero copy is on screen the panel is invisible, but it keeps
@@ -326,9 +305,9 @@ export function CarouselItem({
         exitFrom.current.copy(group.position);
         exitSnapshot.current = {
           scale: group.scale.x,
-          opacity: mat.opacity,
+          opacity: u.uChartMix.value,
           glass: glassMat?.opacity ?? 0,
-          frost: (frostMat?.uniforms.uOpacity.value as number) ?? 0,
+          frost: u.uCardAlpha.value,
           mode: move,
           rotY: group.rotation.y,
           spin: Math.random() < 0.5 ? -1 : 1,
@@ -378,12 +357,10 @@ export function CarouselItem({
       }
       const s = snap.scale * (1 - 0.45 * e);
       group.scale.set(s, s, 1);
-      mat.opacity = snap.opacity * (1 - e);
-      img.visible = mat.opacity > 0.002;
+      u.uChartMix.value = snap.opacity * (1 - e);
+      setCard(snap.frost * (1 - e));
       if (glassMat) glassMat.opacity = snap.glass * (1 - e);
       if (glass && glassMat) glass.visible = img.visible && glassMat.opacity > 0.005;
-      setFaces(mat.opacity);
-      setFrost(snap.frost * (1 - e));
       return;
     }
     exitStart.current = null;
@@ -453,19 +430,17 @@ export function CarouselItem({
       group.rotation.y = target.rotY;
       const s = (0.5 + 0.5 * e) * focus;
       group.scale.set(s, s, 1);
-      mat.opacity = e * targetOpacity;
-      mat.grayscale = targetGray;
-      mat.zoom = targetZoom;
-      // Skip the draw calls entirely while the stagger delay holds the panel
-      // fully transparent at the center.
-      img.visible = e > 0.001;
+      u.uChartMix.value = e * targetOpacity;
+      u.uGray.value = targetGray;
+      u.uZoom.value = targetZoom;
+      // uCardAlpha (was the frost opacity) fades in with the flight and gates
+      // both faces' draws — skipping them while the stagger delay holds the
+      // panel fully transparent at the center.
+      setCard(e);
       // Facing-scaled from the first frame: a card erupting toward a back
       // slot must not arrive with a full bright plate and dim down after.
       if (glassMat) glassMat.opacity = GLASS_OPACITY * e * glassFade;
       if (glassRef.current) glassRef.current.visible = e > 0.001;
-      // Back fades in with the front.
-      setFaces(mat.opacity);
-      setFrost(e * FROST_OPACITY);
       return;
     }
 
@@ -531,29 +506,29 @@ export function CarouselItem({
       // it covers the slot on the click frame. A gradual fade would instead be
       // left behind visibly in the ring as the hero flies off and the ring
       // rotates the emptied slot away. The pose keeps being published above.
-      mat.opacity = 0;
-      img.visible = false;
+      u.uChartMix.value = 0;
+      setCard(0);
       if (glassMat) glassMat.opacity = 0;
       if (glass) glass.visible = false;
-      setFaces(0);
-      setFrost(0);
       wasHidden.current = true;
       return;
     }
-    img.visible = true;
     if (wasHidden.current) {
       // Just returned from the hero: snap to the settled look, no fade-in gap.
-      mat.opacity = targetOpacity;
-      mat.grayscale = targetGray;
-      mat.zoom = targetZoom;
+      u.uChartMix.value = targetOpacity;
+      u.uGray.value = targetGray;
+      u.uZoom.value = targetZoom;
       if (glassMat) glassMat.opacity = targetGlass;
       wasHidden.current = false;
     } else {
-      mat.opacity = MathUtils.lerp(mat.opacity, targetOpacity, 0.15);
-      mat.grayscale = MathUtils.lerp(mat.grayscale, targetGray, 0.15);
-      mat.zoom = MathUtils.lerp(mat.zoom, targetZoom, 0.15);
+      u.uChartMix.value = MathUtils.lerp(u.uChartMix.value, targetOpacity, 0.15);
+      u.uGray.value = MathUtils.lerp(u.uGray.value, targetGray, 0.15);
+      u.uZoom.value = MathUtils.lerp(u.uZoom.value, targetZoom, 0.15);
       if (glassMat) glassMat.opacity = MathUtils.lerp(glassMat.opacity, targetGlass, 0.15);
     }
+    // Settled: the card is fully present (uCardAlpha = 1); face culling shows
+    // exactly one of front/back.
+    setCard(1);
     // Back-of-ring plates keep a faint sheen (glassFade floor); only fully
     // faded plates (hero hidden, entrance) skip the draw entirely.
     if (glass && glassMat) glass.visible = glassMat.opacity > 0.005;
@@ -562,10 +537,6 @@ export function CarouselItem({
     // a hover adds a small extra lift so the panel rises toward the viewer.
     const lift = focus * (1 + pressed * 0.03);
     group.scale.set(lift, lift, 1);
-
-    // Settled: mirror the live opacity onto the back face.
-    setFaces(mat.opacity);
-    setFrost(FROST_OPACITY);
   });
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
@@ -586,39 +557,21 @@ export function CarouselItem({
     // starts at the center anyway), so no transform props that React could
     // re-apply mid-morph.
     <group ref={groupRef}>
-      {/* Back face: the same dashboard texture on the reverse of the panel,
-          UV-flipped (see backGeo) so it reads correctly when the card is turned
-          away — every card shows its chart from both sides. */}
-      <mesh
-        ref={backRef}
-        geometry={backGeo}
-        position={[0, 0, -0.006]}
-        scale={[width, height, 1]}
-        renderOrder={-1}
-        raycast={() => null}
-      >
-        <meshBasicMaterial
-          map={dash.tex}
-          side={BackSide}
-          transparent
-          opacity={0}
-          depthWrite={false}
-          toneMapped={false}
-        />
+      {/* Back face: the merged card-face shader on a BackSide plane. It mirrors
+          the chart (uFlip) so a card turned away reads right, and carries the
+          same frosted backdrop as the front — every card is milk glass from
+          both sides. Face culling keeps only one of front/back in the draw. */}
+      <mesh ref={backRef} material={faces.back} scale={[width, height, 1]} raycast={() => null}>
+        <planeGeometry args={[1, 1]} />
       </mesh>
 
-      {/* Frosted backdrop: the blurred nebula shining through wherever the
-          depth fade leaves the chart translucent — macOS milk glass. */}
-      {!isMobile && <FrostPlate width={width} height={height} meshRef={frostRef} />}
-
-      <Image
+      {/* Front face: the chart and its frosted backdrop in one shader (see
+          cardFace) — the old drei <Image> plus a separate FrostPlate, merged
+          into a single transparent layer. */}
+      <mesh
         ref={imgRef}
-        texture={dash.tex}
-        transparent
-        toneMapped={false}
-        side={FrontSide}
-        radius={0.06}
-        scale={[width, height]}
+        material={faces.front}
+        scale={[width, height, 1]}
         onClick={interactive ? handleClick : undefined}
         onPointerOver={
           interactive
@@ -647,7 +600,9 @@ export function CarouselItem({
               }
             : undefined
         }
-      />
+      >
+        <planeGeometry args={[1, 1]} />
+      </mesh>
 
       <GlassPlate width={width} height={height} meshRef={glassRef} />
     </group>
