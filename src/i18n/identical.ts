@@ -20,6 +20,8 @@ export const IDENTICAL_ACROSS_LOCALES: ReadonlySet<string> = new Set<string>([
   // CPU-Rennen (cpuRace.ts): chip/brand names, benchmark labels and the Zen
   // architecture read identically across de/en/fr/it. The "· TSMC … nm" node
   // annotations ride the bar rows' `sub`, which bypasses t() entirely.
+  'Apple M5',
+  'Apple M5 Max',
   'Apple M4',
   'Apple M4 Max',
   'Apple M1',

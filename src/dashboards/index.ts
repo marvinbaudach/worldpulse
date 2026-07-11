@@ -104,6 +104,7 @@ const TAGS_BY_ID: Record<string, string[]> = {
   humanoids: ['tech'],
   'cpu-single-core': ['tech'],
   'cpu-multi-core': ['tech'],
+  'cpu-efficiency': ['tech'],
   'cpu-race': ['tech'],
   'robot-installations': ['tech'],
   'ua-drones': ['krieg'],
@@ -293,6 +294,7 @@ const ADDED_BY_ID: Record<string, string> = {
   // CPU-Rennen: ARM vs x86 (single-core, multi-core, the 2016→2025 race).
   'cpu-single-core': '2026-07-11T14:00:00+02:00',
   'cpu-multi-core': '2026-07-11T14:01:00+02:00',
+  'cpu-efficiency': '2026-07-11T15:30:00+02:00',
   'cpu-race': '2026-07-11T14:02:00+02:00',
   // SDG-Index laggards choropleth (SDR 2026) — newest, leads the NEU chip.
   'sdg-laggards-map': '2026-07-10T13:05:00+02:00',
@@ -560,7 +562,7 @@ const FEATURED = new Set([
   'de-bank-branches', 'us-middle-wealth', 'us-consumer-debt',
   'de-budget-split', 'de-megaprojects',
   'chatkontrolle', 'asset-register',
-  'cpu-single-core', 'cpu-multi-core', 'cpu-race',
+  'cpu-single-core', 'cpu-multi-core', 'cpu-efficiency', 'cpu-race',
 ]);
 
 /**
