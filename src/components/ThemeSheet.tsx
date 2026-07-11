@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { t as trans } from '../i18n';
 import type { TAGS } from '../dashboards';
-import { glassSurface } from './glass';
+import { ACCENT_TEXT, glassSurface } from './glass';
 
 const Backdrop = styled.div`
   position: fixed;
@@ -62,7 +62,7 @@ const Option = styled.button<{ $active: boolean }>`
   border: none;
   border-radius: 12px;
   background: ${(p) => (p.$active ? 'rgba(57, 135, 229, 0.28)' : 'rgba(255, 255, 255, 0.05)')};
-  color: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.75)')};
+  color: ${(p) => (p.$active ? ACCENT_TEXT : 'rgba(255, 255, 255, 0.75)')};
   font: 600 14px/1 inherit;
   letter-spacing: 0.1em;
   text-align: left;

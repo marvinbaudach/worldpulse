@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { ACCENT_TEXT } from './glass';
 
 // The pager reads as a property of the deck, not the header: centered under
 // the cards (iOS-pager style) instead of squeezed next to the filter button —
@@ -28,7 +29,7 @@ const Dot = styled.div<{ $active: boolean; $small: boolean }>`
   width: ${(p) => (p.$active ? 18 : 6)}px;
   height: 6px;
   border-radius: 999px;
-  background: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.28)')};
+  background: ${(p) => (p.$active ? ACCENT_TEXT : 'rgba(255, 255, 255, 0.28)')};
   transform: scale(${(p) => (p.$small ? 0.6 : 1)});
   transition: width 0.25s ease, background 0.25s ease, transform 0.25s ease;
 `;

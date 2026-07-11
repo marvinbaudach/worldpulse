@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { bgDiag } from './MobileAurora';
-import { glassSurface } from './glass';
+import { ACCENT_TEXT, glassSurface } from './glass';
 
 // Easter egg: an invisible tap target in the top-right corner. Tap it to flash
 // the running build's commit id — a quick way to confirm which deploy is live
@@ -28,7 +28,7 @@ const Badge = styled.div`
   z-index: 13;
   padding: 8px 12px;
   border-radius: 14px;
-  color: #cfe4ff;
+  color: ${ACCENT_TEXT};
   font: 600 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.06em;
   text-align: right;

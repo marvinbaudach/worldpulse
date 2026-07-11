@@ -13,7 +13,6 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { loadLiveData } from '../data/sources';
 import { onLiveUpdate } from '../data/store';
 import { LOCALE, onLocaleChange, setLocale, type Locale } from '../i18n';
 import {
@@ -72,7 +71,7 @@ export default function DevGallery({ active, onClose }: DevGalleryProps) {
   const deferredQuery = useDeferredValue(query);
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState<SortKey>('newest');
-  const [size, setSize] = useState(320);
+  const [size, setSize] = useState(300);
 
   const [locale, setLoc] = useState<Locale>(LOCALE);
   useEffect(() => onLocaleChange(setLoc), []);
@@ -93,13 +92,6 @@ export default function DevGallery({ active, onClose }: DevGalleryProps) {
     });
   }, []);
   const redrawToken = `${locale}:${redrawTick}`;
-
-  const [reloading, setReloading] = useState(false);
-  const reloadLive = useCallback(() => {
-    setReloading(true);
-    setRedrawTick((t) => t + 1);
-    Promise.resolve(loadLiveData()).finally(() => setReloading(false));
-  }, []);
 
   const list = useMemo(
     () => filterSort(entries, { query: deferredQuery, category, sort }),
@@ -169,8 +161,6 @@ export default function DevGallery({ active, onClose }: DevGalleryProps) {
           onSize={setSize}
           locale={locale}
           onLocale={onLocale}
-          onReloadLive={reloadLive}
-          reloading={reloading}
           count={list.length}
           onClose={onClose}
         />

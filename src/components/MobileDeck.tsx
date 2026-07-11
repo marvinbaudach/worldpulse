@@ -17,7 +17,7 @@ import { MobileAurora, hasWebGL } from './MobileAurora';
 import { MobileBackground } from './MobileBackground';
 import { SwipeDeck } from './SwipeDeck';
 import { ThemeSheet } from './ThemeSheet';
-import { glassSurface } from './glass';
+import { ACCENT_TEXT, glassSurface } from './glass';
 
 const Deck = styled.div`
   position: fixed;
@@ -50,7 +50,7 @@ const FilterButton = styled.button`
   padding: 16px 30px;
   border: none;
   border-radius: 999px;
-  color: #cfe4ff;
+  color: ${ACCENT_TEXT};
   font: 600 17px/1 inherit;
   letter-spacing: 0.14em;
   cursor: pointer;
@@ -93,7 +93,7 @@ const RefreshPill = styled.div<{ $error?: boolean }>`
   gap: 8px;
   padding: 9px 16px;
   border-radius: 999px;
-  color: ${(p) => (p.$error ? '#ffb3ab' : '#cfe4ff')};
+  color: ${(p) => (p.$error ? '#ffb3ab' : ACCENT_TEXT)};
   font: 600 12px/1 inherit;
   letter-spacing: 0.1em;
   white-space: nowrap;
@@ -111,7 +111,7 @@ const Spinner = styled.span`
   flex: none;
   border-radius: 50%;
   border: 2px solid rgba(207, 228, 255, 0.25);
-  border-top-color: #cfe4ff;
+  border-top-color: ${ACCENT_TEXT};
   animation: ${spin} 0.8s linear infinite;
   /* Static ring under reduced motion — the label carries the meaning. */
   @media (prefers-reduced-motion: reduce) {

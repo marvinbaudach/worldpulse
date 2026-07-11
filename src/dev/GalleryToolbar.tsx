@@ -1,11 +1,13 @@
-// Dev-only review gallery — the frosted toolbar: search, category, sort, size,
-// locale and a live-data reload, plus the count and the way back to the app.
-// One glass bar over the aurora; every control shares the app's accent focus.
+// Dev-only review gallery — the frosted toolbar: search, category, sort, size
+// and locale, plus the count and the way back to the app. One glass bar over
+// the aurora; every control shares the app's accent focus and the same glass
+// dropdown, so the whole toolbar reads as one component system.
 
 import styled from 'styled-components';
 import { LOCALES, type Locale } from '../i18n';
 import type { SortKey } from './galleryData';
-import { TextInput, Select, Button, Label, DIM, INK, glassPanel } from './galleryChrome';
+import { TextInput, Button, Label, DIM, glassPanel } from './galleryChrome';
+import { GlassSelect, type GlassSelectOption } from './GlassSelect';
 
 export interface CategoryOption {
   value: string;
@@ -25,23 +27,26 @@ interface GalleryToolbarProps {
   onSize: (v: number) => void;
   locale: Locale;
   onLocale: (v: Locale) => void;
-  onReloadLive: () => void;
-  reloading: boolean;
   count: number;
   onClose: () => void;
 }
 
-const SORTS: { value: SortKey; label: string }[] = [
+const SORTS: GlassSelectOption[] = [
   { value: 'newest', label: 'neueste' },
   { value: 'category', label: 'Kategorie' },
   { value: 'id', label: 'A–Z (id)' },
 ];
 
-const SIZES: { value: number; label: string }[] = [
-  { value: 220, label: 'S' },
-  { value: 320, label: 'M' },
-  { value: 460, label: 'L' },
+const SIZES: GlassSelectOption[] = [
+  { value: '220', label: 'S' },
+  { value: '300', label: 'M' },
+  { value: '380', label: 'L' },
 ];
+
+const LOCALE_OPTIONS: GlassSelectOption[] = LOCALES.map((l) => ({
+  value: l,
+  label: l.toUpperCase(),
+}));
 
 const Bar = styled.div`
   position: sticky;
@@ -75,11 +80,14 @@ export function GalleryToolbar({
   onSize,
   locale,
   onLocale,
-  onReloadLive,
-  reloading,
   count,
   onClose,
 }: GalleryToolbarProps) {
+  const categoryOptions: GlassSelectOption[] = categories.map((c) => ({
+    value: c.value,
+    label: `${c.label} (${c.count})`,
+  }));
+
   return (
     <Bar>
       <Button type="button" onClick={onClose} aria-label="Zurück zur App">
@@ -94,53 +102,44 @@ export function GalleryToolbar({
       />
       <Label>
         Kategorie
-        <Select value={category} onChange={(e) => onCategory(e.target.value)}>
-          {categories.map((c) => (
-            <option key={c.value || 'all'} value={c.value}>
-              {c.label} ({c.count})
-            </option>
-          ))}
-        </Select>
+        <GlassSelect
+          value={category}
+          options={categoryOptions}
+          onChange={onCategory}
+          ariaLabel="Kategorie filtern"
+          minWidth={150}
+        />
       </Label>
       <Label>
         Sortierung
-        <Select value={sort} onChange={(e) => onSort(e.target.value as SortKey)}>
-          {SORTS.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </Select>
+        <GlassSelect
+          value={sort}
+          options={SORTS}
+          onChange={(v) => onSort(v as SortKey)}
+          ariaLabel="Sortierung"
+          minWidth={130}
+        />
       </Label>
       <Label>
         Größe
-        <Select value={String(size)} onChange={(e) => onSize(Number(e.target.value))}>
-          {SIZES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </Select>
+        <GlassSelect
+          value={String(size)}
+          options={SIZES}
+          onChange={(v) => onSize(Number(v))}
+          ariaLabel="Kachelgröße"
+          minWidth={56}
+        />
       </Label>
       <Label>
         Sprache
-        <Select value={locale} onChange={(e) => onLocale(e.target.value as Locale)}>
-          {LOCALES.map((l) => (
-            <option key={l} value={l}>
-              {l.toUpperCase()}
-            </option>
-          ))}
-        </Select>
+        <GlassSelect
+          value={locale}
+          options={LOCALE_OPTIONS}
+          onChange={(v) => onLocale(v as Locale)}
+          ariaLabel="Sprache"
+          minWidth={56}
+        />
       </Label>
-      <Button
-        type="button"
-        onClick={onReloadLive}
-        disabled={reloading}
-        title="Live-Daten neu laden und neu zeichnen"
-        style={{ color: INK }}
-      >
-        🔄 {reloading ? 'lädt…' : 'Neu laden'}
-      </Button>
       <Count>{count} Karten</Count>
     </Bar>
   );

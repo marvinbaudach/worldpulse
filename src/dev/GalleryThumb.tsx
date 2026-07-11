@@ -31,25 +31,30 @@ const Figure = styled.figure`
     display: block;
     width: 100%;
     height: auto;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
     background: #000;
+    box-shadow:
+      0 8px 24px -12px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
     transition:
       border-color 0.16s ease,
       box-shadow 0.16s ease;
   }
-  /* Hover lights the tile rather than moving it — accent rim + globe-blue glow. */
+  /* Hover lights the tile rather than moving it — accent rim + globe-blue glow
+     over a deepened drop, so it lifts off the grid. */
   &:hover canvas {
     border-color: ${ACCENT};
     box-shadow:
       0 0 0 1px rgba(${ACCENT_RGB}, 0.45),
-      0 0 24px rgba(${ACCENT_RGB}, 0.32);
+      0 12px 30px -10px rgba(0, 0, 0, 0.6),
+      0 0 28px rgba(${ACCENT_RGB}, 0.36);
   }
   &:focus-visible canvas {
     border-color: ${ACCENT};
     box-shadow:
       0 0 0 2px rgba(${ACCENT_RGB}, 0.6),
-      0 0 24px rgba(${ACCENT_RGB}, 0.32);
+      0 0 28px rgba(${ACCENT_RGB}, 0.36);
   }
 `;
 
@@ -77,6 +82,9 @@ const Caption = styled.figcaption`
     font-size: 11px;
     font-weight: 600;
     color: #05070c;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 1px 3px rgba(0, 0, 0, 0.35);
   }
 `;
 

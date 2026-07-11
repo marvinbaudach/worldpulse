@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { LOCALE, setLocale, t as tr, type Locale } from '../i18n';
 import styled from 'styled-components';
 import { LAYOUT_MODES, type LayoutMode } from '../layouts';
-import { glassSurface } from './glass';
+import { ACCENT_TEXT, glassSurface } from './glass';
 
 interface HotkeyPanelProps {
   layout: LayoutMode;
@@ -121,7 +121,7 @@ const Row = styled.button<{ $active?: boolean; $static?: boolean }>`
   border-radius: 8px;
   background: ${(p) => (p.$active ? 'rgba(57, 135, 229, 0.24)' : 'transparent')};
   color: ${(p) =>
-    p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.72)'};
+    p.$active ? ACCENT_TEXT : 'rgba(255, 255, 255, 0.72)'};
   font-family: inherit;
   text-align: left;
   cursor: ${(p) => (p.$static ? 'default' : 'pointer')};
@@ -164,7 +164,7 @@ const Toggle = styled.button<{ $open: boolean }>`
   padding: 8px 13px;
   border-radius: 999px;
   ${glassSurface}
-  color: ${(p) => (p.$open ? '#cfe4ff' : 'rgba(255, 255, 255, 0.85)')};
+  color: ${(p) => (p.$open ? ACCENT_TEXT : 'rgba(255, 255, 255, 0.85)')};
   font: 500 12px/1 inherit;
   font-family: inherit;
   letter-spacing: 0.04em;

@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { canShareFiles, shareCard } from '../exportCard';
 import { LOCALE, LOCALES, setLocale, t as trans } from '../i18n';
 import type { Dashboard } from '../dashboards';
-import { glassSurface } from './glass';
+import { ACCENT_TEXT, glassSurface } from './glass';
 
 // One "⋯" context button gathers the card actions (share, source, motion
 // opt-in): separate pills crowded the bottom edge and fought the swipe hint
@@ -16,7 +16,7 @@ const MenuButton = styled.button`
   height: 60px;
   border: none;
   border-radius: 999px;
-  color: #cfe4ff;
+  color: ${ACCENT_TEXT};
   font: 700 28px/1 inherit;
   cursor: pointer;
   transition: transform 120ms ease;
@@ -100,7 +100,7 @@ const LangButton = styled.button<{ $active: boolean }>`
   border: none;
   border-radius: 10px;
   background: ${(p) => (p.$active ? 'rgba(57, 135, 229, 0.28)' : 'rgba(255, 255, 255, 0.05)')};
-  color: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.7)')};
+  color: ${(p) => (p.$active ? ACCENT_TEXT : 'rgba(255, 255, 255, 0.7)')};
   font: 600 13px/1 inherit;
   letter-spacing: 0.08em;
   cursor: pointer;

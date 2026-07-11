@@ -7,7 +7,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { downloadCard } from '../exportCard';
 import { drawCard, type CardEntry, type Category } from './galleryData';
-import { Button, INK, DIM, glassPanel } from './galleryChrome';
+import { Button, INK, DIM, ACCENT_RGB, glassPanel } from './galleryChrome';
 
 const FULL_W = 768;
 const FULL_H = 960;
@@ -26,9 +26,16 @@ const Overlay = styled.div`
   inset: 0;
   z-index: 20;
   display: flex;
-  background: rgba(2, 3, 7, 0.4);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  /* A cool accent bloom from the top over a deep dim — atmosphere behind the
+     glass, so the whole view reads as lit rather than a flat scrim. */
+  background:
+    radial-gradient(
+      120% 85% at 50% -5%,
+      rgba(${ACCENT_RGB}, 0.14) 0%,
+      rgba(2, 3, 7, 0.44) 52%
+    );
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
   animation: lbFade 200ms ease;
 
   @keyframes lbFade {
@@ -62,13 +69,24 @@ const Stage = styled.div`
   }
 
   canvas {
-    height: min(90vh, 960px);
+    display: block;
+    /* Auto width+height bounded by BOTH maxes: the browser scales the card
+       down (never up past its 768×960 intrinsic) to fit the viewport while
+       preserving aspect — an explicit height alone kept the card at full size
+       and overflowed short viewports. */
     width: auto;
-    max-width: 58vw;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 10px;
+    height: auto;
+    max-width: min(58vw, 640px);
+    max-height: 88vh;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
     background: #000;
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.38);
+    /* Crisp rim + deep drop + a soft accent halo so the card glows off the
+       glass instead of sitting flat on it. */
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 30px 80px -20px rgba(0, 0, 0, 0.7),
+      0 0 72px -12px rgba(${ACCENT_RGB}, 0.34);
     animation: lbCardIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   @keyframes lbCardIn {
@@ -89,6 +107,7 @@ const Info = styled.div`
     margin: 0 0 10px;
     color: #fff;
     line-height: 1.3;
+    text-shadow: 0 0 24px rgba(${ACCENT_RGB}, 0.4);
   }
   .row {
     margin: 6px 0;

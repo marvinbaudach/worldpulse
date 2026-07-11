@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { t as tr } from '../i18n';
 import type { TAGS } from '../dashboards';
-import { glassSurface } from './glass';
+import { ACCENT_TEXT, glassSurface } from './glass';
 import { useDismissOnOutsideTap } from '../hooks/useDismissOnOutsideTap';
 
 interface LayoutControlsProps {
@@ -60,7 +60,7 @@ const Chip = styled.button<{ $active: boolean }>`
   flex: 0 0 auto;
   white-space: nowrap;
   background: ${(p) => (p.$active ? 'rgba(57, 135, 229, 0.28)' : 'transparent')};
-  color: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.55)')};
+  color: ${(p) => (p.$active ? ACCENT_TEXT : 'rgba(255, 255, 255, 0.55)')};
   font: 600 11px/1 inherit;
   font-family: inherit;
   letter-spacing: 0.14em;
@@ -161,7 +161,7 @@ const MenuItem = styled.button<{ $active: boolean }>`
   border: none;
   border-radius: 9px;
   background: ${(p) => (p.$active ? 'rgba(57, 135, 229, 0.28)' : 'transparent')};
-  color: ${(p) => (p.$active ? '#cfe4ff' : 'rgba(255, 255, 255, 0.65)')};
+  color: ${(p) => (p.$active ? ACCENT_TEXT : 'rgba(255, 255, 255, 0.65)')};
   font: 600 11px/1 inherit;
   font-family: inherit;
   letter-spacing: 0.14em;
