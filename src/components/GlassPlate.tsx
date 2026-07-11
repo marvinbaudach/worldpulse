@@ -1,15 +1,16 @@
 import { useEffect, useMemo, type Ref } from 'react';
-import { MeshPhysicalMaterial, MeshStandardMaterial } from 'three';
+import { MeshStandardMaterial } from 'three';
 import type { Mesh } from 'three';
-import { useIsMobile } from '../hooks/useIsMobile';
 
-// Thickness of the glass plate sitting in front of each dashboard, giving the
-// panels real depth instead of looking like flat sheets.
-export const GLASS_THICKNESS = 0.08;
-// Base transparency of the glass; front panels get a touch clearer. Kept low so
-// the plate's aurora reflection doesn't lift the near-black panel to a milky
-// gray — the charts need their full contrast to read from across the ring.
+// Base transparency of the glass; kept low so the plate's aurora reflection
+// doesn't lift the near-black panel to a milky gray — the charts need their
+// full contrast to read from across the ring.
 export const GLASS_OPACITY = 0.13;
+
+// A thin gap so the glass plane sits just in front of the dashboard image
+// (z = 0) without z-fighting. CarouselItem drives the live z from this (the
+// press sink nudges the plate toward the panel); the hero keeps it fixed.
+export const GLASS_GAP = 0.012;
 
 interface GlassPlateProps {
   width: number;
@@ -19,71 +20,41 @@ interface GlassPlateProps {
 }
 
 /**
- * The glossy, environment-reflecting glass slab shared by the ring panels and
- * the hero card — the same plate travels visually with a panel through its
- * whole lifecycle, so there is never a glass/no-glass jump. raycast disabled so
- * clicks reach the dashboard.
+ * The glossy, environment-reflecting glass sheet over each dashboard, shared by
+ * the ring panels and the hero card — the same plate travels visually with a
+ * panel through its whole lifecycle, so there is never a glass/no-glass jump.
+ * raycast disabled so clicks reach the dashboard.
  *
- * On desktop the plate carries a clearcoat lobe: a second specular layer that
- * mirrors the night environment and, being fresnel-weighted, glares along the
- * edges and on the panels curving away on the ring — the real glass look. Ring
- * plates additionally LOD it away toward the sides (see updateGlassLod).
- * Mobile keeps a plain standard material (no clearcoat pass) so the shader
- * stays cheap across every on-stage plate; the reflection there is just the
- * boosted env map on the low roughness.
+ * A flat plane on a plain standard material: the low roughness catches the
+ * night environment as a glossy sheen along the edges and on the panels curving
+ * away on the ring. This replaced a six-sided box carrying a clearcoat lobe
+ * (a second, fresnel-weighted specular pass) — on a fill-rate-bound scene the
+ * box's extra faces and the clearcoat shader were pure cost for a look the env
+ * reflection already carries.
  */
 export function GlassPlate({ width, height, meshRef }: GlassPlateProps) {
-  const isMobile = useIsMobile();
-
-  const mats = useMemo(() => {
-    // envMapIntensity dialed back from 3.x: the plate still catches the night
-    // env as a glossy sheen along the edges, but no longer floods the reading
-    // surface with the bright aurora — which was greying out the black panel.
-    const cheap = new MeshStandardMaterial({
-      color: '#ffffff',
-      transparent: true,
-      opacity: GLASS_OPACITY,
-      roughness: isMobile ? 0.05 : 0.04,
-      metalness: 0,
-      envMapIntensity: isMobile ? 2.2 : 2.4,
-      depthWrite: false,
-    });
-    const rich = isMobile
-      ? null
-      : new MeshPhysicalMaterial({
-          color: '#ffffff',
-          transparent: true,
-          opacity: GLASS_OPACITY,
-          roughness: 0.04,
-          metalness: 0,
-          envMapIntensity: 2.4,
-          ior: 1.5,
-          clearcoat: 1,
-          clearcoatRoughness: 0.08,
-          specularIntensity: 1,
-          depthWrite: false,
-        });
-    return { cheap, rich };
-  }, [isMobile]);
-
-  useEffect(
-    () => () => {
-      mats.cheap.dispose();
-      mats.rich?.dispose();
-    },
-    [mats],
+  const mat = useMemo(
+    () =>
+      // envMapIntensity kept high so the plate reads as glass off the night env
+      // without a clearcoat lobe; roughness low so that reflection stays a
+      // crisp sheen rather than a diffuse wash.
+      new MeshStandardMaterial({
+        color: '#ffffff',
+        transparent: true,
+        opacity: GLASS_OPACITY,
+        roughness: 0.04,
+        metalness: 0,
+        envMapIntensity: 2.4,
+        depthWrite: false,
+      }),
+    [],
   );
 
+  useEffect(() => () => mat.dispose(), [mat]);
+
   return (
-    <mesh
-      ref={meshRef}
-      material={mats.rich ?? mats.cheap}
-      // Desktop plates carry the LOD swap pair; the hero simply never swaps.
-      userData={mats.rich ? { glassLod: mats } : {}}
-      position={[0, 0, GLASS_THICKNESS / 2 + 0.01]}
-      raycast={() => null}
-    >
-      <boxGeometry args={[width, height, GLASS_THICKNESS]} />
+    <mesh ref={meshRef} material={mat} position={[0, 0, GLASS_GAP]} raycast={() => null}>
+      <planeGeometry args={[width, height]} />
     </mesh>
   );
 }

@@ -6,13 +6,12 @@ import type {
   Group,
   Mesh,
   MeshBasicMaterial,
-  MeshPhysicalMaterial,
+  MeshStandardMaterial,
   ShaderMaterial,
 } from 'three';
 import { FrostPlate, FROST_OPACITY } from './FrostPlate';
 import type { HeroStart } from './HeroCard';
-import { GlassPlate, GLASS_OPACITY, GLASS_THICKNESS } from './GlassPlate';
-import { updateGlassLod } from './glassLod';
+import { GlassPlate, GLASS_GAP, GLASS_OPACITY } from './GlassPlate';
 import type { Slot } from '../layouts';
 import { SETTLED_T, type Dashboard } from '../dashboards';
 import { onLiveUpdate } from '../data/store';
@@ -103,8 +102,6 @@ const EXIT_DURATION = 0.4;
 const TILT_X = 0.03; // vertical cursor offset -> rotation around x
 const TILT_Y = 0.035; // horizontal cursor offset -> rotation around y
 const PRESS_SINK = 0.015; // the glass settles slightly onto the panel too
-// Small gap between the dashboard image and the glass plate's back face.
-const GLASS_GAP = 0.01;
 
 export function CarouselItem({
   dashboard,
@@ -317,9 +314,7 @@ export function CarouselItem({
     const targetGray = (1 - eased) * 0.6;
     const targetZoom = 1 + (1 - eased) * 0.15;
 
-    // Glass LOD: clearcoat only where its glare reads (front of the ring).
-    if (glass) updateGlassLod(glass, eased);
-    const glassMat = glass?.material as MeshPhysicalMaterial | undefined;
+    const glassMat = glass?.material as MeshStandardMaterial | undefined;
 
     // Theme switch: the set leaves in the switch's choreography (see `move`),
     // staggered on the same per-panel jitter as the entrance, while the
@@ -493,7 +488,7 @@ export function CarouselItem({
       0.12,
     );
     if (glass) {
-      glass.position.z = GLASS_GAP + GLASS_THICKNESS / 2 - pressed * PRESS_SINK;
+      glass.position.z = GLASS_GAP - pressed * PRESS_SINK;
     }
 
     // Push the panel back by exactly the distance the far edge would have
@@ -559,9 +554,8 @@ export function CarouselItem({
       mat.zoom = MathUtils.lerp(mat.zoom, targetZoom, 0.15);
       if (glassMat) glassMat.opacity = MathUtils.lerp(glassMat.opacity, targetGlass, 0.15);
     }
-    // Back-of-ring plates keep a faint sheen now (glassFade floor), but they
-    // sit on the cheap material there (see updateGlassLod), so the draw stays
-    // inexpensive; only fully faded plates (hero hidden, entrance) skip it.
+    // Back-of-ring plates keep a faint sheen (glassFade floor); only fully
+    // faded plates (hero hidden, entrance) skip the draw entirely.
     if (glass && glassMat) glass.visible = glassMat.opacity > 0.005;
 
     // Front panels slightly larger -> "focus" feel (scales the whole group);

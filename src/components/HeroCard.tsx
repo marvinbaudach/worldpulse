@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, type RefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Image } from '@react-three/drei';
 import { BackSide, FrontSide, MathUtils, PlaneGeometry, Quaternion, Vector3 } from 'three';
-import type { Group, Mesh, MeshPhysicalMaterial } from 'three';
+import type { Group, Mesh, MeshStandardMaterial } from 'three';
 import { GlassPlate, GLASS_OPACITY } from './GlassPlate';
 import { SETTLED_T, type Dashboard } from '../dashboards';
 import { onLocaleChange } from '../i18n';
@@ -221,7 +221,7 @@ export function HeroCard({
     const glass = glassRef.current;
     if (glass) {
       glass.scale.set(_scale.x, _scale.y, 1);
-      (glass.material as MeshPhysicalMaterial).opacity = MathUtils.lerp(
+      (glass.material as MeshStandardMaterial).opacity = MathUtils.lerp(
         GLASS_OPACITY,
         HERO_GLASS_OPACITY,
         t,
