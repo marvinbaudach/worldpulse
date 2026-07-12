@@ -10,7 +10,13 @@ import { loadLiveData } from '../data/sources';
 import { useDictReady } from '../hooks/useDictReady';
 import Gallery from './gallery/Gallery';
 import { AubergineBackdrop } from './gallery/AubergineBackdrop';
+import { FpsMeter } from './gallery/FpsMeter';
 import { ACCENT } from './gallery/galleryChrome';
+
+// Perf HUD opt-in, checked once: append `?fps` to the URL to overlay the
+// rAF-cadence meter (works on the deployed page too, for on-device jank
+// hunts).
+const SHOW_FPS = new URLSearchParams(window.location.search).has('fps');
 
 const Wrap = styled.div`
   position: fixed;
@@ -31,6 +37,7 @@ export default function DesktopApp() {
     <Wrap>
       <AubergineBackdrop accent={accent} />
       {dictReady && <Gallery onAccentChange={setAccent} />}
+      {SHOW_FPS && <FpsMeter />}
     </Wrap>
   );
 }

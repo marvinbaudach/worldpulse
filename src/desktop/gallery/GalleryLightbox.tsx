@@ -28,16 +28,13 @@ const Overlay = styled.div`
   inset: 0;
   z-index: 20;
   display: flex;
-  /* A cool accent bloom from the top over a deep dim — atmosphere behind the
-     glass, so the whole view reads as lit rather than a flat scrim. */
+  /* A cool accent bloom from the top over a uniform near-black dim (two
+     layers, so the bloom never thins the dim) — atmosphere without a
+     backdrop-filter: the blur re-ran on every fly-in frame (the canvas
+     damages the filter region) and stuttered the intro on real hardware. */
   background:
-    radial-gradient(
-      120% 85% at 50% -5%,
-      rgba(${ACCENT_RGB}, 0.14) 0%,
-      rgba(2, 3, 7, 0.44) 52%
-    );
-  backdrop-filter: blur(24px) saturate(1.5);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    radial-gradient(120% 85% at 50% -5%, rgba(${ACCENT_RGB}, 0.12) 0%, transparent 55%),
+    rgba(2, 3, 7, 0.94);
   animation: lbFade 200ms ease;
 
   @keyframes lbFade {

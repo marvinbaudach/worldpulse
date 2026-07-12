@@ -10,6 +10,47 @@ import { t as tr } from '../../i18n';
 import { drawCard, type CardEntry, type Category } from './galleryData';
 import { ACCENT, ACCENT_RGB, INK, DIM } from './galleryChrome';
 
+// Tiles hold their canvas backing store only while near the viewport: ~230
+// thumbs at dpr 2 would otherwise pin ~400 MB of canvas memory, which drags
+// weaker machines to half refresh on the unfiltered grid. One shared
+// IntersectionObserver per scroll root tells each tile when to (re)draw and
+// when to release; the margin starts the redraw a full viewport early so even
+// fast scrolling meets already-painted tiles (~36 live tiles ≈ 15 MB).
+const NEAR_MARGIN = '100%';
+
+type NearCallback = (isNear: boolean) => void;
+const nearCallbacks = new WeakMap<Element, NearCallback>();
+const observersByRoot = new Map<Element | null, IntersectionObserver>();
+
+function scrollRoot(el: HTMLElement): Element | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const overflowY = getComputedStyle(p).overflowY;
+    if (overflowY === 'auto' || overflowY === 'scroll') return p;
+  }
+  return null;
+}
+
+/** Observe an element's proximity to its scroll viewport; returns unobserve. */
+function observeNear(el: HTMLElement, cb: NearCallback): () => void {
+  const root = scrollRoot(el);
+  let observer = observersByRoot.get(root);
+  if (!observer) {
+    observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) nearCallbacks.get(e.target)?.(e.isIntersecting);
+      },
+      { root, rootMargin: NEAR_MARGIN },
+    );
+    observersByRoot.set(root, observer);
+  }
+  nearCallbacks.set(el, cb);
+  observer.observe(el);
+  return () => {
+    nearCallbacks.delete(el);
+    observer.unobserve(el);
+  };
+}
+
 interface GalleryThumbProps {
   entry: CardEntry;
   category: Category | undefined;
@@ -151,7 +192,9 @@ function GalleryThumbImpl({
   onRendered,
 }: GalleryThumbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const figureRef = useRef<HTMLElement>(null);
   const [onScreen, setOnScreen] = useState(false);
+  const [isNear, setIsNear] = useState(false);
   const [rendered, setRendered] = useState(false);
   const reported = useRef(false);
 
@@ -163,28 +206,50 @@ function GalleryThumbImpl({
     return () => window.clearTimeout(id);
   }, [entry.idx]);
 
-  // Paint while on-screen. The drawn signature is remembered so scrolling a tile
-  // out and back doesn't repaint (and flash) an unchanged canvas; a locale
-  // switch or resize changes the signature, so on-screen tiles repaint while
-  // off-screen ones stay stale until they return.
+  useEffect(() => {
+    const el = figureRef.current;
+    if (!el) return;
+    return observeNear(el, setIsNear);
+  }, []);
+
+  // Paint while near the viewport, release when far. The drawn signature is
+  // remembered so an unchanged tile isn't repainted (and flashed); a locale
+  // switch or resize changes the signature, so near tiles repaint while far
+  // ones stay released until they return.
   const drawnKey = useRef('');
   useEffect(() => {
-    if (!onScreen) return;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!onScreen || !canvas) return;
     const key = `${entry.card.id}|${width}|${height}|${redrawToken}`;
-    if (drawnKey.current === key) return;
-    drawCard(canvas, entry.card, width, height);
-    drawnKey.current = key;
-    setRendered(true);
+    if (isNear) {
+      if (drawnKey.current === key) return;
+      drawCard(canvas, entry.card, width, height);
+      drawnKey.current = key;
+      setRendered(true);
+      if (!reported.current) {
+        reported.current = true;
+        onRendered?.(entry.card.id);
+      }
+      return;
+    }
+    // Far from the viewport: paint once so the load-progress bar stays honest
+    // (the card provably draws), then drop the backing store right away.
     if (!reported.current) {
+      drawCard(canvas, entry.card, width, height);
       reported.current = true;
       onRendered?.(entry.card.id);
     }
-  }, [onScreen, entry.card, width, height, redrawToken, onRendered]);
+    if (canvas.width) {
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+    drawnKey.current = '';
+    setRendered(false);
+  }, [onScreen, isNear, entry.card, width, height, redrawToken, onRendered]);
 
   return (
     <Figure
+      ref={figureRef}
       $w={width}
       $h={height}
       tabIndex={0}

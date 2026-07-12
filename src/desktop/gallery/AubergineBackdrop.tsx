@@ -57,14 +57,13 @@ const Ground = styled.div`
   );
 `;
 
-// Freeze all backdrop motion while the lightbox is open: its full-viewport
-// backdrop-filter must re-blur the whole backdrop on every frame anything
-// behind it moves, which starves the card fly-in of its frame budget
-// (measured 5× frame time in the settled lightbox). Behind blur(24px) + the
-// dim the freeze is imperceptible, and a static backdrop lets the compositor
-// cache the blurred result. Accent cross-fades can't be interrupted by this:
-// the accent only changes via toolbar category picks, unreachable while the
-// modal is open.
+// Freeze all backdrop motion while the lightbox is open: the drifting layers
+// are each far larger than the viewport, and recompositing all of them every
+// frame costs half the frame budget (measured 2× frame time) — budget the
+// card fly-in needs. Behind the lightbox's deep dim the freeze is
+// imperceptible. Accent cross-fades can't be interrupted by this: the accent
+// only changes via toolbar category picks, unreachable while the modal is
+// open.
 const pauseWhileLightboxOpen = css`
   body:has([aria-modal='true']) & {
     animation-play-state: paused;
