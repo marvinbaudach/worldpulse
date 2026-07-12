@@ -2157,6 +2157,29 @@ export const EN = {
     "The “Longevity Escape Velocity” target quietly slipped from 2029 to ~2032 between 2024 and 2026.",
   "Die 86 % stammen aus Kurzweils eigener Auswertung (2010), die „im Kern richtig\" großzügig als Treffer zählt; die unabhängigen LessWrong-Panels bewerteten den Wortlaut.":
     "The 86% comes from Kurzweil’s own assessment (2010), which generously counts “essentially correct” as a hit; the independent LessWrong panels judged the exact wording.",
+
+  // Desktop gallery chrome (toolbar, lightbox, card context menu)
+  'Suche…': 'Search…',
+  'Kategorie': 'Category',
+  'Kategorie filtern': 'Filter by category',
+  'Größe': 'Size',
+  'Kachelgröße': 'Tile size',
+  'Sprache': 'Language',
+  'Karten': 'cards',
+  'alle': 'all',
+  'öffnen': 'open',
+  'Karten-Detailansicht': 'Card detail view',
+  'Karte als PNG herunterladen': 'Download card as PNG',
+  'Zurück': 'Back',
+  'Weiter': 'Next',
+  'ID kopieren': 'Copy ID',
+  'ID kopiert': 'ID copied',
+  'ID + Titel kopieren': 'Copy ID + title',
+  'ID + Titel kopiert': 'ID + title copied',
+  'Bild kopieren': 'Copy image',
+  'Bild kopiert': 'Image copied',
+  'Bild kopieren fehlgeschlagen': 'Copying the image failed',
+  'Kopieren fehlgeschlagen': 'Copy failed',
 } satisfies Record<string, string>;
 
 // The exact set of German source strings that get a non-identity English

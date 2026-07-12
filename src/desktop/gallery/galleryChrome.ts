@@ -1,14 +1,26 @@
-// Dev-only review gallery — shared styled primitives so the whole gallery GUI
-// reads as one frosted-glass system over the aurora backdrop, matching the
-// app's overlays (PerfHud, DevGalleryLink) via the same `glassSurface`.
-// Not part of the app bundle (loaded only under import.meta.env.DEV; see
-// DevGallery + App.tsx).
+// Desktop gallery chrome — shared styled primitives so the whole gallery GUI
+// reads as one frosted-glass system over the aubergine backdrop, built on the
+// app-wide `glassSurface`. This is the production desktop UI (see DesktopApp).
 
 import styled, { css } from 'styled-components';
 import { glassSurface, ACCENT, ACCENT_RGB, INK, DIM, RADIUS } from '../../components/glass';
 
 // Re-export the shared glass tokens so gallery modules keep one import site.
 export { ACCENT, ACCENT_RGB, ACCENT_TEXT, INK, DIM, RADIUS, SPACE } from '../../components/glass';
+
+/** The desktop backdrop's Ubuntu-aubergine ramp (bright bloom → near-black
+    ground). Chrome tokens, not chart colors — the CVD-validated SERIES palette
+    in dashboards/theme.ts stays reserved for data marks. One definition here so
+    the backdrop and the progress bar can never drift apart. */
+export const AUBERGINE = {
+  bloom: '#7a1f6b',
+  plum: '#571b52',
+  deep: '#3d0f39',
+  ground0: '#2c001e',
+  ground1: '#1c0518',
+  ground2: '#120311',
+  ember: '#b5432f',
+} as const;
 
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, monospace';
 

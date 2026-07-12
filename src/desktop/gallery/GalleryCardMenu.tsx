@@ -1,12 +1,14 @@
-// Dev-only review gallery — right-click a card to copy its id, id + title, or
-// the card image itself (reusing the app's poster export, so the source is
-// stamped into the picture). Plus the little confirmation toast. Controlled by
-// DevGallery, which owns the open menu and the toast message.
+// Desktop gallery card context menu — right-click a card to copy its id,
+// id + title, or the card image itself (reusing the app's poster export, so
+// the source is stamped into the picture). Plus the little confirmation
+// toast. Controlled by Gallery, which owns the open menu and the toast
+// message; labels/toasts are authored in German and translated at render.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import type { Dashboard } from '../../dashboards/types';
 import { cardToPngBlob } from '../../exportCard';
+import { t as tr } from '../../i18n';
 import { INK, ACCENT_RGB, RADIUS, glassPanel } from './galleryChrome';
 
 async function copyText(text: string): Promise<boolean> {
@@ -154,7 +156,7 @@ export function GalleryCardMenu({ menu, onClose, onToast }: GalleryCardMenuProps
             onToast(await item.run(menu.card));
           }}
         >
-          {item.label}
+          {tr(item.label)}
         </button>
       ))}
     </Menu>
@@ -191,5 +193,5 @@ const ToastBox = styled.div`
 `;
 
 export function GalleryToast({ message }: { message: string }) {
-  return <ToastBox role="status">{message}</ToastBox>;
+  return <ToastBox role="status">{tr(message)}</ToastBox>;
 }

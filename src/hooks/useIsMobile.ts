@@ -7,7 +7,11 @@ import { readViewOverride } from './viewOverride';
 export const MOBILE_QUERY = '(max-width: 820px), (pointer: coarse)';
 const QUERY = MOBILE_QUERY;
 
-function match(): boolean {
+/** One-shot "is this the mobile experience?" — media query plus the `?view=`
+    preview override. Non-React consumers (the loader's canvas choreography)
+    must use this instead of matching MOBILE_QUERY raw, or a `?view=mobile`
+    desktop preview would mix desktop effects into the mobile path. */
+export function isMobileView(): boolean {
   const override = readViewOverride();
   if (override) return override === 'mobile';
   return typeof window !== 'undefined' && window.matchMedia(QUERY).matches;
@@ -15,7 +19,7 @@ function match(): boolean {
 
 /** True on touch phones / small screens (or forced via `?view=`). */
 export function useIsMobile(): boolean {
-  const [mobile, setMobile] = useState(match);
+  const [mobile, setMobile] = useState(isMobileView);
 
   useEffect(() => {
     if (readViewOverride()) return;

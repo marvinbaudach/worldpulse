@@ -1,17 +1,9 @@
-// Dev-only review gallery, embedded in the app as a single-page view: the card
-// grid, lightbox, filters and live-data controls, rendered over the app's own
-// Aurora starfield in frosted glass so it reads as one piece with the ring.
-//
-// It stays mounted (in dev, desktop) once opened, so toggling between the ring
-// and the gallery is smooth and lossless in both directions — `active` only
-// flips visibility (a crossfade) and freezes the backdrop. The heavy content
-// (backdrop context + ~200 thumbnail canvases) is deferred until the first open
-// so a dev who never opens the gallery pays nothing at boot.
-//
-// Never ships: App loads this module only under import.meta.env.DEV via a
-// dead-code-eliminated dynamic import.
+// The production desktop UI: the card grid, lightbox, filters and the
+// determinate load progress, rendered in frosted glass over the aubergine
+// backdrop (mounted by DesktopApp). Grew out of the former dev review gallery;
+// mobile/tablet ships the swipe deck instead (see mobile/MobileApp).
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { onLiveUpdate } from '../../data/store';
 import { LOCALE, onLocaleChange, setLocale, type Locale } from '../../i18n';
@@ -27,9 +19,11 @@ import { GalleryToolbar, type CategoryOption } from './GalleryToolbar';
 import { GalleryGrid } from './GalleryGrid';
 import { GalleryLightbox } from './GalleryLightbox';
 import { GalleryCardMenu, GalleryToast, type CardMenuState } from './GalleryCardMenu';
+import { ProgressBar } from './GallerySkeletons';
+import { progressPct } from './progress';
 
 interface GalleryProps {
-  onThumbRendered?: (id: string) => void;
+  /** Fired from the category handler so DesktopApp can tint the backdrop. */
   onAccentChange?: (accent: string) => void;
 }
 
@@ -50,13 +44,42 @@ const Scroll = styled.div`
 const FULL_RATIO = 960 / 768;
 const TOAST_MS = 1400;
 
-export default function Gallery({ onThumbRendered, onAccentChange }: GalleryProps) {
+export default function Gallery({ onAccentChange }: GalleryProps) {
   const entries = useMemo(() => buildEntries(), []);
 
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
   const [category, setCategory] = useState('');
   const [size, setSize] = useState(300);
+
+  // Category picks also retint the backdrop — notified from the handler (not
+  // an effect), so there is no extra render round-trip through the parent.
+  const changeCategory = useCallback(
+    (id: string) => {
+      setCategory(id);
+      onAccentChange?.((id && CATEGORIES.get(id)?.accent) || ACCENT);
+    },
+    [onAccentChange],
+  );
+
+  // Load progress, owned where the list lives: painted-once ids accumulate in
+  // a ref and are flushed to state at most once per frame; the numerator only
+  // counts ids in the *current* filtered list, so filtering mid-load re-bases
+  // the bar instead of stranding it below 100% forever (filtered-out tiles
+  // unmount without ever painting). A hidden tab throttles the paint stagger —
+  // the bar then just sits at its honest partial value until focus returns.
+  const doneRef = useRef<Set<string>>(new Set());
+  const rafRef = useRef(0);
+  const [progressTick, setProgressTick] = useState(0);
+  const onThumbRendered = useCallback((id: string) => {
+    doneRef.current.add(id);
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      setProgressTick((t) => t + 1);
+    });
+  }, []);
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
   const [locale, setLoc] = useState<Locale>(LOCALE);
   useEffect(() => onLocaleChange(setLoc), []);
@@ -83,20 +106,29 @@ export default function Gallery({ onThumbRendered, onAccentChange }: GalleryProp
     [entries, deferredQuery, category],
   );
 
+  // progressTick invalidates the memo when new paints land; the ref itself is
+  // stable, so it must ride the dep array as an explicit repaint token.
+  const rendered = useMemo(
+    () => list.reduce((n, e) => n + (doneRef.current.has(e.card.id) ? 1 : 0), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- progressTick is the invalidation token for doneRef
+    [list, progressTick],
+  );
+  const pct = progressPct(rendered, list.length);
+
   const categories = useMemo<CategoryOption[]>(() => {
     const counts = new Map<string, number>();
     for (const e of entries) counts.set(e.primaryTag, (counts.get(e.primaryTag) ?? 0) + 1);
+    // Labels stay the German TAGS originals; the toolbar translates through
+    // t() (which knows the uppercase keys) and lowercases for display.
     const opts: CategoryOption[] = [{ value: '', label: 'alle', count: entries.length }];
     for (const [id, cat] of CATEGORIES) {
       const n = counts.get(id);
-      if (n) opts.push({ value: id, label: cat.label.toLowerCase(), count: n });
+      if (n) opts.push({ value: id, label: cat.label, count: n });
     }
     return opts;
   }, [entries]);
 
   const categoryOf = useCallback((tag: string): Category | undefined => CATEGORIES.get(tag), []);
-  const accent = (category && CATEGORIES.get(category)?.accent) || ACCENT;
-  useEffect(() => onAccentChange?.(accent), [accent, onAccentChange]);
 
   // Lightbox: an index into the current filtered list (null = closed).
   const [lbIndex, setLbIndex] = useState<number | null>(null);
@@ -128,17 +160,15 @@ export default function Gallery({ onThumbRendered, onAccentChange }: GalleryProp
 
   const height = Math.round(size * FULL_RATIO);
 
-  // App only mounts this component on first open (behind a dev-gated lazy
-  // import), so there's nothing to defer here — everything below is live from
-  // the first paint, and stays mounted for lossless re-toggling.
   return (
     <Root>
+      <ProgressBar pct={pct} />
       <Scroll>
         <GalleryToolbar
           query={query}
           onQuery={setQuery}
           category={category}
-          onCategory={setCategory}
+          onCategory={changeCategory}
           categories={categories}
           size={size}
           onSize={setSize}

@@ -1,85 +1,57 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { bootWithLocale } from './helpers';
 
-// Desktop dev gallery open/close transition (App <-> DevGallery). The gallery is
-// a dev-only, desktop-only single-page view that fades in over the WebGL ring;
-// both views stay mounted so toggling between them is lossless. This guards the
-// round-trip the crossfade exists for — ring -> gallery -> back -> and open
-// again — asserting the second open still shows tiles (nothing is torn down on
-// close). "Der Übergang hin und zurück" is the whole point of the spec.
-//
-// Firefox-only (see playwright.config.ts): the desktop view mounts the full
-// WebGL ring, which starves headless Chromium's software GL. The first
-// interaction of each test carries the ~13s headless boot wait via the 30s
-// actionTimeout — the loading screen sits on top with pointer-events until the
-// ring is ready, so the launcher click only lands once the gallery can mount.
+// The desktop experience IS the gallery since the split: no boot loader, no
+// 3D carousel — the toolbar and the skeleton grid appear immediately and the
+// thumbnails paint in staggered. These flows cover the product surface: boot,
+// search, category filter, and the lightbox.
 
-// The ⧉ Gallery launcher in the ring overlay (accessible name is its aria-label;
-// App unmounts it while the gallery is open).
-const galleryLink = (page: Page) => page.getByRole('button', { name: /Karten-Galerie öffnen/ });
-
-// The "← App" back button in the gallery toolbar (aria-label "Zurück zur App").
-const backButton = (page: Page) => page.getByRole('button', { name: 'Zurück zur App' });
-
-// Any gallery card tile — a <figure role="button" aria-label="<id> öffnen">. The
-// launcher's label ends in "(Dev)", so the trailing anchor keeps them apart.
-const anyTile = (page: Page) => page.getByRole('button', { name: /öffnen$/ }).first();
-
-// The toolbar's live card count, e.g. "223 Karten" — text unique to the gallery.
-const cardCount = (page: Page) => page.getByText(/\d+ Karten/);
-
-test.describe('desktop dev gallery transition', () => {
-  test('opens from the ring view and hides the ring overlay', async ({ page }) => {
+test.describe('desktop gallery', () => {
+  test('boots straight into the gallery — toolbar up, thumbnails paint', async ({ page }) => {
     await bootWithLocale(page, 'de');
 
-    // Booted ring view: the gallery has never mounted, so its back button is
-    // absent. (The launcher's own presence is asserted by the click below, whose
-    // 30s actionTimeout waits out the loader-covered boot.)
-    await expect(backButton(page)).toBeHidden();
+    // No loader gate: the search box is interactive well before the old
+    // ~2.4s boot beat would have cleared.
+    await expect(page.getByPlaceholder('Suche…')).toBeVisible({ timeout: 3000 });
 
-    await galleryLink(page).click();
-
-    // The gallery view is up: back button, count and at least one tile render...
-    await expect(backButton(page)).toBeVisible();
-    await expect(cardCount(page)).toBeVisible();
-    await expect(anyTile(page)).toBeVisible();
-
-    // ...and the ring's own overlay controls are gone while it's open (App drops
-    // both DevGalleryLink and PerfHud from the tree when showGallery is true).
-    await expect(galleryLink(page)).toBeHidden();
+    // Thumbnails arrive (tiles are buttons labelled "<id> · öffnen").
+    await expect(page.getByRole('button', { name: /öffnen/ }).first()).toBeVisible();
   });
 
-  test('the "← App" back button returns to the ring view', async ({ page }) => {
+  test('search narrows the visible set', async ({ page }) => {
     await bootWithLocale(page, 'de');
+    const count = page.getByText(/\d+ Karten/);
+    await expect(count).toBeVisible();
+    const before = await count.textContent();
 
-    await galleryLink(page).click();
-    await expect(backButton(page)).toBeVisible();
-
-    await backButton(page).click();
-
-    // Ring overlay returns (launcher remounts) and the gallery is hidden again.
-    await expect(galleryLink(page)).toBeVisible();
-    await expect(backButton(page)).toBeHidden();
+    await page.getByPlaceholder('Suche…').fill('cpu');
+    await expect(count).not.toHaveText(before ?? '', { timeout: 5000 });
+    // The CPU cards exist, so the filtered set is non-empty.
+    await expect(page.getByRole('button', { name: /cpu-single-core/ })).toBeVisible();
   });
 
-  test('round-trips ring -> gallery -> ring -> gallery, still showing tiles', async ({ page }) => {
+  test('category filter narrows the set', async ({ page }) => {
     await bootWithLocale(page, 'de');
+    const count = page.getByText(/\d+ Karten/);
+    const before = await count.textContent();
 
-    // Open (first time).
-    await galleryLink(page).click();
-    await expect(backButton(page)).toBeVisible();
-    await expect(anyTile(page)).toBeVisible();
+    await page.getByRole('button', { name: 'Kategorie filtern' }).click();
+    await page.getByRole('option', { name: /tech/ }).click();
 
-    // Close — back to the ring view.
-    await backButton(page).click();
-    await expect(galleryLink(page)).toBeVisible();
-    await expect(backButton(page)).toBeHidden();
+    await expect(count).not.toHaveText(before ?? '');
+  });
 
-    // Reopen: the gallery stayed mounted, so it comes straight back with its
-    // tiles and count intact — the lossless re-toggle the crossfade is built for.
-    await galleryLink(page).click();
-    await expect(backButton(page)).toBeVisible();
-    await expect(anyTile(page)).toBeVisible();
-    await expect(cardCount(page)).toBeVisible();
+  test('lightbox opens from a tile and closes on Esc', async ({ page }) => {
+    await bootWithLocale(page, 'de');
+    await page
+      .getByRole('button', { name: /öffnen/ })
+      .first()
+      .click();
+
+    const dialog = page.getByRole('dialog', { name: 'Karten-Detailansicht' });
+    await expect(dialog).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).not.toBeVisible();
   });
 });

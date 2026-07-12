@@ -1,6 +1,6 @@
 import { useEffect, type RefObject } from 'react';
 import { LIVE_FEEDS } from '../../data/sources';
-import { MOBILE_QUERY } from '../../hooks/useIsMobile';
+import { isMobileView } from '../../hooks/useIsMobile';
 import { CONVERGE_MS, MONO } from './loaderConstants';
 import { alphaBucket, slerp, toVec, type Vec3 } from './loaderMath';
 
@@ -106,7 +106,9 @@ export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRef
     // One-shot check (a viewport class change mid-boot is not a real case):
     // mobile skips the shockwave/dust — they radiate from the center, where
     // the deck's first card already sits.
-    const mobileExit = window.matchMedia(MOBILE_QUERY).matches;
+    // isMobileView (not the raw media query) so a `?view=mobile` desktop
+    // preview gets the calm mobile exit too, matching LoadingScreen's choice.
+    const mobileExit = isMobileView();
 
     // Fibonacci sphere.
     const N = 2600;

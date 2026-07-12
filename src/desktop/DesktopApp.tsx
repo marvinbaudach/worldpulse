@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+// The desktop shell: the aubergine backdrop plus the gallery — no boot loader.
+// The gallery owns its skeletons and load-progress bar; this shell only holds
+// what must outlive the gallery: the backdrop's accent mood and the shared
+// boot work (live-data kickoff, dictionary gate so the first paint is already
+// translated).
+
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { loadLiveData } from '../data/sources';
-import { LOCALE, ensureLocaleReady } from '../i18n';
+import { useDictReady } from '../hooks/useDictReady';
 import Gallery from './gallery/Gallery';
 import { AubergineBackdrop } from './gallery/AubergineBackdrop';
-import { ProgressBar } from './gallery/GallerySkeletons';
 import { ACCENT } from './gallery/galleryChrome';
-import { buildEntries } from './gallery/galleryData';
-import { progressPct } from './gallery/progress';
 
 const Wrap = styled.div`
   position: fixed;
@@ -16,33 +19,18 @@ const Wrap = styled.div`
 `;
 
 export default function DesktopApp() {
-  const total = useMemo(() => buildEntries().length, []);
-  const [renderedIds, setRenderedIds] = useState<ReadonlySet<string>>(() => new Set());
   const [accent, setAccent] = useState(ACCENT);
-  const [dictReady, setDictReady] = useState(LOCALE === 'de');
+  const dictReady = useDictReady();
 
   useEffect(() => {
+    // Fire-and-forget; loadLiveData guards against StrictMode double-mount.
     loadLiveData();
-    let alive = true;
-    void (async () => {
-      await ensureLocaleReady();
-      if (alive) setDictReady(true);
-    })();
-    return () => { alive = false; };
   }, []);
-
-  const onThumbRendered = useCallback((id: string) => {
-    setRenderedIds((ids) => ids.has(id) ? ids : new Set(ids).add(id));
-  }, []);
-  const pct = dictReady ? progressPct(renderedIds.size, total) : 0;
 
   return (
     <Wrap>
       <AubergineBackdrop accent={accent} />
-      <ProgressBar pct={pct} />
-      {dictReady && (
-        <Gallery onAccentChange={setAccent} onThumbRendered={onThumbRendered} />
-      )}
+      {dictReady && <Gallery onAccentChange={setAccent} />}
     </Wrap>
   );
 }

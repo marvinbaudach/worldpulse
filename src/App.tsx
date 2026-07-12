@@ -13,7 +13,12 @@ const Stage = styled.main`
   overflow: hidden;
   & canvas {
     display: block;
-    touch-action: none;
+    /* The !important clamp is behavior, not just styling: the mobile loader's
+       StarCanvas asks for 106% (edge bleed) and has always been clamped to the
+       viewport by this rule — dropping it would change the shipped mobile look. */
+    width: 100% !important;
+    height: 100% !important;
+    touch-action: none; /* drag must not collide with page scroll */
   }
 `;
 

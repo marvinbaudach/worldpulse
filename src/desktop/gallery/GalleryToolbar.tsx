@@ -1,10 +1,11 @@
-// Dev-only review gallery — the frosted toolbar: search, category, size and
-// locale, plus the count and the way back to the app. One glass bar over the
-// aurora; every control shares the app's accent focus and the same glass
-// dropdown, so the whole toolbar reads as one component system.
+// The desktop gallery's frosted toolbar: search, category, size and locale,
+// plus the result count. One glass bar over the aubergine backdrop; every
+// control shares the app's accent focus and the same glass dropdown, so the
+// whole toolbar reads as one component system. Copy is authored in German and
+// translated through t() like every other product surface.
 
 import styled from 'styled-components';
-import { LOCALES, type Locale } from '../../i18n';
+import { LOCALES, t as tr, type Locale } from '../../i18n';
 import { TextInput, Label, DIM, SPACE, glassPanel } from './galleryChrome';
 import { GlassSelect, type GlassSelectOption } from './GlassSelect';
 
@@ -72,49 +73,51 @@ export function GalleryToolbar({
 }: GalleryToolbarProps) {
   const categoryOptions: GlassSelectOption[] = categories.map((c) => ({
     value: c.value,
-    label: `${c.label} (${c.count})`,
+    label: `${tr(c.label).toLowerCase()} (${c.count})`,
   }));
 
   return (
     <Bar>
       <TextInput
         type="search"
-        placeholder="Suche id / Titel…"
+        placeholder={tr('Suche…')}
         autoComplete="off"
         value={query}
         onChange={(e) => onQuery(e.target.value)}
       />
       <Label>
-        Kategorie
+        {tr('Kategorie')}
         <GlassSelect
           value={category}
           options={categoryOptions}
           onChange={onCategory}
-          ariaLabel="Kategorie filtern"
+          ariaLabel={tr('Kategorie filtern')}
           minWidth={150}
         />
       </Label>
       <Label>
-        Größe
+        {tr('Größe')}
         <GlassSelect
           value={String(size)}
           options={SIZES}
           onChange={(v) => onSize(Number(v))}
-          ariaLabel="Kachelgröße"
+          ariaLabel={tr('Kachelgröße')}
           minWidth={56}
         />
       </Label>
       <Label>
-        Sprache
+        {tr('Sprache')}
         <GlassSelect
           value={locale}
           options={LOCALE_OPTIONS}
           onChange={(v) => onLocale(v as Locale)}
-          ariaLabel="Sprache"
+          ariaLabel={tr('Sprache')}
           minWidth={56}
         />
       </Label>
-      <Count>{count} Karten</Count>
+      <Count>
+        {count} {tr('Karten')}
+      </Count>
     </Bar>
   );
 }

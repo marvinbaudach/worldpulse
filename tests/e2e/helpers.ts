@@ -21,20 +21,6 @@ export async function bootWithLocale(page: Page, locale = 'de'): Promise<void> {
   await page.goto('/');
 }
 
-/**
- * Open the desktop settings panel (HotkeyPanel). The ⚙ toggle only exists once
- * the ~2.4s loader clears and the WebGL ring has booted, so this click carries
- * the boot wait — the locator auto-waits for the button to become actionable.
- */
-export async function openSettings(page: Page): Promise<void> {
-  await settingsToggle(page).click();
-}
-
-/** The ⚙ settings toggle — `aria-expanded` reflects the panel's open state. */
-export function settingsToggle(page: Page): Locator {
-  return page.getByRole('button', { name: /Einstellungen/ });
-}
-
 /** Open the mobile "⋯" action menu (DeckActionMenu). */
 export async function openActions(page: Page): Promise<void> {
   await actionsToggle(page).click();

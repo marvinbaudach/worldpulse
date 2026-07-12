@@ -1,7 +1,7 @@
-// Dev-only review gallery — the lightbox: a full 768×960 render of one card
-// beside its metadata, with prev/next to walk the current filtered set, Esc /
-// arrow keys, and a PNG export that reuses the app's poster renderer (so the QA
-// download is byte-for-byte the mobile deck's share image).
+// The desktop gallery's lightbox: a full 768×960 render of one card beside
+// its metadata and detail notes, with prev/next to walk the current filtered
+// set, Esc / arrow keys, and a PNG export that reuses the app's poster
+// renderer (so the download is byte-for-byte the mobile deck's share image).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
@@ -227,7 +227,7 @@ export function GalleryLightbox({
     <Overlay
       role="dialog"
       aria-modal="true"
-      aria-label="Karten-Detailansicht"
+      aria-label={tr('Karten-Detailansicht')}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -240,7 +240,7 @@ export function GalleryLightbox({
         style={{ top: 58 }}
         disabled={downloading}
         onClick={() => void download()}
-        aria-label="Karte als PNG herunterladen"
+        aria-label={tr('Karte als PNG herunterladen')}
       >
         ⭳ PNG
       </Corner>
@@ -250,7 +250,7 @@ export function GalleryLightbox({
             type="button"
             style={{ left: 16 }}
             onClick={() => onNavigate(-1)}
-            aria-label="Zurück"
+            aria-label={tr('Zurück')}
           >
             ‹
           </Nav>
@@ -258,7 +258,7 @@ export function GalleryLightbox({
             type="button"
             style={{ right: 16 }}
             onClick={() => onNavigate(1)}
-            aria-label="Weiter"
+            aria-label={tr('Weiter')}
           >
             ›
           </Nav>

@@ -1,11 +1,12 @@
-// Dev-only review gallery — one card tile: a canvas thumbnail drawn by the
-// shared engine, plus a caption (#index · id · category chip · added date).
-// Memoized so filtering/reordering the grid doesn't redraw untouched tiles;
-// the canvas repaints only when its size or the redraw token (locale switch,
-// live-data landing) changes.
+// One card tile of the desktop gallery: a canvas thumbnail drawn by the shared
+// engine under a shimmer skeleton until its first paint, plus a caption
+// (#index · id · category chip · added date). Memoized so filtering/reordering
+// the grid doesn't redraw untouched tiles; the canvas repaints only when its
+// size or the redraw token (locale switch, live-data landing) changes.
 
 import { memo, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
+import { t as tr } from '../../i18n';
 import { drawCard, type CardEntry, type Category } from './galleryData';
 import { ACCENT, ACCENT_RGB, INK, DIM } from './galleryChrome';
 
@@ -99,17 +100,25 @@ const CanvasWrap = styled.div`
   overflow: hidden;
 `;
 
+// Shimmer as an opacity pulse (compositor-only), not a background-position
+// sweep — a dozen visible skeletons animating a paint property would repaint
+// continuously during the one window where the grid is already busy drawing.
 const Skeleton = styled.div`
   position: absolute;
   inset: 0;
-  background: linear-gradient(100deg, #ffffff08 30%, #ffffff18 50%, #ffffff08 70%);
-  background-size: 200% 100%;
-  animation: thumb-shimmer 1.4s ease-in-out infinite;
+  background: linear-gradient(100deg, #ffffff08 30%, #ffffff14 50%, #ffffff08 70%);
+  animation: thumb-shimmer 1.4s ease-in-out infinite alternate;
   @keyframes thumb-shimmer {
-    from { background-position: 200% 0; }
-    to { background-position: -200% 0; }
+    from {
+      opacity: 0.55;
+    }
+    to {
+      opacity: 1;
+    }
   }
-  @media (prefers-reduced-motion: reduce) { animation: none; }
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 function GalleryThumbImpl({
@@ -123,7 +132,6 @@ function GalleryThumbImpl({
   onRendered,
 }: GalleryThumbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const figureRef = useRef<HTMLElement>(null);
   const [onScreen, setOnScreen] = useState(false);
   const [rendered, setRendered] = useState(false);
   const reported = useRef(false);
@@ -158,12 +166,11 @@ function GalleryThumbImpl({
 
   return (
     <Figure
-      ref={figureRef}
       $w={width}
       $h={height}
       tabIndex={0}
       role="button"
-      aria-label={`${entry.card.id} öffnen`}
+      aria-label={`${entry.card.id} · ${tr('öffnen')}`}
       onClick={() => onOpen(entry)}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -182,7 +189,7 @@ function GalleryThumbImpl({
         <div className="meta">
           {category && (
             <span className="chip" style={{ background: category.accent }}>
-              {category.label.toLowerCase()}
+              {tr(category.label).toLowerCase()}
             </span>
           )}
           <span>{entry.card.added ? entry.card.added.slice(0, 10) : '—'}</span>
