@@ -8,7 +8,7 @@ import { DETAILS_BY_ID } from './details';
 import { KONTEXT_BY_ID } from './detailKontext';
 import { SERIES } from './theme';
 
-export { type Dashboard, SETTLED_T } from './types';
+export { type Dashboard, SETTLED_T, INTRO_S } from './types';
 
 /**
  * Filter chips shown in the bottom bar, in display order. Each theme carries
@@ -538,7 +538,7 @@ for (const d of POOL) {
 
 /** Full pool ordered newest-first (cards without a date trail at the end).
     Consumed by the dev review gallery's "newest" sort. */
-export const NEWEST: Dashboard[] = [...POOL].sort((a, b) =>
+export const NEWEST: Dashboard[] = POOL.toSorted((a, b) =>
   (b.added ?? '').localeCompare(a.added ?? ''),
 );
 

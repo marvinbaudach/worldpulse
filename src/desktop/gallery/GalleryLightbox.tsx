@@ -5,6 +5,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
+import { INTRO_S } from '../../dashboards';
 import { downloadCard } from '../../exportCard';
 import { t as tr } from '../../i18n';
 import { drawCard, type CardEntry, type Category } from './galleryData';
@@ -188,10 +189,45 @@ export function GalleryLightbox({
   const entry = list[index];
 
   // Paint before the browser shows the frame, so a navigation never flashes a
-  // blank canvas; keyed on index (below) so the fade-in restarts each step.
+  // blank canvas — then replay the deck's fly-in: sweep the draw progress `t`
+  // from 0 to the settled frame, on open and on every prev/next step (the
+  // effect re-runs per entry; the canvas is keyed on index below so the CSS
+  // fade restarts too). Reduced motion keeps the instant settled frame.
+  const isSettled = useRef(false);
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas && entry) drawCard(canvas, entry.card, FULL_W, FULL_H);
+    if (!canvas || !entry) return;
+    isSettled.current = false;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      drawCard(canvas, entry.card, FULL_W, FULL_H);
+      isSettled.current = true;
+      return;
+    }
+    drawCard(canvas, entry.card, FULL_W, FULL_H, 0);
+    let raf = 0;
+    let start = 0;
+    const tick = (now: number): void => {
+      if (!start) start = now;
+      const t = (now - start) / 1000;
+      if (t < INTRO_S) {
+        drawCard(canvas, entry.card, FULL_W, FULL_H, t);
+        raf = requestAnimationFrame(tick);
+      } else {
+        drawCard(canvas, entry.card, FULL_W, FULL_H); // lock the settled frame
+        isSettled.current = true;
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [entry]);
+
+  // Locale switches and live-data updates bump redrawToken every time a
+  // dataset (or the once-a-second tick) lands. Repaint the settled frame then
+  // — but never restart the intro, and skip while it still plays (its rAF loop
+  // repaints each frame anyway, so fresh data lands on the next sweep).
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas && entry && isSettled.current) drawCard(canvas, entry.card, FULL_W, FULL_H);
   }, [entry, redrawToken]);
 
   // Esc closes; arrows walk the set. Owned here so the grid stops moving focus

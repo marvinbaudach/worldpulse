@@ -44,3 +44,12 @@ export interface Dashboard {
  * show a settled chart until a hover replays the animation from 0.
  */
 export const SETTLED_T = 9.7;
+
+/**
+ * Real-time seconds to play a card's fly-in before locking the settled frame.
+ * Draw progress runs on `t`; the slowest element (the line, easeOut(t/1.4))
+ * finishes at t=1.4, so a ~2s window covers every panel's intro. After that
+ * hold SETTLED_T so endpoints (e.g. the temperature line's true final value)
+ * land where they should.
+ */
+export const INTRO_S = 2;

@@ -80,8 +80,16 @@ export function filterSort(entries: CardEntry[], s: FilterState): CardEntry[] {
 const MAX_PIXEL_RATIO = 2;
 
 /** Draw a card into a canvas sized w×h CSS px; paints an error box if draw()
-    throws so a broken card is visible in the grid instead of silently blank. */
-export function drawCard(canvas: HTMLCanvasElement, card: Dashboard, w: number, h: number): void {
+    throws so a broken card is visible in the grid instead of silently blank.
+    `t` is the draw progress (seconds into the intro) — the default renders the
+    fully-settled chart, the lightbox sweeps it 0→SETTLED_T for the fly-in. */
+export function drawCard(
+  canvas: HTMLCanvasElement,
+  card: Dashboard,
+  w: number,
+  h: number,
+  t: number = SETTLED_T,
+): void {
   const dpr = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
   const pw = Math.round(w * dpr);
   const ph = Math.round(h * dpr);
@@ -90,7 +98,7 @@ export function drawCard(canvas: HTMLCanvasElement, card: Dashboard, w: number, 
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   try {
-    card.draw({ ctx, w: pw, h: ph, t: SETTLED_T, u: pw / 512 });
+    card.draw({ ctx, w: pw, h: ph, t, u: pw / 512 });
   } catch (err) {
     ctx.fillStyle = '#3a0d0d';
     ctx.fillRect(0, 0, pw, ph);

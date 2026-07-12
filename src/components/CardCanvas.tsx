@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { SETTLED_T, type Dashboard } from '../dashboards';
+import { INTRO_S, SETTLED_T, type Dashboard } from '../dashboards';
 import { onLiveUpdate } from '../data/store';
 
 // The draw functions are written against a 512-wide reference layout (u =
@@ -15,13 +15,6 @@ const MOBILE_REF_W = 420;
 // chart room (longer bars, wider plots), not bigger type. Portrait cards keep
 // the exact same `u` (w is always ≤ h·REF_ASPECT there), so they're untouched.
 const REF_ASPECT = 1.25;
-// Real-time seconds to play the fly-in for before locking the settled frame.
-// Draw progress runs on `t`; the slowest element (the line, easeOut(t/1.4))
-// finishes at t=1.4, so a ~2s window covers every panel's intro. After that we
-// hold SETTLED_T — the same fully-settled time the ring renders — so endpoints
-// (e.g. the temperature line's true final value) land where they should.
-const INTRO_S = 2;
-
 // Dominant *hue* of a drawn card, returned as a vivid tint for the background.
 // Averaging every saturated pixel muddies a multi-color card to gray, so we
 // instead vote colored pixels into hue bins (weighted by chroma) and emit the
