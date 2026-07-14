@@ -144,8 +144,8 @@ const SourceNote = styled.div`
   position: fixed;
   left: 16px;
   right: 16px;
-  /* Sits above the 56px action cluster (top at inset + 74px) with a gap. */
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 86px);
+  /* Sits above the 52px action cluster (top at inset + 70px) with a gap. */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 78px);
   z-index: 12;
   padding: 12px 14px;
   border-radius: 14px;

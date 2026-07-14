@@ -12,15 +12,21 @@ const MenuButton = styled.button`
   right: 16px;
   bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
   z-index: 12;
-  width: 60px;
-  height: 60px;
+  /* Flex-center the glyph so it sits dead-centre regardless of the device
+     font's ellipsis metrics — line-height alone left it drifting and, on
+     fonts with a taller glyph, overflowing the button. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
   border: none;
   border-radius: 999px;
   color: ${ACCENT_TEXT};
-  /* Like the star pill: the ⋯ glyph's ink is small within its em box, so the
-     font size runs close to the 60px button for the icon to read app-scale. */
+  /* The ⋯ ink is short and wide; ~0.6× the button keeps it app-scale without
+     crowding the rim. */
   font-weight: 700;
-  font-size: 56px;
+  font-size: 33px;
   line-height: 1;
   cursor: pointer;
   transition: transform 120ms ease;
@@ -36,9 +42,6 @@ const MenuButton = styled.button`
     top: calc(env(safe-area-inset-top, 0px) + 10px);
     right: calc(env(safe-area-inset-right, 0px) + 16px);
     bottom: auto;
-    width: 52px;
-    height: 52px;
-    font-size: 48px;
   }
 `;
 
@@ -47,8 +50,8 @@ const MenuButton = styled.button`
 const Menu = styled.div`
   position: fixed;
   right: 16px;
-  /* Clears the 60px button (top at inset + 78px) with an 8px gap. */
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 86px);
+  /* Clears the 52px button (top at inset + 70px) with an 8px gap. */
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 78px);
   z-index: 13;
   display: flex;
   flex-direction: column;
@@ -78,6 +81,9 @@ const Menu = styled.div`
 `;
 
 const Item = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-height: 44px;
   padding: 14px 18px;
   border: none;
@@ -91,6 +97,57 @@ const Item = styled.button`
   text-align: left;
   cursor: pointer;
 `;
+
+// Small stroke icons in front of the menu labels — inline SVGs on currentColor
+// so they inherit the row's ink and stay crisp on the glass (emoji would clash
+// with the chrome and render differently per platform).
+const ItemIcon = styled.svg.attrs({
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+  'aria-hidden': true,
+})`
+  width: 16px;
+  height: 16px;
+  flex: none;
+  opacity: 0.85;
+`;
+
+const ShareIcon = () => (
+  <ItemIcon>
+    <path d="M12 15V3" />
+    <path d="m8 7 4-4 4 4" />
+    <path d="M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
+  </ItemIcon>
+);
+
+const SaveIcon = () => (
+  <ItemIcon>
+    <path d="M12 3v12" />
+    <path d="m8 11 4 4 4-4" />
+    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+  </ItemIcon>
+);
+
+const InfoIcon = () => (
+  <ItemIcon>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5" />
+    <path d="M12 8h.01" />
+  </ItemIcon>
+);
+
+const MotionIcon = () => (
+  <ItemIcon>
+    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+    <path d="M21 3v5h-5" />
+    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+    <path d="M3 21v-5h5" />
+  </ItemIcon>
+);
 
 // Language switcher row at the bottom of the action menu — the mobile
 // counterpart of the desktop settings panel's SPRACHE fold.
@@ -159,6 +216,7 @@ export function DeckActionMenu({
                 void shareCard(current);
               }}
             >
+              {canShareFiles() ? <ShareIcon /> : <SaveIcon />}
               {trans(canShareFiles() ? 'Teilen' : 'Bild speichern')}
             </Item>
           )}
@@ -169,6 +227,7 @@ export function DeckActionMenu({
                 onShowSource();
               }}
             >
+              <InfoIcon />
               {trans(current?.detail ? 'Details anzeigen' : 'Quelle anzeigen')}
             </Item>
           )}
@@ -179,6 +238,7 @@ export function DeckActionMenu({
                 onAskMotion();
               }}
             >
+              <MotionIcon />
               {trans('Bewegungseffekte aktivieren')}
             </Item>
           )}
