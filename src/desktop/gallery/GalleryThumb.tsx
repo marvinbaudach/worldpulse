@@ -244,6 +244,7 @@ function GalleryThumbImpl({
       canvas.height = 0;
     }
     drawnKey.current = '';
+    // eslint-disable-next-line react/set-state-in-effect -- reflects the canvas backing store this same effect just released, not a value derivable during render.
     setRendered(false);
   }, [onScreen, isNear, entry.card, width, height, redrawToken, onRendered]);
 

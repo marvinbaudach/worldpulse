@@ -407,7 +407,9 @@ export function LoadingScreen({ done, onExited }: LoadingScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const starRef = useRef<HTMLCanvasElement>(null);
   const doneRef = useRef(false);
-  doneRef.current = done;
+  useEffect(() => {
+    doneRef.current = done;
+  }, [done]);
 
   const settled = feedSnapshot.reduce((n, s) => (s === 'pending' ? n : n + 1), 0);
 
