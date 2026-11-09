@@ -69,8 +69,10 @@ describe('useDeviceTilt', () => {
     step();
 
     expect(card.current?.style.transform).toMatch(/rotateY\(.*deg\) rotateX\(.*deg\)/);
-    // Background shifts opposite the deck for parallax.
-    expect(bg.current?.style.transform).toMatch(/translate\(.*px, .*px\)/);
+    // Background shifts opposite the deck for parallax. jsdom's CSSOM
+    // canonicalizes a zero y-offset away, so `translate(x)` and
+    // `translate(x, y)` are both valid serializations here.
+    expect(bg.current?.style.transform).toMatch(/translate\(.*px(?:, .*px)?\)/);
   });
 
   it('drifts toward the target across successive frames', () => {
