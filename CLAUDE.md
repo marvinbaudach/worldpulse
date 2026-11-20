@@ -1,9 +1,10 @@
 # Worldpulse — Agent Guide
 
-3D data carousel: canvas-drawn dashboards on WebGL panels that orbit and morph
-between formations, fed by keyless public APIs. React 19 · React Three Fiber ·
-Three.js · Vite 8 · TypeScript 6 · oxlint. Deploys to GitHub Pages on push to
-`main`.
+Gallery of canvas-drawn data dashboards fed by keyless public APIs: a card grid
+with search, category filter, language switcher and lightbox on desktop
+(`src/desktop/gallery/`), a swipe deck on phones (`src/mobile/`). React 19 ·
+styled-components · Vite 8 · TypeScript · oxlint. Deploys to GitHub Pages on
+push to `main`.
 
 ## Conventions
 
@@ -11,10 +12,6 @@ Three.js · Vite 8 · TypeScript 6 · oxlint. Deploys to GitHub Pages on push to
   identity-assigned categorical palette (never cycled); `SEQ` is the sequential
   ramp for magnitude; `GOOD`/`CRITICAL` are reserved (never series colors). The
   palette is CVD-validated against the `#12151c` surface — don't hand-pick hex.
-- **Animation runs in `useFrame`, never per-frame React state.** Adaptive
-  resolution via drei `PerformanceMonitor`.
-- Formations live in `src/layouts.ts` (`ring`/`helix`/`sphere`), all
-  Y-axis rotation-symmetric. Ring radius/camera/fog scale with panel count.
 - Deterministic PRNG (`rng`/`makeSeries` in `draw.ts`) so demo data is stable
   across visits.
 - UI copy is authored in **German**; code, comments and commit messages are

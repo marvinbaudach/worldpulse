@@ -2,7 +2,7 @@
 
 Vitest + jsdom. The suite targets the **pure logic** that drives features —
 geometry, data math, i18n, persistence — plus a smoke test that renders every
-dashboard card offline. The WebGL/R3F layer and canvas pixels are intentionally
+dashboard card offline. Canvas pixels are intentionally
 not unit-tested (that's visual-regression territory).
 
 ```bash
@@ -37,7 +37,7 @@ used by the card smoke test — no `node-canvas` native build in CI.
 | Filter hooks | `src/hooks/useTagFilter.test.ts`, `useThemeFilter.test.ts` | URL/storage precedence, FAVORITEN chip lifecycle |
 
 The card smoke test is the primary safety net: it catches the most common real
-regression — a card reading `live.x.y` without a fallback and crashing the ring
+regression — a card reading `live.x.y` without a fallback and crashing the gallery
 when a feed is down or slow.
 
 ## Conventions
