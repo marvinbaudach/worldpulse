@@ -48,7 +48,8 @@ export const controlCss = css`
     box-shadow 0.16s ease,
     background 0.16s ease;
 
-  &:hover {
+  /* A busy/disabled control must not light up as if it would respond. */
+  &:hover:not(:disabled):not([aria-disabled='true']) {
     border-color: rgba(${ACCENT_RGB}, 0.7);
   }
   &:focus-visible {

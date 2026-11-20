@@ -127,6 +127,8 @@ test.describe('desktop gallery', () => {
   test('Shift+Tab wraps backwards inside the lightbox, Tab wraps forwards again', async ({
     page,
   }) => {
+    // Short viewport: the info panel overflows, so it is the last tab stop.
+    await page.setViewportSize({ width: 1280, height: 400 });
     await bootWithLocale(page, 'de');
     await page.getByRole('button', { name: /öffnen/ }).first().click();
     const dialog = page.getByRole('dialog', { name: 'Karten-Detailansicht' });
@@ -145,16 +147,33 @@ test.describe('desktop gallery', () => {
     await expect(close).toBeFocused();
   });
 
-  test('the scrollable info panel is reachable by keyboard', async ({ page }) => {
+  test('the info panel is a tab stop only while it scrolls', async ({ page }) => {
+    // Tall viewport first: the whole text fits, so there is nothing to scroll.
+    await page.setViewportSize({ width: 1280, height: 1600 });
     await bootWithLocale(page, 'de');
     await page.getByRole('button', { name: /öffnen/ }).first().click();
     const dialog = page.getByRole('dialog', { name: 'Karten-Detailansicht' });
     const info = dialog.getByRole('region', { name: 'Kartendetails' });
-    await expect(info).toHaveAttribute('tabindex', '0');
+    const close = dialog.getByRole('button', { name: 'Schließen', exact: true });
+    await expect(close).toBeFocused();
+    await expect(info).not.toHaveAttribute('tabindex', /.*/);
 
-    // Close -> PNG -> prev -> next -> info panel.
+    // No dead stop: Shift+Tab from the first stop lands on the last button.
+    await page.keyboard.press('Shift+Tab');
+    await expect(dialog.getByRole('button', { name: 'Weiter' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(close).toBeFocused();
+
+    // Shrinking the viewport makes the panel overflow: it gains the tab stop
+    // (the resize is observed, no reopen needed) and Tab reaches it.
+    await page.setViewportSize({ width: 1280, height: 400 });
+    await expect(info).toHaveAttribute('tabindex', '0');
     await inOrder(Array.from({ length: 4 }, () => () => page.keyboard.press('Tab')));
     await expect(info).toBeFocused();
+
+    // Growing it back drops the stop again.
+    await page.setViewportSize({ width: 1280, height: 1600 });
+    await expect(info).not.toHaveAttribute('tabindex', /.*/);
   });
 
   test('after walking with the arrows, Esc returns focus to the tile of the card shown', async ({
@@ -193,20 +212,74 @@ test.describe('desktop gallery', () => {
     await expect(dialog.getByRole('button', { name: 'Schließen', exact: true })).toBeFocused();
   });
 
-  test('the download button keeps focus while the PNG is being rendered', async ({ page }) => {
+  test('while the PNG renders the download button stays focused, busy and single-shot', async ({
+    page,
+  }) => {
+    // Stall canvas.toBlob (the export's async step) so the busy window lasts
+    // as long as the test needs, and count how many exports were started.
+    await page.addInitScript(() => {
+      const w = window as unknown as {
+        __exports: number;
+        __stalled: Array<() => void>;
+        __release: () => void;
+      };
+      w.__exports = 0;
+      w.__stalled = [];
+      const original = HTMLCanvasElement.prototype.toBlob;
+      HTMLCanvasElement.prototype.toBlob = function (cb, type, quality) {
+        w.__exports += 1;
+        w.__stalled.push(() => original.call(this, cb, type, quality));
+      };
+      w.__release = () => w.__stalled.splice(0).forEach((run) => run());
+    });
+    const exports = (): Promise<number> =>
+      page.evaluate(() => (window as unknown as { __exports: number }).__exports);
+
     await bootWithLocale(page, 'de');
     await page.getByRole('button', { name: /öffnen/ }).first().click();
     const dialog = page.getByRole('dialog', { name: 'Karten-Detailansicht' });
     const png = dialog.getByRole('button', { name: 'Karte als PNG herunterladen' });
     await png.focus();
+    await expect(png).toHaveAttribute('aria-disabled', 'false');
+
+    await page.keyboard.press('Enter');
+    // Busy, but not natively disabled: focus must stay put (a disabled button
+    // drops focus to <body>).
+    await expect(png).toHaveAttribute('aria-disabled', 'true');
+    await expect(png).toBeFocused();
+    expect(await exports()).toBe(1);
+
+    // Activating it again while busy must not start a second export.
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(200);
+    expect(await exports()).toBe(1);
+    await expect(png).toBeFocused();
 
     const download = page.waitForEvent('download');
-    await page.keyboard.press('Enter');
-    // aria-disabled, not disabled: a natively disabled button drops focus to
-    // <body> mid-export, which would also let Esc/Tab misbehave.
-    await expect(png).toBeFocused();
+    await page.evaluate(() => (window as unknown as { __release: () => void }).__release());
     await download;
-    await expect(png).toBeFocused();
     await expect(png).toHaveAttribute('aria-disabled', 'false');
+    await expect(png).toBeFocused();
+    expect(await exports()).toBe(1);
+  });
+
+  test('a held Space opens the lightbox once, on release, and stays open', async ({ page }) => {
+    await bootWithLocale(page, 'de');
+    await page.locator('[data-card-id]').first().focus();
+    const dialog = page.getByRole('dialog', { name: 'Karten-Detailansicht' });
+    const close = dialog.getByRole('button', { name: 'Schließen', exact: true });
+
+    // Space opens on keyup: if it opened on keydown, the keyup would land on
+    // the freshly focused Close button and click it (Space activates buttons
+    // on release), shutting the dialog straight away.
+    await inOrder(Array.from({ length: 6 }, () => () => page.keyboard.down('Space')));
+    await expect(dialog).not.toBeVisible();
+    await page.keyboard.up('Space');
+
+    await expect(dialog).toBeVisible();
+    await page.waitForTimeout(300);
+    await expect(dialog).toBeVisible();
+    await expect(close).toBeFocused();
   });
 });

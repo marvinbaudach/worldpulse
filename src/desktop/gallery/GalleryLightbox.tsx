@@ -183,7 +183,7 @@ const Corner = styled(Button)`
 `;
 
 // Everything Tab can land on inside the dialog: the buttons plus the info
-// panel, which is a scroll region and therefore focusable.
+// panel while it is a focusable scroll region (tabindex is set only then).
 const TAB_STOPS = 'button:not([disabled]), [tabindex="0"]';
 
 /** Keeps Tab / Shift+Tab inside `root`: wraps at either end and pulls focus
@@ -218,6 +218,10 @@ export function GalleryLightbox({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [infoEl, setInfoEl] = useState<HTMLDivElement | null>(null);
+  // The info panel only becomes a tab stop while it actually scrolls; a
+  // non-scrolling panel would be a dead stop with nothing to read by keyboard.
+  const [infoScrolls, setInfoScrolls] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const entry = list[index];
   // The unmount cleanup below runs once, so it reads the card currently shown
@@ -269,6 +273,21 @@ export function GalleryLightbox({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [entry]);
+
+  // Re-measure whether the info panel overflows: for every card (the panel is
+  // keyed by card id, so each one is a fresh element), and whenever the panel
+  // or any block inside it changes size (viewport resize, a locale switch
+  // re-wrapping the text).
+  useLayoutEffect(() => {
+    const info = infoEl;
+    if (!info) return;
+    const measure = (): void => setInfoScrolls(info.scrollHeight > info.clientHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(info);
+    Array.from(info.children).forEach((child) => observer.observe(child));
+    return () => observer.disconnect();
+  }, [infoEl]);
 
   // Locale switches and live-data updates bump redrawToken every time a
   // dataset (or the once-a-second tick) lands. Repaint the settled frame then
@@ -378,7 +397,13 @@ export function GalleryLightbox({
       )}
       <Stage>
         <canvas key={entry.card.id} ref={canvasRef} width={FULL_W} height={FULL_H} />
-        <Info tabIndex={0} role="region" aria-label={tr('Kartendetails')}>
+        <Info
+          key={entryId}
+          ref={setInfoEl}
+          tabIndex={infoScrolls ? 0 : undefined}
+          role="region"
+          aria-label={tr('Kartendetails')}
+        >
           <h2>{tr(entry.card.title)}</h2>
           <p className="meta">{meta}</p>
           {entry.card.detail && (

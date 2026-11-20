@@ -57,9 +57,12 @@ export function GalleryGrid({
 
     if (e.key === 'Enter' || e.key === ' ') {
       if (current >= 0 && list[current]) {
-        e.preventDefault();
-        // A held key must open the card once, not once per repeat.
-        if (!e.repeat) onOpen(list[current]);
+        e.preventDefault(); // also keeps Space from scrolling the page
+        // Enter opens on keydown, once: a held key must not reopen per repeat.
+        // Space opens on keyup instead (handleKeyUp): focus moves to the
+        // lightbox's Close button on open, and a Space keyup landing on a
+        // button clicks it, which would shut the dialog right away.
+        if (e.key === 'Enter' && !e.repeat) onOpen(list[current]);
       }
       return;
     }
@@ -82,8 +85,19 @@ export function GalleryGrid({
     }
   };
 
+  const handleKeyUp = (e: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (!keyboardActive || e.key !== ' ') return;
+    const grid = gridRef.current;
+    if (!grid) return;
+    const current = Array.prototype.indexOf.call(grid.children, document.activeElement);
+    if (current >= 0 && list[current]) {
+      e.preventDefault();
+      onOpen(list[current]);
+    }
+  };
+
   return (
-    <Grid ref={gridRef} $tw={width} onKeyDown={handleKeyDown}>
+    <Grid ref={gridRef} $tw={width} onKeyDown={handleKeyDown} onKeyUp={handleKeyUp}>
       {list.map((entry) => (
         <GalleryThumb
           key={entry.card.id}
