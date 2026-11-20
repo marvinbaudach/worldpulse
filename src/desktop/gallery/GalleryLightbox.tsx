@@ -9,7 +9,7 @@ import { INTRO_S } from '../../dashboards';
 import { downloadCard } from '../../exportCard';
 import { t as tr } from '../../i18n';
 import { drawCard, type CardEntry, type Category } from './galleryData';
-import { Button, INK, DIM, SPACE, UI_FONT, glassPanel } from './galleryChrome';
+import { ACCENT_TEXT, Button, INK, DIM, SPACE, UI_FONT, glassPanel } from './galleryChrome';
 import { ChevronIcon, CloseIcon, DownloadIcon } from './galleryIcons';
 
 const FULL_W = 768;
@@ -110,6 +110,13 @@ const Info = styled.div`
   font: 14px/1.5 ${UI_FONT};
   color: ${INK};
 
+  /* The panel is a keyboard tab stop (it scrolls), so it needs the same
+     visible focus ring as the buttons. */
+  &:focus-visible {
+    outline: 2px solid ${ACCENT_TEXT};
+    outline-offset: 2px;
+  }
+
   h2 {
     font-size: 18px;
     font-weight: 600;
@@ -175,11 +182,15 @@ const Corner = styled(Button)`
   justify-content: flex-start;
 `;
 
+// Everything Tab can land on inside the dialog: the buttons plus the info
+// panel, which is a scroll region and therefore focusable.
+const TAB_STOPS = 'button:not([disabled]), [tabindex="0"]';
+
 /** Keeps Tab / Shift+Tab inside `root`: wraps at either end and pulls focus
     back in if it ever sits outside the dialog. */
 function trapTab(e: KeyboardEvent, root: HTMLElement | null): void {
   if (!root) return;
-  const stops = Array.from(root.querySelectorAll<HTMLElement>('button:not([disabled])'));
+  const stops = Array.from(root.querySelectorAll<HTMLElement>(TAB_STOPS));
   if (stops.length === 0) return;
   const first = stops[0];
   const last = stops[stops.length - 1];
@@ -289,7 +300,11 @@ export function GalleryLightbox({
   // lightbox being closed).
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
+      // A held Enter keeps firing keydown. The one that opened the lightbox
+      // moved focus to the close button, so without this its repeats would
+      // click Close and shut the dialog straight away.
+      if (e.key === 'Enter' && e.repeat) e.preventDefault();
+      else if (e.key === 'Escape') onClose();
       else if (e.key === 'ArrowLeft') onNavigate(-1);
       else if (e.key === 'ArrowRight') onNavigate(1);
       else if (e.key === 'Tab') trapTab(e, dialogRef.current);
@@ -334,7 +349,7 @@ export function GalleryLightbox({
       <Corner
         type="button"
         style={{ top: 58 }}
-        disabled={downloading}
+        aria-disabled={downloading}
         onClick={() => void download()}
         aria-label={tr('Karte als PNG herunterladen')}
       >
@@ -363,7 +378,7 @@ export function GalleryLightbox({
       )}
       <Stage>
         <canvas key={entry.card.id} ref={canvasRef} width={FULL_W} height={FULL_H} />
-        <Info>
+        <Info tabIndex={0} role="region" aria-label={tr('Kartendetails')}>
           <h2>{tr(entry.card.title)}</h2>
           <p className="meta">{meta}</p>
           {entry.card.detail && (

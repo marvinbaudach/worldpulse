@@ -58,7 +58,8 @@ export function GalleryGrid({
     if (e.key === 'Enter' || e.key === ' ') {
       if (current >= 0 && list[current]) {
         e.preventDefault();
-        onOpen(list[current]);
+        // A held key must open the card once, not once per repeat.
+        if (!e.repeat) onOpen(list[current]);
       }
       return;
     }

@@ -2236,6 +2236,7 @@ export const FR: Record<MessageKey, string> & Record<string, string> = {
   'alle': 'toutes',
   'öffnen': 'ouvrir',
   'Karten-Detailansicht': 'Vue détaillée de la carte',
+  'Kartendetails': 'Détails de la carte',
   'Karte als PNG herunterladen': 'Télécharger la carte en PNG',
   'Zurück': 'Retour',
   'Weiter': 'Suivant',

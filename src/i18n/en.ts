@@ -2166,6 +2166,7 @@ export const EN = {
   'alle': 'all',
   'öffnen': 'open',
   'Karten-Detailansicht': 'Card detail view',
+  'Kartendetails': 'Card details',
   'Karte als PNG herunterladen': 'Download card as PNG',
   'Zurück': 'Back',
   'Weiter': 'Next',

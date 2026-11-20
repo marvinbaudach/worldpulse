@@ -2219,6 +2219,7 @@ export const IT: Record<MessageKey, string> & Record<string, string> = {
   'alle': 'tutte',
   'öffnen': 'aprire',
   'Karten-Detailansicht': 'Vista dettagliata della scheda',
+  'Kartendetails': 'Dettagli della scheda',
   'Karte als PNG herunterladen': 'Scarica la scheda in PNG',
   'Zurück': 'Indietro',
   'Weiter': 'Avanti',

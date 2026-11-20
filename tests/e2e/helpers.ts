@@ -35,3 +35,8 @@ export function actionsToggle(page: Page): Locator {
 export async function expectHtmlLang(page: Page, locale: string): Promise<void> {
   await expect(page.locator('html')).toHaveAttribute('lang', locale);
 }
+
+/** Run async steps strictly one after another (key presses must not overlap). */
+export async function inOrder(steps: ReadonlyArray<() => Promise<unknown>>): Promise<void> {
+  await steps.reduce<Promise<unknown>>((prev, step) => prev.then(step), Promise.resolve());
+}

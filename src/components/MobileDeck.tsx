@@ -88,14 +88,17 @@ const Hint = styled.div<{ $gone: boolean }>`
   /* On phones the bottom-right action cluster (⋯ and the favorite star, 52px
      each with a 12px gap, inset 16px: 132px from the edge) would cover a
      centered pill. Dock the hint to the left edge and keep it clear of that
-     cluster; it truncates rather than slide under a button on the narrowest
-     screens. */
+     cluster; the longer FR/IT copy wraps onto a second line rather than
+     truncate or slide under a button on the narrowest screens. */
   @media (max-width: 520px) {
     left: 16px;
     transform: none;
     max-width: calc(100vw - 16px - 148px);
-    overflow: hidden;
-    text-overflow: ellipsis;
+    padding: 7px 14px;
+    border-radius: 20px;
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
   }
 `;
 

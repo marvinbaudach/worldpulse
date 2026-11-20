@@ -70,7 +70,10 @@ export const Button = styled.button`
   align-items: center;
   gap: 6px;
 
-  &:disabled {
+  /* aria-disabled keeps a busy button focusable (a native :disabled drops
+     focus to <body>), so both states look the same. */
+  &:disabled,
+  &[aria-disabled='true'] {
     opacity: 0.5;
     cursor: progress;
   }
