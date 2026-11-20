@@ -220,8 +220,9 @@ export function GalleryLightbox({
   // Paint before the browser shows the frame, so a navigation never flashes a
   // blank canvas — then replay the deck's fly-in: sweep the draw progress `t`
   // from 0 to the settled frame, on open and on every prev/next step (the
-  // effect re-runs per entry; the canvas is keyed on index below so the CSS
-  // fade restarts too). Reduced motion keeps the instant settled frame.
+  // effect re-runs per entry; the canvas is keyed on the card id below, so the
+  // CSS fade restarts too and a list change that only shifts the index keeps
+  // the painted canvas). Reduced motion keeps the instant settled frame.
   const isSettled = useRef(false);
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
@@ -269,14 +270,16 @@ export function GalleryLightbox({
 
   // Focus belongs to the dialog while it is open: it lands on the close button,
   // and goes back to the tile of the card on show when the lightbox unmounts
-  // (the opener if that tile is gone, else the first tile).
+  // (the opener if that tile is gone, else the first tile, else the empty
+  // state's reset button when the filter left no tiles at all).
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeRef.current?.focus();
     return () => {
       const tiles = document.querySelectorAll<HTMLElement>('[data-card-id]');
       const current = Array.from(tiles).find((tile) => tile.dataset.cardId === currentId.current);
-      const target = current ?? (opener?.isConnected ? opener : tiles[0]);
+      const resetButton = document.querySelector<HTMLElement>('[data-empty-reset]');
+      const target = current ?? (opener?.isConnected ? opener : (tiles[0] ?? resetButton));
       target?.focus();
     };
   }, []);
@@ -359,7 +362,7 @@ export function GalleryLightbox({
         </>
       )}
       <Stage>
-        <canvas key={index} ref={canvasRef} width={FULL_W} height={FULL_H} />
+        <canvas key={entry.card.id} ref={canvasRef} width={FULL_W} height={FULL_H} />
         <Info>
           <h2>{tr(entry.card.title)}</h2>
           <p className="meta">{meta}</p>

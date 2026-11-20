@@ -80,4 +80,22 @@ test.describe('desktop gallery', () => {
     await expect(dialog).not.toBeVisible();
     await expect(tile).toBeFocused();
   });
+
+  test('focus lands on the reset button when the open card filters away to an empty list', async ({
+    page,
+  }) => {
+    await bootWithLocale(page, 'de');
+    await page
+      .getByRole('button', { name: /öffnen/ })
+      .first()
+      .click();
+    const dialog = page.getByRole('dialog', { name: 'Karten-Detailansicht' });
+    await expect(dialog).toBeVisible();
+
+    // fill() skips the hit-target check, so the search box behind the overlay
+    // is still reachable; no card matches, so the lightbox closes on its own.
+    await page.getByPlaceholder('Suche…').fill('qqqzzz');
+    await expect(dialog).not.toBeVisible();
+    await expect(page.getByRole('button', { name: 'Filter zurücksetzen' })).toBeFocused();
+  });
 });

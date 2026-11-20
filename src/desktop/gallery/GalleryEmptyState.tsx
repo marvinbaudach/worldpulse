@@ -141,7 +141,7 @@ export function GalleryEmptyState({ query, categoryLabel, onReset }: GalleryEmpt
           {tr('Kein Treffer für')} {parts.join(' · ')}
         </Hint>
       )}
-      <Button type="button" onClick={onReset}>
+      <Button type="button" data-empty-reset onClick={onReset}>
         {tr('Filter zurücksetzen')}
       </Button>
     </Wrap>
