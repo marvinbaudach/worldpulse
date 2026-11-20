@@ -1,7 +1,7 @@
 import type { Ref } from 'react';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
 
-// CSS counterpart of the desktop aurora: the mobile path has no WebGL, so the
+// CSS counterpart of MobileAurora, used when WebGL is unavailable: the
 // "room changes mood" read comes from two big radial-gradient blobs drifting
 // via transform (compositor-only, no per-frame JS). The tint is a registered
 // CSS custom property (@property with a <color> syntax), so the browser can

@@ -6,8 +6,9 @@ description: Use when adding, reworking, or removing a Worldpulse dashboard card
 # Creating Dashboard Cards
 
 The routine for taking a Worldpulse card from idea to verified. Six phases, each
-with a gate you do not skip. The pipeline is one-directional (data → texture →
-3D); read `CLAUDE.md` "Architecture" and "Adding a dashboard card" first.
+with a gate you do not skip. The pipeline is one-directional (data → card
+`draw()` → 2D canvas); read `CLAUDE.md` first (Conventions, Gotchas, Data
+integrity).
 
 **Core rule:** propose before you build, verify on real surfaces before you claim
 done. Never fabricate data — every `live.*` read needs a real bundled/seeded
@@ -39,13 +40,13 @@ choices (which cards, chart variant, featured or not, live vs. static).
 before this.
 
 ### 3. Implementation
-Follow the `CLAUDE.md` "Adding a dashboard card" checklist exactly:
+Follow this checklist exactly:
 
 1. Add the definition to `POOL` in `src/dashboards/cards.ts`. Build the chart
    config **inside `draw`** (never above it) so it reads live data per-frame.
    Provide a fallback for every `live.*` read.
 2. Register tags in `TAGS_BY_ID` in `src/dashboards/index.ts`; add to `FEATURED`
-   if it should lead the ring.
+   if it should lead its theme.
 3. Live-fetched → `dynamic: true`. Keeps moving while idle → `live: true`. Purely
    bundled → leave both off.
 4. New live source → add fetcher + `LIVE_FEEDS` entry in `data/sources.ts` and a
@@ -93,7 +94,7 @@ card throws or paints nothing — your new card is covered automatically.
 **Gate:** full suite green, including your new helper tests.
 
 ### 6. Headless verification — mobile AND desktop
-The app picks the renderer via `useIsMobile` — breakpoint
+The app picks the view via `useIsMobile` — breakpoint
 `(max-width: 820px), (pointer: coarse)`. Both paths must be seen, not assumed:
 
 ```bash
@@ -101,17 +102,17 @@ npm run dev &    # vite on :5173
 ```
 Then drive Chrome headless (`use_browser`, see the browsing/browser-qa skills):
 
-- **Desktop** — viewport ~1440×900 → `Carousel3D` (WebGL). Confirm the ring
-  renders, the new card appears, console has no errors. Screenshot.
+- **Desktop** — viewport ~1440×900 → the gallery (`src/desktop/gallery/`). Find
+  the new card with the search box or the category filter, confirm its thumbnail
+  paints, open it in the lightbox, console has no errors. Screenshot.
 - **Mobile** — viewport ~390×844 (≤820 triggers the coarse path) → `MobileDeck`
-  (2D canvas, no WebGL). Confirm the card renders there too. Screenshot.
-- Toggle live data (or open the in-app dev gallery — the **⧉ Gallery** button
-  bottom-left, or press **`g`**, desktop dev only — which renders every card
-  with a live toggle and lightbox) to confirm both the live and offline looks.
+  (swipe deck). Confirm the card renders there too. Screenshot.
+- Check both the live and the offline look (block the card's API host to see the
+  bundled fallback).
 - **Eyeball the colors on the actual dark surface:** every series is distinct
-  from its neighbours and from the background, no two look the same at ring-panel
-  size, labels are readable. If a pair blurs together, re-pick `SERIES` slots or
-  lean on direct labels — do not tweak hex.
+  from its neighbours and from the background, no two look the same at gallery
+  thumbnail size, labels are readable. If a pair blurs together, re-pick
+  `SERIES` slots or lean on direct labels — do not tweak hex.
 
 **Gate:** both surfaces screenshotted, no console errors, card legible and its
 colors clearly distinguishable on each. Only now is the card done.
@@ -123,8 +124,8 @@ colors clearly distinguishable on each. Only now is the card done.
 | Lint | `npm run lint` | oxlint error |
 | Build | `npm run build` | type or bundle error (CI gate) |
 | Test | `npm run test` | card throws/paints nothing, i18n gap |
-| Card QA | in-app gallery: ⧉ Gallery / `g` (desktop dev) | new card looks wrong in the grid |
-| App | `npm run dev` → :5173 | ring/deck broken at either viewport |
+| Card QA | gallery grid + lightbox (desktop), swipe deck (mobile) | new card looks wrong in either view |
+| App | `npm run dev` → :5173 | gallery/deck broken at either viewport |
 
 ## Common mistakes
 
@@ -132,12 +133,13 @@ colors clearly distinguishable on each. Only now is the card done.
   before any code — cheaper to iterate on a proposal. [[present-cards-before-building]]
 - **Building the chart config above `draw`.** It then captures stale/undefined
   live data and never updates per-frame. Always inside `draw`.
-- **No fallback for a `live.*` read.** The ring looks broken offline and the
+- **No fallback for a `live.*` read.** The card looks broken offline and the
   smoke test may pass while the real app doesn't. Every read falls back.
 - **Overlaying bundled onto live to fake a delta.** `bundled.ts` is an offline
   fallback, not an override. Never mix them into one figure.
-- **Verifying desktop only.** Mobile is a separate 2D renderer (`MobileDeck`) —
-  a card can render on WebGL and break on the phone canvas. Check both.
+- **Verifying desktop only.** Mobile is a separate view (`MobileDeck`) with
+  its own canvas size and reference width — a card can look right in the
+  gallery and break on the phone. Check both.
 - **Hand-picking hex.** Colors come from `theme.ts` (`SERIES`/`SEQ`/`GOOD`/
   `CRITICAL`) only — the palette is CVD-validated for ≥3:1 on `#12151c`.
 - **Colors that blur together.** Adjacent/compared series drawn in near-hues, or

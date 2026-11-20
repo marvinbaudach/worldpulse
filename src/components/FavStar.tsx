@@ -1,5 +1,5 @@
-// The star glyph inside the favorite toggles (hero footer + the mobile deck's
-// action pill), with the app-like feedback baked in: starring pops the star
+// The star glyph inside the favorite toggles (the mobile deck's action
+// pill), with the app-like feedback baked in: starring pops the star
 // with a springy overshoot and fires an expanding gold ring; un-starring gives
 // a quick dip. The animation only plays on an actual toggle — swiping to
 // another card that happens to be starred re-renders silently (the pill is one

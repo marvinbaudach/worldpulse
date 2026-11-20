@@ -57,7 +57,7 @@ export function wealthSplit(f: Frame, cfg: WealthSplitCfg): void {
   const yPop = top + 46 * u;
   // The card must hold flow band, wealth bar, axis caption, legend and (on
   // non-compact frames) the source footer. The flow band is the elastic
-  // part: full 170u on the tall ring panels, compressed on the short mobile
+  // part: full 170u on the tall gallery cards, compressed on the short mobile
   // cards — with a floor so the widening-band story stays readable.
   const bottomRoom = f.compact ? 14 * u : 40 * u;
   const legendGap = 62 * u;

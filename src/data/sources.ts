@@ -3,11 +3,11 @@
 // spend, population, homicide) and the US Treasury (debt). Each fetcher
 // derives the draw-ready shape, caches it (see cache.ts) and writes it into
 // the store; failures are logged and swallowed so one dead API never takes
-// down the ring. Series math lives in series.ts, the bundled historical
+// down the gallery. Series math lives in series.ts, the bundled historical
 // datasets and fallbacks in bundled.ts.
 
 import { localeNum, t as tr } from '../i18n';
-import { cached, fetchJson } from './cache';
+import { cached, fetchJson, sweepLegacyCache } from './cache';
 import { baselineTrend, niceScale, norm, trend } from './series';
 import { CH_CENSUS, WORLD_HISTORY, debtTrend } from './bundled';
 import { emitLiveUpdate, live } from './store';
@@ -557,7 +557,7 @@ export const LIVE_FEEDS: LiveFeed[] = [
     beside `live`, so the loader can poll it without a subscription (and so a
     localStorage-cached feed that settled before the loader mounted is still
     counted). `failed` still advances progress; a dead source must never stall
-    the ring. */
+    the loader. */
 export type FeedState = 'pending' | 'ok' | 'failed';
 export const feedStates: FeedState[] = LIVE_FEEDS.map(() => 'pending');
 
@@ -572,6 +572,7 @@ let started = false;
 export function loadLiveData(): void {
   if (started) return; // StrictMode double-mount guard
   started = true;
+  sweepLegacyCache();
   // The country outlines ship in the bundle — no fetch, no failure mode.
   live.worldMap = WORLD;
   // Heartbeat for the "live" panels (debt clock): re-render once a second.

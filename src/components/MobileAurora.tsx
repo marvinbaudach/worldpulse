@@ -1,11 +1,11 @@
 import { useEffect, useRef, type Ref } from 'react';
 import styled from 'styled-components';
 
-// The desktop aurora, ported to a raw WebGL quad for the mobile deck: same
-// domain-warped fbm flow and theme tint, but no three.js/R3F overhead and no
-// star layers (they pixelate at this resolution). The nebula is soft, so it
-// renders into a small backing store (RES_CAP wide) and lets the browser
-// upscale — a fraction of the fill-rate of a native-resolution pass.
+// A raw WebGL quad aurora for the mobile deck: a domain-warped fbm flow with
+// a theme tint, no three.js/R3F overhead and no star layers (they pixelate at
+// this resolution). The nebula is soft, so it renders into a small backing
+// store (RES_CAP wide) and lets the browser upscale — a fraction of the
+// fill-rate of a native-resolution pass.
 // Callers must WebGL-check first (see hasWebGL) and fall back to the CSS
 // blob background (MobileBackground) when unavailable or when the user
 // prefers reduced motion.

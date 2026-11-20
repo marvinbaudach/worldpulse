@@ -39,7 +39,7 @@ const MARKER_REVEAL_FADE = 0.06;
  * line — at x-fraction `progress` — reaches its position, then fades in over
  * `MARKER_REVEAL_FADE`, so events appear as the curve arrives at them instead
  * of all at once. Collision layout is computed for every marker regardless of
- * reveal, so labels never shift as later ones fade in. Elsewhere (ring/hero,
+ * reveal, so labels never shift as later ones fade in. Elsewhere (the gallery,
  * or when `progress` is omitted) every marker draws solid.
  */
 export function drawEraMarkers(

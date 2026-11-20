@@ -11,33 +11,29 @@ import { SERIES } from './theme';
 export { type Dashboard, SETTLED_T, INTRO_S } from './types';
 
 /**
- * Filter chips shown in the bottom bar, in display order. Each theme carries
- * an accent from the categorical palette (never hand-picked hex — see
- * theme.ts): the gallery backdrop tints its ambience toward it, so switching
- * themes reads as a mood change, not just a card swap.
- *
- * `primary` themes render as always-visible chips in the desktop bar; the
- * rest live in its "MEHR" popover so the bar stays a fixed width no matter
- * how many themes the pool grows. Mobile's ThemeSheet ignores the flag and
- * lists everything.
+ * Themes, in display order: the options of the gallery toolbar's category
+ * select and the mobile ThemeSheet's chips. Each theme carries an accent from
+ * the categorical palette (never hand-picked hex — see theme.ts): the gallery
+ * backdrop tints its ambience toward it, so switching themes reads as a mood
+ * change, not just a card swap.
  */
-export const TAGS: { id: string; label: string; accent: string; primary?: boolean }[] = [
-  // TECH leads the bar. Shares violet with FREIHEIT — the palette is fixed
+export const TAGS: { id: string; label: string; accent: string }[] = [
+  // TECH leads the list. Shares violet with FREIHEIT — the palette is fixed
   // (CVD-validated, all 8 categorical slots taken), never extended by hand.
-  { id: 'tech', label: 'TECH', accent: SERIES[4], primary: true }, // violet
-  { id: 'geld', label: 'GELD', accent: SERIES[2], primary: true }, // gold
-  { id: 'krieg', label: 'KRIEG', accent: SERIES[5], primary: true }, // red
-  { id: 'deutschland', label: 'DEUTSCHLAND', accent: SERIES[7], primary: true }, // orange
-  { id: 'soziales', label: 'SOZIALES', accent: SERIES[6], primary: true }, // magenta
-  { id: 'freiheit', label: 'FREIHEIT', accent: SERIES[4], primary: true }, // violet
+  { id: 'tech', label: 'TECH', accent: SERIES[4] }, // violet
+  { id: 'geld', label: 'GELD', accent: SERIES[2] }, // gold
+  { id: 'krieg', label: 'KRIEG', accent: SERIES[5] }, // red
+  { id: 'deutschland', label: 'DEUTSCHLAND', accent: SERIES[7] }, // orange
+  { id: 'soziales', label: 'SOZIALES', accent: SERIES[6] }, // magenta
+  { id: 'freiheit', label: 'FREIHEIT', accent: SERIES[4] }, // violet
   { id: 'gesundheit', label: 'GESUNDHEIT', accent: SERIES[1] }, // aqua
   // Pandemic dossier: everything COVID — measures, vaccinations, excess
   // mortality. Shares aqua with GESUNDHEIT (the palette is fixed).
   { id: 'corona', label: 'CORONA', accent: SERIES[1] }, // aqua
   { id: 'welt', label: 'WELT', accent: SERIES[0] }, // blue
   // Personal stack: gets its cards from the favorites store at runtime, so it
-  // has no static pool entry. Shares gold with GELD —
-  // the palette is fixed (CVD-validated), and gold matches the star.
+  // has no static pool entry. Shares gold with GELD — the palette is fixed
+  // (CVD-validated), and gold matches the star.
   { id: 'favoriten', label: 'FAVORITEN', accent: SERIES[2] }, // gold
 ];
 

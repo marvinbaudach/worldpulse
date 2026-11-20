@@ -2,7 +2,7 @@
 // draw closures read from `live` on every frame, so a panel picks up real
 // data the moment its fetcher resolves; subscribers re-render the settled
 // textures. Fields stay undefined when a source fails — the charts then keep
-// their procedural fallback data, so the ring never looks broken offline.
+// their procedural fallback data, so a card never looks broken offline.
 
 /** Normalized series plus everything the chart needs around it. */
 export interface TrendSeries {

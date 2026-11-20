@@ -1,5 +1,5 @@
 // Central source registry — the single place that says where each card's data
-// comes from. The per-card source caption (desktop hero footer + mobile deck)
+// comes from. The per-card source caption (desktop lightbox + mobile deck)
 // reads from here, so a source is written once.
 //
 // `S` is the institution registry (name + official link); `CARD_SOURCES` maps a

@@ -8,7 +8,7 @@ import { createFakeContext } from '../test/fakeCanvas';
 // (independent of the tag-clustering that builds ALL_DASHBOARDS).
 const CARDS: Dashboard[] = Object.values(DASHBOARDS_BY_ID);
 
-// A ring-panel-sized frame (512px reference → u = 1). No live data is loaded,
+// A card-sized frame (512px reference → u = 1). No live data is loaded,
 // so each card must fall back to its bundled/seeded series to render — which is
 // exactly the offline path we want to guarantee never throws.
 function frameAt(t: number): Frame & { ctx: ReturnType<typeof createFakeContext> } {

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { cached, clearDataCache, fetchJson } from './cache';
+import { cached, clearDataCache, fetchJson, sweepLegacyCache } from './cache';
 
 const PREFIX = 'gallery:data:v1:';
 
@@ -47,6 +47,20 @@ describe('clearDataCache', () => {
     clearDataCache();
     expect(localStorage.getItem(`${PREFIX}a`)).toBeNull();
     expect(localStorage.getItem(`${PREFIX}b`)).toBeNull();
+    expect(localStorage.getItem('worldpulse-favorites')).toBe('keep-me');
+  });
+});
+
+describe('sweepLegacyCache', () => {
+  it('removes carousel3d: entries and leaves current and unrelated keys alone', () => {
+    localStorage.setItem('carousel3d:data:v1:a', '1');
+    localStorage.setItem('carousel3d:data:v1:b', '2');
+    localStorage.setItem(`${PREFIX}k`, 'current');
+    localStorage.setItem('worldpulse-favorites', 'keep-me');
+    sweepLegacyCache();
+    expect(localStorage.getItem('carousel3d:data:v1:a')).toBeNull();
+    expect(localStorage.getItem('carousel3d:data:v1:b')).toBeNull();
+    expect(localStorage.getItem(`${PREFIX}k`)).toBe('current');
     expect(localStorage.getItem('worldpulse-favorites')).toBe('keep-me');
   });
 });

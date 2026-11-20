@@ -3,6 +3,9 @@
 // the network entirely, which keeps the free public APIs' rate limits happy.
 
 const PREFIX = 'gallery:data:v1:';
+// The prefix this cache used while the app was a 3D carousel. Nothing reads
+// those entries any more; sweepLegacyCache() drops them once per page load.
+const LEGACY_PREFIX = 'carousel3d:';
 
 export async function cached<T>(
   key: string,
@@ -34,16 +37,25 @@ export async function fetchJson<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** Drop every cached derived dataset — a user-initiated refresh must hit the
-    network, not the TTL cache. */
-export function clearDataCache(): void {
+function removeByPrefix(prefix: string): void {
   try {
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k?.startsWith(PREFIX)) localStorage.removeItem(k);
+      if (k?.startsWith(prefix)) localStorage.removeItem(k);
     }
   } catch {
     // Storage blocked (lockdown/private mode) — nothing was cached then, so
-    // the refresh proceeds against the network anyway; same style as cached().
+    // there is nothing to remove; same style as cached().
   }
+}
+
+/** Drop every cached derived dataset — a user-initiated refresh must hit the
+    network, not the TTL cache. */
+export function clearDataCache(): void {
+  removeByPrefix(PREFIX);
+}
+
+/** Remove entries left behind by the pre-gallery cache prefix. */
+export function sweepLegacyCache(): void {
+  removeByPrefix(LEGACY_PREFIX);
 }
