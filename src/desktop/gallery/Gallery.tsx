@@ -10,6 +10,8 @@ import { LOCALE, onLocaleChange, setLocale, type Locale } from '../../i18n';
 import {
   buildEntries,
   filterSort,
+  indexOfId,
+  stepId,
   CATEGORIES,
   type CardEntry,
   type Category,
@@ -141,19 +143,22 @@ export default function Gallery({ onAccentChange }: GalleryProps) {
     changeCategory('');
   }, [changeCategory]);
 
-  // Lightbox: an index into the current filtered list (null = closed).
-  const [lbIndex, setLbIndex] = useState<number | null>(null);
-  const openCard = useCallback((entry: CardEntry) => setLbIndex(list.indexOf(entry)), [list]);
+  // Lightbox: tracks the card by id (null = closed) and resolves its position
+  // in the current filtered list. An index would drift onto a different card
+  // whenever a locale switch re-filters the list under an open lightbox.
+  const [lbId, setLbId] = useState<string | null>(null);
+  const lbIndex = useMemo(() => indexOfId(list, lbId), [list, lbId]);
+  const openCard = useCallback((entry: CardEntry) => setLbId(entry.card.id), []);
   const navigate = useCallback(
-    (delta: number) =>
-      setLbIndex((i) => (i === null ? i : (i + delta + list.length) % list.length)),
-    [list.length],
+    (delta: number) => setLbId((id) => stepId(list, id, delta) ?? id),
+    [list],
   );
-  const closeLightbox = useCallback(() => setLbIndex(null), []);
-  // Filtering can shrink the list under an open lightbox — keep the index valid.
+  const closeLightbox = useCallback(() => setLbId(null), []);
+  // The card on show can drop out of the list (re-filtered away): close rather
+  // than hold a stale id that would pop back open when the card returns.
   useEffect(() => {
-    setLbIndex((i) => (i !== null && i >= list.length ? (list.length ? list.length - 1 : null) : i));
-  }, [list.length]);
+    if (lbId !== null && lbIndex < 0) setLbId(null);
+  }, [lbId, lbIndex]);
 
   const [menu, setMenu] = useState<CardMenuState | null>(null);
   const openMenu = useCallback(
@@ -200,17 +205,17 @@ export default function Gallery({ onAccentChange }: GalleryProps) {
             width={size}
             height={height}
             redrawToken={redrawToken}
-            keyboardActive={lbIndex === null}
+            keyboardActive={lbId === null}
             onOpen={openCard}
             onContextMenu={openMenu}
             onRendered={onThumbRendered}
           />
         )}
       </Scroll>
-      {lbIndex !== null && list.length > 0 && (
+      {lbIndex >= 0 && (
         <GalleryLightbox
           list={list}
-          index={Math.min(lbIndex, list.length - 1)}
+          index={lbIndex}
           redrawToken={redrawToken}
           categoryOf={categoryOf}
           onClose={closeLightbox}

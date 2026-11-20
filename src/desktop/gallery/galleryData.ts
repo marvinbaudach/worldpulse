@@ -4,7 +4,7 @@
 // part of the app bundle — DevGallery is code-split behind import.meta.env.DEV.
 
 import { POOL } from '../../dashboards/cards';
-import { t as tr } from '../../i18n';
+import { tQuiet } from '../../i18n';
 // Importing the registry runs its side effects, which assign `tags` and `added`
 // onto the very POOL objects read below (ES modules share one instance), so the
 // gallery sees the same metadata the app does.
@@ -45,6 +45,21 @@ export function buildEntries(): CardEntry[] {
   }));
 }
 
+/** Position of the card with `id` in `list`, or -1 when it is not (or no
+    longer) part of it. The lightbox tracks its card by id and resolves the
+    index here, so a reorder or re-filter never swaps the card on show. */
+export function indexOfId(list: readonly CardEntry[], id: string | null): number {
+  return id === null ? -1 : list.findIndex((e) => e.card.id === id);
+}
+
+/** The id `delta` steps from `id` in `list`, wrapping at both ends; null when
+    `id` is not in the list. */
+export function stepId(list: readonly CardEntry[], id: string | null, delta: number): string | null {
+  const i = indexOfId(list, id);
+  if (i < 0) return null;
+  return list[(i + delta + list.length) % list.length].card.id;
+}
+
 export type SortKey = 'newest' | 'category' | 'id';
 
 export interface FilterState {
@@ -62,7 +77,7 @@ export function filterSort(entries: CardEntry[], s: FilterState): CardEntry[] {
     return (
       e.card.id.toLowerCase().includes(q) ||
       e.card.title.toLowerCase().includes(q) ||
-      tr(e.card.title).toLowerCase().includes(q)
+      tQuiet(e.card.title).toLowerCase().includes(q)
     );
   });
 

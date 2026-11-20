@@ -134,13 +134,9 @@ export async function setLocale(next: Locale): Promise<void> {
   listeners.forEach((fn) => fn(next));
 }
 
-/**
- * Translate a German UI string into the active locale. Falls back to
- * translating the ' · '-separated segments individually, so composed labels
- * like `Militärausgaben · 2025` still resolve their static parts while the
- * dynamic parts (years, numbers) pass through untouched.
- */
-export function t(s: string): string {
+/** Shared lookup behind `t()` and `tQuiet()`. `report` decides whether a miss
+    is handed to the test recorder. */
+function translate(s: string, report: boolean): string {
   if (LOCALE === 'de' || !s) return s;
   const dict = activeDict;
   if (!dict) return s;
@@ -148,11 +144,28 @@ export function t(s: string): string {
   if (hit) return hit;
   if (s.includes(' · ')) {
     const segs = s.split(' · ');
-    if (missRecorder) missRecorder(s, segs.filter((seg) => !dict[seg]));
+    if (report && missRecorder) missRecorder(s, segs.filter((seg) => !dict[seg]));
     return segs.map((seg) => dict[seg] ?? seg).join(' · ');
   }
-  if (missRecorder) missRecorder(s, [s]);
+  if (report && missRecorder) missRecorder(s, [s]);
   return s;
+}
+
+/**
+ * Translate a German UI string into the active locale. Falls back to
+ * translating the ' · '-separated segments individually, so composed labels
+ * like `Militärausgaben · 2025` still resolve their static parts while the
+ * dynamic parts (years, numbers) pass through untouched.
+ */
+export function t(s: string): string {
+  return translate(s, true);
+}
+
+/** `t()` for lookups that are not rendered copy (the gallery search matches
+    against translated titles on every keystroke). Resolves identically but
+    never feeds the miss recorder, so such probes cannot flood the report. */
+export function tQuiet(s: string): string {
+  return translate(s, false);
 }
 
 /** Locale-aware integer with thousands separators (12183 → "12.183"/"12,183"). */
