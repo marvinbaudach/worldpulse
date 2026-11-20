@@ -91,7 +91,7 @@ export function CardCanvas({ dashboard, animate, restT = SETTLED_T, onColor }: C
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const draw = (t: number) => {
       // Layout size, not getBoundingClientRect(): the intro can replay while
-      // the card is mid-drag with rotate/rotateY transforms applied, and the
+      // the card is mid-swipe with rotate/rotateY transforms applied, and the
       // transformed bounding box changes every frame — reallocating the
       // backing store and jumping `u`. clientWidth/Height ignore transforms.
       const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
@@ -126,7 +126,7 @@ export function CardCanvas({ dashboard, animate, restT = SETTLED_T, onColor }: C
     }
 
     // Live cards keep counting (the once-a-second tick) and dynamic cards
-    // repaint when a dataset lands — the same triggers the WebGL ring uses.
+    // repaint when a dataset lands.
     // Guarded on `settled` so an update never interrupts the intro replay;
     // waiting neighbours (restT 0) are excluded too — they hold their empty
     // start frame until they land and play the intro themselves.
@@ -149,8 +149,8 @@ export function CardCanvas({ dashboard, animate, restT = SETTLED_T, onColor }: C
   }, [dashboard, animate, restT, onColor]);
 
   // pan-x so a horizontal swipe still scrolls the pager: the global canvas
-  // rule sets touch-action:none for the 3D drag, which would otherwise trap
-  // the swipe on the card.
+  // rule sets touch-action:none, which would otherwise trap the swipe on the
+  // card.
   return (
     <canvas
       ref={canvasRef}

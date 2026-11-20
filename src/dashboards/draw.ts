@@ -84,35 +84,18 @@ export interface Frame {
   sourceDrawn?: boolean;
   /** PNG export: the poster is a standalone full-bleed rectangle, so skip the
       edge-light rim — that rounded inner frame only exists to lift a panel off
-      the 3D backdrop, and reads as a stray border on a shared image. */
+      the gallery backdrop, and reads as a stray border on a shared image. */
   bleed?: boolean;
-  /** Ring panels on desktop sit on a frosted transmission pane (FrostPlate):
-      the surface is filled translucent so the blurred scene glows through the
-      card face — the macOS material look. Ink and charts stay fully opaque.
-      Off for mobile (no frost pane — the raw scene would show through sharp),
-      the hero (focused = opaque, and only the scrim is behind it) and export. */
-  frost?: boolean;
 }
 
-// How much of the card face is tint vs. blurred backdrop. macOS dark
-// materials sit around 80–90 % tint; below ~0.85 the bright aurora starts
-// washing out chart contrast at a distance, above ~0.92 the glass stops
-// reading. Kept near the top of that band — legibility wins over sparkle.
-const FROST_SURFACE_ALPHA = 0.9;
-
 /** Panel background: soft vertical gradient, a faint top light, and a hairline
-    edge rim. The rim keeps the panel's silhouette crisp against the dark space
-    now that the surface itself is nearly black — without it a card at the back
-    of the ring would dissolve into the starfield. */
-export function drawSurface({ ctx, w, h, bleed, frost }: Frame): void {
-  // A translucent fill no longer overwrites the previous frame — clear first
-  // so live-tick redraws don't accumulate ghosted ink.
-  if (frost) ctx.clearRect(0, 0, w, h);
+    edge rim. The rim keeps the panel's silhouette crisp against the dark
+    backdrop now that the surface itself is nearly black. */
+export function drawSurface({ ctx, w, h, bleed }: Frame): void {
   const g = ctx.createLinearGradient(0, 0, 0, h);
   g.addColorStop(0, SURFACE);
   g.addColorStop(1, SURFACE_DEEP);
   ctx.fillStyle = g;
-  if (frost) ctx.globalAlpha = FROST_SURFACE_ALPHA;
   ctx.fillRect(0, 0, w, h);
   ctx.globalAlpha = 1;
   const sheen = ctx.createLinearGradient(0, 0, 0, h * 0.18);

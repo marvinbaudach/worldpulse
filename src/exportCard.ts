@@ -5,7 +5,7 @@ import type { Frame } from './dashboards/draw';
 
 // Card → PNG: the chart renderers are pure functions of (ctx, size, t), so an
 // export is just one settled draw into an offscreen canvas at poster size.
-// 1080×1350 (4:5) matches the ring panels' aspect and posts cleanly.
+// 1080×1350 (4:5) matches the cards' aspect and posts cleanly.
 const EXPORT_W = 1080;
 const EXPORT_H = 1350;
 

@@ -2,7 +2,7 @@
 // payloads — the USGS feed alone is megabytes). Reloads within the TTL skip
 // the network entirely, which keeps the free public APIs' rate limits happy.
 
-const PREFIX = 'carousel3d:data:v1:';
+const PREFIX = 'gallery:data:v1:';
 
 export async function cached<T>(
   key: string,

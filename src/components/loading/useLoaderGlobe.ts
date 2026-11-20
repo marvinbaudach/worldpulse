@@ -93,7 +93,7 @@ interface GlobeRefs {
  * particle graticule (equator + two meridians) gives it structure, the data
  * stations pulse and send packets along great-circle arcs. On `done` everything
  * spirals back into the screen center — the same point the iris then closes
- * over and the carousel panels bloom out of.
+ * over and the handoff blooms out of.
  */
 export function useLoaderGlobe({ canvasRef, pctRef, doneRef, onLeave }: GlobeRefs): void {
   useEffect(() => {

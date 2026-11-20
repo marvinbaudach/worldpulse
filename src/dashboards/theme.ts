@@ -2,8 +2,7 @@
 // (scripts from the dataviz method) against the panel surface #12151c:
 // lightness band, chroma floor and >=3:1 contrast all pass; the worst adjacent
 // CVD pair sits in the floor band, mitigated by direct labels on every chart.
-// The surface was since deepened to #0a0c11 for distance readability on the
-// orbiting ring — darkening the ground only *raises* the ink/series contrast
+// The surface was since deepened to #0a0c11 for distance readability — darkening the ground only *raises* the ink/series contrast
 // the check measured, so every validated pair stays comfortably above floor.
 
 export const SURFACE = '#0a0c11';

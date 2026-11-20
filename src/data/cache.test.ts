@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { cached, clearDataCache, fetchJson } from './cache';
 
-const PREFIX = 'carousel3d:data:v1:';
+const PREFIX = 'gallery:data:v1:';
 
 beforeEach(() => {
   localStorage.clear();

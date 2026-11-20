@@ -46,7 +46,7 @@ export const SPACE = {
 
 // Shared glassmorphism surface for the GUI overlays (control bar, chips,
 // buttons, HUD): a frosted, background-blurring pane in the macOS-vibrancy
-// idiom. backdrop-filter blurs the 3D scene behind it so the aurora reads
+// idiom. backdrop-filter blurs the backdrop behind it so the aurora reads
 // through as diffuse color; a top-lit gradient fill + bright top rim make it
 // read as a lit pane of glass rather than a flat tint, and the layered shadow
 // (ambient drop + tight contact + inner bottom shade) gives real depth. Cheap:
@@ -71,7 +71,7 @@ export const glassSurface = css`
 
 // Shared hover/focus reaction for the floating glass controls — the gallery
 // launcher, the FPS HUD and the settings toggle. The accent border blooms and
-// an accent glow lifts the control a hair off the scene, identical everywhere
+// an accent glow lifts the control a hair off the backdrop, identical everywhere
 // so all the corner chrome behaves as one. Pair it with `glassSurface` (which
 // sets the resting border + shadow) and make sure the element's own
 // `transition` lists `transform`, `border-color` and `box-shadow` so the glow

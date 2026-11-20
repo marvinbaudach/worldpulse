@@ -1,17 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { bootWithLocale } from './helpers';
 
-// The desktop experience IS the gallery since the split: no boot loader, no
-// 3D carousel — the toolbar and the skeleton grid appear immediately and the
-// thumbnails paint in staggered. These flows cover the product surface: boot,
-// search, category filter, and the lightbox.
+// The desktop experience IS the gallery: no boot loader — the toolbar and the
+// skeleton grid appear immediately and the thumbnails paint in staggered.
+// These flows cover the product surface: boot, search, category filter, and
+// the lightbox.
 
 test.describe('desktop gallery', () => {
   test('boots straight into the gallery — toolbar up, thumbnails paint', async ({ page }) => {
     await bootWithLocale(page, 'de');
 
-    // No loader gate: the search box is interactive well before the old
-    // ~2.4s boot beat would have cleared.
+    // No loader gate: the search box is interactive right away.
     await expect(page.getByPlaceholder('Suche…')).toBeVisible({ timeout: 3000 });
 
     // Thumbnails arrive (tiles are buttons labelled "<title> · öffnen").

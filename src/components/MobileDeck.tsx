@@ -212,12 +212,12 @@ const SourceLine = styled.p`
 `;
 
 /**
- * Mobile view: no 3D ring at all — a filter plus a swipeable deck of cards,
- * each drawn straight to a 2D canvas. Far lighter than the WebGL carousel.
+ * Mobile view: a filter plus a swipeable deck of cards, each drawn straight
+ * to a 2D canvas.
  */
 export function MobileDeck() {
-  // One theme is always active (the full 110-card pool is gone); like the 3D
-  // view, the filter persists via URL param and localStorage (shared
+  // One theme is always active (the full 110-card pool is gone); like the desktop
+  // gallery, the filter persists via URL param and localStorage (shared
   // view-model, including the FAVORITEN fallback when the last star goes).
   const { tag, setTag, visibleTags } = useThemeFilter();
 

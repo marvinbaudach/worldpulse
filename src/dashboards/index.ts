@@ -13,8 +13,8 @@ export { type Dashboard, SETTLED_T, INTRO_S } from './types';
 /**
  * Filter chips shown in the bottom bar, in display order. Each theme carries
  * an accent from the categorical palette (never hand-picked hex — see
- * theme.ts): the 3D scene tints its ambience toward it, so switching themes
- * reads as a scene change, not just a card swap.
+ * theme.ts): the gallery backdrop tints its ambience toward it, so switching
+ * themes reads as a mood change, not just a card swap.
  *
  * `primary` themes render as always-visible chips in the desktop bar; the
  * rest live in its "MEHR" popover so the bar stays a fixed width no matter
@@ -36,7 +36,7 @@ export const TAGS: { id: string; label: string; accent: string; primary?: boolea
   { id: 'corona', label: 'CORONA', accent: SERIES[1] }, // aqua
   { id: 'welt', label: 'WELT', accent: SERIES[0] }, // blue
   // Personal stack: gets its cards from the favorites store at runtime, so it
-  // has no static pool entry (see RING_BY_TAG below). Shares gold with GELD —
+  // has no static pool entry. Shares gold with GELD —
   // the palette is fixed (CVD-validated), and gold matches the star.
   { id: 'favoriten', label: 'FAVORITEN', accent: SERIES[2] }, // gold
 ];
@@ -581,9 +581,9 @@ const FEATURED = new Set([
 ]);
 
 /**
- * The ring is clustered by theme: cards are grouped by their primary tag (the
- * first in TAGS_BY_ID) in the TAGS chip order, so related panels sit together
- * as an arc rather than scattered. Within each cluster the featured panels lead
+ * The pool is clustered by theme: cards are grouped by their primary tag (the
+ * first in TAGS_BY_ID) in the TAGS chip order, so related cards sit together
+ * rather than scattered. Within each cluster the featured panels lead
  * and both halves are shuffled, so the strong cards front each theme while the
  * order still varies per load. Untagged cards trail at the end.
  */
@@ -603,21 +603,3 @@ export const ALL_DASHBOARDS: Dashboard[] = [
 export const DASHBOARDS_BY_ID: Record<string, Dashboard> = Object.fromEntries(
   POOL.map((d) => [d.id, d]),
 );
-
-/**
- * Hard cap for the desktop ring: at most RING_MAX cards per theme. Featured
- * cards fill the ring first; both halves are shuffled once per load, so the
- * overflow rotates across visits instead of the same cards always being cut.
- * Mobile keeps the full per-theme pool — a swipe deck has no crowding problem.
- */
-export const RING_MAX = 20;
-
-export const RING_BY_TAG: Record<string, Dashboard[]> = Object.fromEntries(
-  TAGS.filter((t) => t.id !== 'favoriten').map((t) => [
-    t.id,
-    clustered(POOL.filter((d) => d.tags?.includes(t.id))).slice(0, RING_MAX),
-  ]),
-);
-
-/** Floor for the ring radius, so a small filtered set still spaces out well. */
-export const MIN_COUNT = 5;

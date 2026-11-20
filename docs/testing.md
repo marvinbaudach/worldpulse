@@ -26,7 +26,6 @@ used by the card smoke test — no `node-canvas` native build in CI.
 
 | Area | File | Guards |
 |------|------|--------|
-| Formations | `src/layouts.test.ts` | slot count, ring rotation-symmetry, `n=1` helix edge case, sphere radius, no NaN |
 | Series math | `src/data/series.test.ts` | `niceScale`/`logScale` rounding, `norm`, `resample`, `yearly`/`interpAt`, `trend` |
 | Draw helpers | `src/dashboards/draw.test.ts` | PRNG determinism + bounds, `easeOut`/`stagger` clamp, `fmtCompact` thresholds |
 | i18n | `src/i18n/i18n.test.ts` | `t()` fallback + composed `A · B` segments, locale number/percent formatters, dictionary sanity |
