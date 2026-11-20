@@ -209,6 +209,13 @@ export function GalleryLightbox({
   const closeRef = useRef<HTMLButtonElement>(null);
   const [downloading, setDownloading] = useState(false);
   const entry = list[index];
+  // The unmount cleanup below runs once, so it reads the card currently shown
+  // through a ref instead of closing over the one that was open at mount.
+  const currentId = useRef<string | undefined>(entry?.card.id);
+  const entryId = entry?.card.id;
+  useEffect(() => {
+    currentId.current = entryId;
+  }, [entryId]);
 
   // Paint before the browser shows the frame, so a navigation never flashes a
   // blank canvas — then replay the deck's fly-in: sweep the draw progress `t`
@@ -261,12 +268,16 @@ export function GalleryLightbox({
   }, [entry, redrawToken]);
 
   // Focus belongs to the dialog while it is open: it lands on the close button,
-  // and goes back to the tile that opened it when the lightbox unmounts.
+  // and goes back to the tile of the card on show when the lightbox unmounts
+  // (the opener if that tile is gone, else the first tile).
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeRef.current?.focus();
     return () => {
-      if (opener?.isConnected) opener.focus();
+      const tiles = document.querySelectorAll<HTMLElement>('[data-card-id]');
+      const current = Array.from(tiles).find((tile) => tile.dataset.cardId === currentId.current);
+      const target = current ?? (opener?.isConnected ? opener : tiles[0]);
+      target?.focus();
     };
   }, []);
 

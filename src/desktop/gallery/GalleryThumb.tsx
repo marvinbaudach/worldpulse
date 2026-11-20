@@ -219,6 +219,7 @@ function GalleryThumbImpl({
       $w={width}
       $h={height}
       tabIndex={0}
+      data-card-id={entry.card.id}
       role="button"
       aria-label={`${tr(entry.card.title)} · ${tr('öffnen')}`}
       onClick={() => onOpen(entry)}

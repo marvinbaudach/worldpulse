@@ -105,7 +105,9 @@ export default function Gallery({ onAccentChange }: GalleryProps) {
 
   const list = useMemo(
     () => filterSort(entries, { query: deferredQuery, category, sort: 'newest' }),
-    [entries, deferredQuery, category],
+    // `locale` re-runs the title match, which searches the translated title too.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [entries, deferredQuery, category, locale],
   );
 
   // progressTick invalidates the memo when new paints land; the ref itself is

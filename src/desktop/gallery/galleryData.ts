@@ -4,6 +4,7 @@
 // part of the app bundle — DevGallery is code-split behind import.meta.env.DEV.
 
 import { POOL } from '../../dashboards/cards';
+import { t as tr } from '../../i18n';
 // Importing the registry runs its side effects, which assign `tags` and `added`
 // onto the very POOL objects read below (ES modules share one instance), so the
 // gallery sees the same metadata the app does.
@@ -58,7 +59,11 @@ export function filterSort(entries: CardEntry[], s: FilterState): CardEntry[] {
   const filtered = entries.filter((e) => {
     if (s.category && e.primaryTag !== s.category) return false;
     if (!q) return true;
-    return e.card.id.toLowerCase().includes(q) || e.card.title.toLowerCase().includes(q);
+    return (
+      e.card.id.toLowerCase().includes(q) ||
+      e.card.title.toLowerCase().includes(q) ||
+      tr(e.card.title).toLowerCase().includes(q)
+    );
   });
 
   const sorted = [...filtered];
