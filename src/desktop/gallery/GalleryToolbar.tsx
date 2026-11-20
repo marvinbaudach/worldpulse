@@ -6,7 +6,7 @@
 
 import styled from 'styled-components';
 import { LOCALES, t as tr, type Locale } from '../../i18n';
-import { TextInput, Label, DIM, SPACE, glassPanel } from './galleryChrome';
+import { TextInput, Label, DIM, SPACE, UI_FONT, glassPanel } from './galleryChrome';
 import { GlassSelect, type GlassSelectOption } from './GlassSelect';
 
 export interface CategoryOption {
@@ -56,7 +56,7 @@ const Bar = styled.div`
 const Count = styled.span`
   margin-left: auto;
   color: ${DIM};
-  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 14px/1.4 ${UI_FONT};
 `;
 
 export function GalleryToolbar({
@@ -81,6 +81,7 @@ export function GalleryToolbar({
       <TextInput
         type="search"
         placeholder={tr('Suche…')}
+        aria-label={tr('Suche…')}
         autoComplete="off"
         value={query}
         onChange={(e) => onQuery(e.target.value)}

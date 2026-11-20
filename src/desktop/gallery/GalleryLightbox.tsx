@@ -9,7 +9,8 @@ import { INTRO_S } from '../../dashboards';
 import { downloadCard } from '../../exportCard';
 import { t as tr } from '../../i18n';
 import { drawCard, type CardEntry, type Category } from './galleryData';
-import { Button, INK, DIM, ACCENT_RGB, SPACE, glassPanel } from './galleryChrome';
+import { Button, INK, DIM, SPACE, UI_FONT, glassPanel } from './galleryChrome';
+import { ChevronIcon, CloseIcon, DownloadIcon } from './galleryIcons';
 
 const FULL_W = 768;
 const FULL_H = 960;
@@ -28,13 +29,10 @@ const Overlay = styled.div`
   inset: 0;
   z-index: 20;
   display: flex;
-  /* A cool accent bloom from the top over a uniform near-black dim (two
-     layers, so the bloom never thins the dim) — atmosphere without a
-     backdrop-filter: the blur re-ran on every fly-in frame (the canvas
-     damages the filter region) and stuttered the intro on real hardware. */
-  background:
-    radial-gradient(120% 85% at 50% -5%, rgba(${ACCENT_RGB}, 0.12) 0%, transparent 55%),
-    rgba(2, 3, 7, 0.94);
+  /* A uniform near-black dim, deliberately without a backdrop-filter: the
+     blur re-ran on every fly-in frame (the canvas damages the filter region)
+     and stuttered the intro on real hardware. */
+  background: rgba(2, 3, 7, 0.96);
   animation: lbFade 200ms ease;
 
   @keyframes lbFade {
@@ -80,16 +78,12 @@ const Stage = styled.div`
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 12px;
     background: #000;
-    /* Crisp rim + deep drop + a soft accent halo + a cold ambient glow. The
-       dim behind is near-black, so a dark drop alone does nothing there — the
-       two white glows (tight rim light + wide halo) are what actually lift
-       the card's silhouette off it. */
+    /* The dim behind is near-black, so a dark drop alone does nothing there:
+       the rim border plus one neutral light lift the card off it. */
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
       0 30px 80px -20px rgba(0, 0, 0, 0.7),
-      0 0 96px -12px rgba(${ACCENT_RGB}, 0.4),
-      0 0 34px rgba(255, 255, 255, 0.16),
-      0 0 150px rgba(255, 255, 255, 0.1);
+      0 0 60px rgba(255, 255, 255, 0.08);
     animation: lbCardIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   @keyframes lbCardIn {
@@ -97,64 +91,71 @@ const Stage = styled.div`
       opacity: 0.3;
     }
   }
+  @media (prefers-reduced-motion: reduce) {
+    canvas {
+      animation: none;
+    }
+  }
 `;
 
 const Info = styled.div`
+  width: 340px;
   max-width: 340px;
+  max-height: 88vh;
+  overflow-y: auto;
+  /* Keep wheel momentum inside the panel. */
+  overscroll-behavior: contain;
   padding: ${SPACE.xl};
   ${glassPanel}
-  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 14px/1.5 ${UI_FONT};
+  color: ${INK};
 
   h2 {
-    font-size: 16px;
-    margin: 0 0 10px;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 ${SPACE.xs};
     color: #fff;
     line-height: 1.3;
-    text-shadow: 0 0 24px rgba(${ACCENT_RGB}, 0.4);
+    text-wrap: balance;
   }
-  .row {
-    margin: 6px 0;
-    word-break: break-word;
-    color: ${INK};
-  }
-  .k {
+  .meta {
+    margin: 0;
     color: ${DIM};
-  }
-  .src {
-    margin-top: 14px;
-    white-space: pre-wrap;
-    color: ${DIM};
-    font-size: 12px;
-    line-height: 1.5;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
   }
   .detail {
-    max-height: 30vh;
-    overflow-y: auto;
-    margin-top: 12px;
-    font-size: 12px;
-    line-height: 1.5;
+    margin-top: ${SPACE.lg};
+    font-size: 13px;
+    line-height: 1.55;
   }
   .detail p {
-    margin: 0 0 6px;
+    margin: 0 0 ${SPACE.sm};
     color: ${INK};
   }
   /* Same semantic tones as the mobile detail sheet. */
   .dl {
-    margin: 8px 0 2px;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    margin: ${SPACE.md} 0 ${SPACE.xs};
+    font-size: 12px;
+    font-weight: 600;
   }
   .dl.pro { color: #8fd694; }
   .dl.kontra { color: #ffb3ab; }
   .dl.hinweis { color: #ffd98a; }
   .detail ul {
     margin: 0;
-    padding-left: 16px;
+    padding-left: ${SPACE.lg};
     color: ${INK};
   }
   .detail li {
     margin: 2px 0;
+  }
+  .src {
+    margin-top: ${SPACE.lg};
+    white-space: pre-wrap;
+    color: ${DIM};
+    font-size: 12px;
+    line-height: 1.55;
   }
 `;
 
@@ -164,18 +165,36 @@ const Nav = styled(Button)`
   transform: translateY(-50%);
   width: 42px;
   height: 58px;
-  font-size: 22px;
   justify-content: center;
-
-  &:hover {
-    transform: translateY(calc(-50% - 1px));
-  }
 `;
 
 const Corner = styled(Button)`
   position: fixed;
   right: 16px;
+  min-width: 104px;
+  justify-content: flex-start;
 `;
+
+/** Keeps Tab / Shift+Tab inside `root`: wraps at either end and pulls focus
+    back in if it ever sits outside the dialog. */
+function trapTab(e: KeyboardEvent, root: HTMLElement | null): void {
+  if (!root) return;
+  const stops = Array.from(root.querySelectorAll<HTMLElement>('button:not([disabled])'));
+  if (stops.length === 0) return;
+  const first = stops[0];
+  const last = stops[stops.length - 1];
+  const active = document.activeElement;
+  if (!(active instanceof Node) || !root.contains(active)) {
+    e.preventDefault();
+    first.focus();
+  } else if (e.shiftKey && active === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && active === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
 
 export function GalleryLightbox({
   list,
@@ -186,6 +205,8 @@ export function GalleryLightbox({
   onNavigate,
 }: GalleryLightboxProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const [downloading, setDownloading] = useState(false);
   const entry = list[index];
 
@@ -239,13 +260,25 @@ export function GalleryLightbox({
     if (canvas && entry && isSettled.current) drawCard(canvas, entry.card, FULL_W, FULL_H);
   }, [entry, redrawToken]);
 
-  // Esc closes; arrows walk the set. Owned here so the grid stops moving focus
-  // underneath (DevGallery gates the grid on the lightbox being closed).
+  // Focus belongs to the dialog while it is open: it lands on the close button,
+  // and goes back to the tile that opened it when the lightbox unmounts.
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeRef.current?.focus();
+    return () => {
+      if (opener?.isConnected) opener.focus();
+    };
+  }, []);
+
+  // Esc closes; arrows walk the set; Tab cycles inside the dialog. Owned here
+  // so the grid stops moving focus underneath (Gallery gates the grid on the
+  // lightbox being closed).
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
       else if (e.key === 'ArrowLeft') onNavigate(-1);
       else if (e.key === 'ArrowRight') onNavigate(1);
+      else if (e.key === 'Tab') trapTab(e, dialogRef.current);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -266,10 +299,13 @@ export function GalleryLightbox({
   };
 
   const cat = categoryOf(entry.primaryTag);
-  const added = entry.card.added ? entry.card.added.slice(0, 16).replace('T', ' ') : '—';
+  const meta = [cat ? tr(cat.label).toLowerCase() : null, `${index + 1} / ${list.length}`]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <Overlay
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={tr('Karten-Detailansicht')}
@@ -277,8 +313,9 @@ export function GalleryLightbox({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <Corner type="button" style={{ top: 16 }} onClick={onClose}>
-        ✕ Esc
+      <Corner ref={closeRef} type="button" style={{ top: 16 }} onClick={onClose}>
+        <CloseIcon />
+        {tr('Schließen')}
       </Corner>
       <Corner
         type="button"
@@ -287,7 +324,8 @@ export function GalleryLightbox({
         onClick={() => void download()}
         aria-label={tr('Karte als PNG herunterladen')}
       >
-        ⭳ PNG
+        <DownloadIcon />
+        PNG
       </Corner>
       {list.length > 1 && (
         <>
@@ -297,7 +335,7 @@ export function GalleryLightbox({
             onClick={() => onNavigate(-1)}
             aria-label={tr('Zurück')}
           >
-            ‹
+            <ChevronIcon dir="prev" />
           </Nav>
           <Nav
             type="button"
@@ -305,40 +343,15 @@ export function GalleryLightbox({
             onClick={() => onNavigate(1)}
             aria-label={tr('Weiter')}
           >
-            ›
+            <ChevronIcon dir="next" />
           </Nav>
         </>
       )}
       <Stage>
         <canvas key={index} ref={canvasRef} width={FULL_W} height={FULL_H} />
         <Info>
-          <h2>{entry.card.title}</h2>
-          <div>
-            <div className="row">
-              <span className="k">id </span>
-              {entry.card.id}
-            </div>
-            <div className="row">
-              <span className="k"># </span>
-              {entry.idx}
-            </div>
-            <div className="row">
-              <span className="k">Kategorie </span>
-              {cat ? cat.label : '—'}
-            </div>
-            <div className="row">
-              <span className="k">hinzugefügt </span>
-              {added}
-            </div>
-            <div className="row">
-              <span className="k">tags </span>
-              {entry.card.tags?.length ? entry.card.tags.join(' · ') : '—'}
-            </div>
-            <div className="row">
-              <span className="k">Position </span>
-              {index + 1} / {list.length}
-            </div>
-          </div>
+          <h2>{tr(entry.card.title)}</h2>
+          <p className="meta">{meta}</p>
           {entry.card.detail && (
             <div className="detail">
               {entry.card.detail.kontext && <p>{tr(entry.card.detail.kontext)}</p>}

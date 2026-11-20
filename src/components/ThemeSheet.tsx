@@ -20,6 +20,9 @@ const Backdrop = styled.div`
       opacity: 1;
     }
   }
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 const Sheet = styled.div`
@@ -43,6 +46,9 @@ const Sheet = styled.div`
     to {
       transform: translateY(0);
     }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
   }
 `;
 

@@ -15,7 +15,7 @@ const TARGETS = [
 test.describe('desktop language switcher', () => {
   test('offers every shipped locale', async ({ page }) => {
     await bootWithLocale(page, 'de');
-    await page.getByRole('button', { name: 'Sprache' }).click();
+    await page.getByRole('button', { name: 'Sprache', exact: true }).click();
     for (const label of ['DE', 'EN', 'FR', 'IT']) {
       await expect(page.getByRole('option', { name: label })).toBeVisible();
     }
@@ -26,7 +26,7 @@ test.describe('desktop language switcher', () => {
       await bootWithLocale(page, 'de');
       await expectHtmlLang(page, 'de');
 
-      await page.getByRole('button', { name: 'Sprache' }).click();
+      await page.getByRole('button', { name: 'Sprache', exact: true }).click();
       await page.getByRole('option', { name: option }).click();
 
       await expectHtmlLang(page, locale);

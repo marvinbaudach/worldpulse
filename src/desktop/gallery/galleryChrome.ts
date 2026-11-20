@@ -3,10 +3,10 @@
 // app-wide `glassSurface`. This is the production desktop UI (see DesktopApp).
 
 import styled, { css } from 'styled-components';
-import { glassSurface, ACCENT, ACCENT_RGB, INK, DIM, RADIUS } from '../../components/glass';
+import { glassSurface, ACCENT, ACCENT_RGB, ACCENT_TEXT, INK, DIM, RADIUS, UI_FONT } from '../../components/glass';
 
 // Re-export the shared glass tokens so gallery modules keep one import site.
-export { ACCENT, ACCENT_RGB, ACCENT_TEXT, INK, DIM, RADIUS, SPACE } from '../../components/glass';
+export { ACCENT, ACCENT_RGB, ACCENT_TEXT, INK, DIM, RADIUS, SPACE, UI_FONT } from '../../components/glass';
 
 /** The desktop backdrop's Ubuntu-aubergine ramp (bright bloom → near-black
     ground). Chrome tokens, not chart colors — the CVD-validated SERIES palette
@@ -22,11 +22,9 @@ export const AUBERGINE = {
   ember: '#b5432f',
 } as const;
 
-const MONO = 'ui-monospace, SFMono-Regular, Menlo, monospace';
-
 /** A frosted control (input/select/button): denser than the bare panel so it
-    reads as sitting on top of it, with a top sheen and an accent glow that
-    blooms on hover and lights up fully on focus. */
+    reads as sitting on top of it. Hover shifts the border to the accent;
+    keyboard focus draws a solid ring, so it never depends on a glow. */
 export const controlCss = css`
   appearance: none;
   -webkit-appearance: none;
@@ -41,31 +39,22 @@ export const controlCss = css`
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: ${RADIUS.control};
   padding: 6px 10px;
-  font: 13px/1.4 ${MONO};
+  font: 14px/1.4 ${UI_FONT};
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.3);
   transition:
     border-color 0.16s ease,
     box-shadow 0.16s ease,
-    background 0.16s ease,
-    transform 0.16s ease;
+    background 0.16s ease;
 
   &:hover {
-    border-color: rgba(${ACCENT_RGB}, 0.65);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      0 2px 10px rgba(0, 0, 0, 0.34),
-      0 0 18px -2px rgba(${ACCENT_RGB}, 0.42);
+    border-color: rgba(${ACCENT_RGB}, 0.7);
   }
-  &:focus,
   &:focus-visible {
-    outline: none;
+    outline: 2px solid ${ACCENT_TEXT};
+    outline-offset: 2px;
     border-color: ${ACCENT};
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      0 0 0 3px rgba(${ACCENT_RGB}, 0.22),
-      0 0 22px -2px rgba(${ACCENT_RGB}, 0.5);
   }
 `;
 
@@ -81,13 +70,9 @@ export const Button = styled.button`
   align-items: center;
   gap: 6px;
 
-  &:hover {
-    transform: translateY(-1px);
-  }
   &:disabled {
     opacity: 0.5;
     cursor: progress;
-    transform: none;
   }
 `;
 
@@ -101,7 +86,7 @@ export const Label = styled.span`
   gap: 6px;
   align-items: center;
   color: ${DIM};
-  font: 13px/1.4 ${MONO};
+  font: 14px/1.4 ${UI_FONT};
 `;
 
 /** The large frosted pane behind grouped chrome (toolbar, lightbox info). */

@@ -5,7 +5,7 @@
 
 import styled, { css, keyframes } from 'styled-components';
 import { t as tr } from '../../i18n';
-import { Button, ACCENT_RGB, INK, DIM, RADIUS, SPACE } from './galleryChrome';
+import { Button, ACCENT_RGB, INK, DIM, RADIUS, SPACE, UI_FONT } from './galleryChrome';
 
 interface GalleryEmptyStateProps {
   /** The (deferred) search text the empty list was computed from. */
@@ -75,9 +75,7 @@ const GhostLead = styled.div`
   ${ghostCss}
   transform: translateX(-50%) translateY(-8px);
   border-color: rgba(${ACCENT_RGB}, 0.55);
-  box-shadow:
-    0 12px 34px -12px rgba(0, 0, 0, 0.6),
-    0 0 26px -4px rgba(${ACCENT_RGB}, 0.35);
+  box-shadow: 0 12px 34px -12px rgba(0, 0, 0, 0.6);
   animation: ${drift} 3.2s ease-in-out infinite alternate;
 
   @media (prefers-reduced-motion: reduce) {
@@ -98,13 +96,13 @@ const Bone = styled.div<{ $w: string; $h?: string }>`
 const Headline = styled.p`
   margin: 0;
   color: ${INK};
-  font: 600 16px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 600 16px/1.4 ${UI_FONT};
 `;
 
 const Hint = styled.p`
   margin: 0;
   color: ${DIM};
-  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 14px/1.4 ${UI_FONT};
 `;
 
 function Ghost() {

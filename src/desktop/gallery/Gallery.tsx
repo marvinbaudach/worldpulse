@@ -198,7 +198,6 @@ export default function Gallery({ onAccentChange }: GalleryProps) {
             width={size}
             height={height}
             redrawToken={redrawToken}
-            categoryOf={categoryOf}
             keyboardActive={lbIndex === null}
             onOpen={openCard}
             onContextMenu={openMenu}

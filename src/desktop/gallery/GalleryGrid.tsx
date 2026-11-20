@@ -6,14 +6,13 @@ import { useRef } from 'react';
 import styled from 'styled-components';
 import { GalleryThumb } from './GalleryThumb';
 import { SPACE } from './galleryChrome';
-import type { CardEntry, Category } from './galleryData';
+import type { CardEntry } from './galleryData';
 
 interface GalleryGridProps {
   list: CardEntry[];
   width: number;
   height: number;
   redrawToken: string;
-  categoryOf: (tag: string) => Category | undefined;
   /** False while the lightbox owns the arrow keys — the grid stops moving. */
   keyboardActive: boolean;
   onOpen: (entry: CardEntry) => void;
@@ -24,7 +23,7 @@ interface GalleryGridProps {
 const Grid = styled.div<{ $tw: number }>`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(${(p) => p.$tw}px, 1fr));
-  gap: ${SPACE.xl} ${SPACE.lg};
+  gap: ${SPACE.lg};
   padding: ${SPACE.xxl};
   align-items: start;
 `;
@@ -41,7 +40,6 @@ export function GalleryGrid({
   width,
   height,
   redrawToken,
-  categoryOf,
   keyboardActive,
   onOpen,
   onContextMenu,
@@ -89,7 +87,6 @@ export function GalleryGrid({
         <GalleryThumb
           key={entry.card.id}
           entry={entry}
-          category={categoryOf(entry.primaryTag)}
           width={width}
           height={height}
           redrawToken={redrawToken}

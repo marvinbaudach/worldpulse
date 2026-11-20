@@ -1,4 +1,4 @@
-// Dev-only review gallery — the design-system dropdown. Native <select> popups
+// The gallery's dropdown. Native <select> popups
 // are OS-drawn and can't take backdrop-filter, so the toolbar's selects would
 // never match the rest of the frosted-glass chrome. This is a custom listbox:
 // the trigger reuses the shared `controlCss` (so it's identical to the other
@@ -12,9 +12,7 @@
 import { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { glassSurface, RADIUS } from '../../components/glass';
-import { controlCss, ACCENT, ACCENT_RGB, INK } from './galleryChrome';
-
-const MONO = 'ui-monospace, SFMono-Regular, Menlo, monospace';
+import { controlCss, ACCENT, ACCENT_RGB, INK, UI_FONT } from './galleryChrome';
 
 export interface GlassSelectOption {
   value: string;
@@ -50,10 +48,6 @@ const Trigger = styled.button<{ $minWidth?: number }>`
   }
   &[aria-expanded='true'] {
     border-color: ${ACCENT};
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
-      0 0 0 3px rgba(${ACCENT_RGB}, 0.22),
-      0 0 22px -2px rgba(${ACCENT_RGB}, 0.5);
   }
   &[aria-expanded='true'] .chev {
     transform: rotate(180deg);
@@ -79,10 +73,10 @@ const Menu = styled.ul`
      more opacity to stay readable while the blur still diffuses what's behind. */
   background: linear-gradient(
     180deg,
-    rgba(22, 28, 42, 0.9) 0%,
-    rgba(12, 16, 24, 0.88) 100%
+    rgba(22, 28, 42, 0.98) 0%,
+    rgba(12, 16, 24, 0.97) 100%
   );
-  /* The fill above is ~89% opaque, so the glassSurface blur barely shows — but a
+  /* The fill above is ~97% opaque, so the glassSurface blur barely shows — but a
      backdrop-filter on a *scrolling* element forces the browser to re-blur the
      grid behind it every frame, which is what makes the wheel feel sluggish.
      Drop it here; the near-opaque gradient carries the look. */
@@ -110,7 +104,7 @@ const Opt = styled.li`
   padding: 7px 10px;
   border-radius: ${RADIUS.item};
   color: ${INK};
-  font: 13px/1.4 ${MONO};
+  font: 14px/1.4 ${UI_FONT};
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -125,16 +119,14 @@ const Opt = styled.li`
   &[aria-selected='true'] .check {
     opacity: 1;
   }
-  /* Active = keyboard/hover focus — the same accent glow as the context menu. */
+  /* Active = keyboard/hover focus — the same accent tint as the context menu. */
   &[data-active='true'] {
     background: linear-gradient(
       180deg,
       rgba(${ACCENT_RGB}, 0.24),
       rgba(${ACCENT_RGB}, 0.12)
     );
-    box-shadow:
-      inset 0 0 0 1px rgba(${ACCENT_RGB}, 0.35),
-      0 0 16px -4px rgba(${ACCENT_RGB}, 0.5);
+    box-shadow: inset 0 0 0 1px rgba(${ACCENT_RGB}, 0.4);
     color: #fff;
   }
 `;

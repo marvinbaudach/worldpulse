@@ -1,14 +1,14 @@
 // One card tile of the desktop gallery: a canvas thumbnail drawn by the shared
-// engine under a shimmer skeleton until its first paint, plus a caption
-// (#index · id · category chip · added date). Memoized so filtering/reordering
+// engine under a shimmer skeleton until its first paint. The card carries its
+// own title, so nothing is captioned underneath. Memoized so filtering/reordering
 // the grid doesn't redraw untouched tiles; the canvas repaints only when its
 // size or the redraw token (locale switch, live-data landing) changes.
 
 import { memo, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { t as tr } from '../../i18n';
-import { drawCard, type CardEntry, type Category } from './galleryData';
-import { ACCENT, ACCENT_RGB, INK, DIM } from './galleryChrome';
+import { drawCard, type CardEntry } from './galleryData';
+import { ACCENT, ACCENT_TEXT } from './galleryChrome';
 
 // Tiles hold their canvas backing store only while near the viewport: ~230
 // thumbs at dpr 2 would otherwise pin ~400 MB of canvas memory, which drags
@@ -53,7 +53,6 @@ function observeNear(el: HTMLElement, cb: NearCallback): () => void {
 
 interface GalleryThumbProps {
   entry: CardEntry;
-  category: Category | undefined;
   /** Thumbnail width in CSS px (grid column width). */
   width: number;
   /** Thumbnail height in CSS px. */
@@ -70,9 +69,9 @@ const Figure = styled.figure<{ $w: number; $h: number }>`
   cursor: pointer;
   outline: none;
   /* Skip layout/paint for tiles scrolled out of view; the intrinsic size (tile
-     width + caption) keeps the scrollbar stable until each row first renders. */
+     size) keeps the scrollbar stable until each row first renders. */
   content-visibility: auto;
-  contain-intrinsic-size: auto ${(p) => p.$w}px auto ${(p) => p.$h + 54}px;
+  contain-intrinsic-size: auto ${(p) => p.$w}px auto ${(p) => p.$h}px;
 
   canvas {
     display: block;
@@ -88,50 +87,17 @@ const Figure = styled.figure<{ $w: number; $h: number }>`
       border-color 0.16s ease,
       box-shadow 0.16s ease;
   }
-  /* Hover lights the tile rather than moving it — accent rim + globe-blue glow
-     over a deepened drop, so it lifts off the grid. */
+  /* Hover and focus change the rim only; the offset drop stays as it is. */
   &:hover canvas {
     border-color: ${ACCENT};
-    box-shadow:
-      0 0 0 1px rgba(${ACCENT_RGB}, 0.45),
-      0 12px 30px -10px rgba(0, 0, 0, 0.6),
-      0 0 28px rgba(${ACCENT_RGB}, 0.36);
+  }
+  &:focus-visible {
+    outline: 2px solid ${ACCENT_TEXT};
+    outline-offset: 4px;
+    border-radius: 14px;
   }
   &:focus-visible canvas {
     border-color: ${ACCENT};
-    box-shadow:
-      0 0 0 2px rgba(${ACCENT_RGB}, 0.6),
-      0 0 28px rgba(${ACCENT_RGB}, 0.36);
-  }
-`;
-
-const Caption = styled.figcaption`
-  padding: 6px 2px 0;
-  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
-
-  .top {
-    color: ${INK};
-    word-break: break-all;
-  }
-  .idx {
-    color: ${DIM};
-  }
-  .meta {
-    margin-top: 4px;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    color: ${DIM};
-  }
-  .chip {
-    padding: 1px 7px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #05070c;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 1px 3px rgba(0, 0, 0, 0.35);
   }
 `;
 
@@ -183,7 +149,6 @@ const Skeleton = styled.div`
 
 function GalleryThumbImpl({
   entry,
-  category,
   width,
   height,
   redrawToken,
@@ -255,7 +220,7 @@ function GalleryThumbImpl({
       $h={height}
       tabIndex={0}
       role="button"
-      aria-label={`${entry.card.id} · ${tr('öffnen')}`}
+      aria-label={`${tr(entry.card.title)} · ${tr('öffnen')}`}
       onClick={() => onOpen(entry)}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -266,20 +231,6 @@ function GalleryThumbImpl({
         <canvas ref={canvasRef} />
         {!rendered && <Skeleton aria-hidden />}
       </CanvasWrap>
-      <Caption>
-        <div className="top">
-          <span className="idx">#{entry.idx} </span>
-          {entry.card.id}
-        </div>
-        <div className="meta">
-          {category && (
-            <span className="chip" style={{ background: category.accent }}>
-              {tr(category.label).toLowerCase()}
-            </span>
-          )}
-          <span>{entry.card.added ? entry.card.added.slice(0, 10) : '—'}</span>
-        </div>
-      </Caption>
     </Figure>
   );
 }

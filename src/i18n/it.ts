@@ -2231,6 +2231,7 @@ export const IT: Record<MessageKey, string> & Record<string, string> = {
   'Karte als PNG herunterladen': 'Scarica la scheda in PNG',
   'Zurück': 'Indietro',
   'Weiter': 'Avanti',
+  'Schließen': 'Chiudi',
   'ID kopieren': 'Copia ID',
   'ID kopiert': 'ID copiato',
   'ID + Titel kopieren': 'Copia ID + titolo',

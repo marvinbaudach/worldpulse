@@ -71,6 +71,9 @@ const Menu = styled.div`
       transform: translateY(0);
     }
   }
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 
   /* Unfold downward from the top-bar button (top at inset + 62px + 8px gap). */
   @media (max-height: 520px) {

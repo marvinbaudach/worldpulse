@@ -13,9 +13,14 @@ import { css } from 'styled-components';
 export const ACCENT = '#3870f8';
 export const ACCENT_RGB = '56, 112, 248';
 export const ACCENT_TEXT = '#cfe4ff';
-// Neutral text on glass: primary and secondary.
+// Neutral text on glass: primary and secondary. DIM is tuned to hold >= 4.5:1
+// on the brightest stop of the backdrop ramp (#571b52 bloom) under the toolbar.
 export const INK = '#dfe3ec';
-export const DIM = '#8b93a3';
+export const DIM = '#a9b0c0';
+
+// One UI face for the chrome — the same system sans the mobile deck uses.
+// Monospace is reserved for data and code; none of the chrome is either.
+export const UI_FONT = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 // Corner-radius scale. One system: controls < menu rows < menu popovers < large
 // panes. Rows nest concentrically inside a popover (popover radius − padding).

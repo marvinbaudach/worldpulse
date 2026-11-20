@@ -2175,6 +2175,7 @@ export const EN = {
   'Karte als PNG herunterladen': 'Download card as PNG',
   'Zurück': 'Back',
   'Weiter': 'Next',
+  'Schließen': 'Close',
   'ID kopieren': 'Copy ID',
   'ID kopiert': 'ID copied',
   'ID + Titel kopieren': 'Copy ID + title',
