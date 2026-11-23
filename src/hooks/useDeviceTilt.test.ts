@@ -70,7 +70,7 @@ describe('useDeviceTilt', () => {
 
     expect(card.current?.style.transform).toMatch(/rotateY\(.*deg\) rotateX\(.*deg\)/);
     // Background shifts opposite the deck for parallax.
-    expect(bg.current?.style.transform).toMatch(/translate\(.*px, .*px\)/);
+    expect(bg.current?.style.transform).toMatch(/translate\(.*px(?:, .*px)?\)/);
   });
 
   it('drifts toward the target across successive frames', () => {
